@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：field 'homework' of 'Others' not accessible here<br>
@@ -12,8 +12,8 @@ public class FieldNotAccessError extends DecafError {
 
 	private String owner;
 
-	public FieldNotAccessError(Location location, String name, String owner) {
-		super(location);
+	public FieldNotAccessError(Pos pos, String name, String owner) {
+		super(pos);
 		this.name = name;
 		this.owner = owner;
 	}

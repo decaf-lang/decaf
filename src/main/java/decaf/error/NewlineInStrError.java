@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：illegal newline in string constant "this is stri"<br>
@@ -10,8 +10,8 @@ public class NewlineInStrError extends DecafError {
 
 	private String str;
 
-	public NewlineInStrError(Location location, String str) {
-		super(location);
+	public NewlineInStrError(Pos pos, String str) {
+		super(pos);
 		this.str = str;
 	}
 

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：class 'zig' not found<br>
@@ -10,8 +10,8 @@ public class ClassNotFoundError extends DecafError {
 
 	private String name;
 
-	public ClassNotFoundError(Location location, String name) {
-		super(location);
+	public ClassNotFoundError(Pos pos, String name) {
+		super(pos);
 		this.name = name;
 	}
 

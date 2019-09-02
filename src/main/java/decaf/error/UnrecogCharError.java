@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：unrecognized char: '@'<br>
@@ -10,8 +10,8 @@ public class UnrecogCharError extends DecafError {
 
 	private char c;
 
-	public UnrecogCharError(Location location, char c) {
-		super(location);
+	public UnrecogCharError(Pos pos, char c) {
+		super(pos);
 		this.c = c;
 	}
 

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：'break' is only allowed inside a loop<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BreakOutOfLoopError extends DecafError {
 
-	public BreakOutOfLoopError(Location location) {
-		super(location);
+	public BreakOutOfLoopError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

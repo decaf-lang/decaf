@@ -1,11 +1,11 @@
-package decaf;
+package decaf.tree;
 
 /**
  * 语法符号在源代码中的位置<br>
  */
-public class Location implements Comparable<Location> {
+public class Pos implements Comparable<Pos> {
 
-	public static final Location NO_LOCATION = new Location(-1, -1);
+	public static final Pos NoPos = new Pos(-1, -1);
 	/**
 	 * 该符号第一个字符所在的行号
 	 */
@@ -24,7 +24,7 @@ public class Location implements Comparable<Location> {
 	 * @param col
 	 *            列号
 	 */
-	public Location(int lin, int col) {
+	public Pos(int lin, int col) {
 		line = lin;
 		column = col;
 	}
@@ -38,7 +38,7 @@ public class Location implements Comparable<Location> {
 	}
 
 	@Override
-	public int compareTo(Location o) {
+	public int compareTo(Pos o) {
 		if (line > o.line) {
 			return 1;
 		}

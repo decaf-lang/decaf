@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：'length' can only be applied to arrays<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BadLengthError extends DecafError {
 
-	public BadLengthError(Location location) {
-		super(location);
+	public BadLengthError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

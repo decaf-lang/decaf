@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：declaration of 'abcde' here conflicts with earlier declaration at (3,2)<br>
@@ -8,12 +8,12 @@ import decaf.Location;
  */
 public class DeclConflictError extends DecafError {
 
-	private Location earlier;
+	private Pos earlier;
 
 	private String name;
 
-	public DeclConflictError(Location location, String name, Location earlier) {
-		super(location);
+	public DeclConflictError(Pos pos, String name, Pos earlier) {
+		super(pos);
 		this.name = name;
 		this.earlier = earlier;
 	}

@@ -2,7 +2,7 @@ package decaf.symbol;
 
 import java.util.Comparator;
 
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.scope.Scope;
 import decaf.type.Type;
 
@@ -15,13 +15,13 @@ public abstract class Symbol {
 
 	protected int order;
 
-	protected Location location;
+	protected Pos pos;
 
 	public static final Comparator<Symbol> LOCATION_COMPARATOR = new Comparator<Symbol>() {
 
 		@Override
 		public int compare(Symbol o1, Symbol o2) {
-			return o1.location.compareTo(o2.location);
+			return o1.pos.compareTo(o2.pos);
 		}
 
 	};
@@ -51,12 +51,12 @@ public abstract class Symbol {
 		this.order = order;
 	}
 
-	public Location getLocation() {
-		return location;
+	public Pos getPos() {
+		return pos;
 	}
 
-	public void setLocation(Location location) {
-		this.location = location;
+	public void setPos(Pos pos) {
+		this.pos = pos;
 	}
 
 	public Type getType() {

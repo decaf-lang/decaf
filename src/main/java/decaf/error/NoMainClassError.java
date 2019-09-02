@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：no legal Main class named 'Main' was found<br>
@@ -11,7 +11,7 @@ public class NoMainClassError extends DecafError {
 	private String name;
 
 	public NoMainClassError(String name) {
-		super(Location.NO_LOCATION);
+		super(Pos.NoPos);
 		this.name = name;
 	}
 

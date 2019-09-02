@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * string is not a class type.
@@ -9,8 +9,8 @@ public class NotClassError extends DecafError {
 
 	private String type;
 
-	public NotClassError(String type, Location location) {
-		super(location);
+	public NotClassError(String type, Pos pos) {
+		super(pos);
 		this.type = type;
 	}
 

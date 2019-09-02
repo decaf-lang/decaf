@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：integer literal 112233445566778899 is too large<br>
@@ -10,8 +10,8 @@ public class IntTooLargeError extends DecafError {
 
 	private String val;
 
-	public IntTooLargeError(Location location, String val) {
-		super(location);
+	public IntTooLargeError(Pos pos, String val) {
+		super(pos);
 		this.val = val;
 	}
 

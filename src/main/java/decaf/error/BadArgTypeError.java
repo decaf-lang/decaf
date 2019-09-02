@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：incompatible argument 3: int given, bool expected<br>
@@ -15,9 +15,9 @@ public class BadArgTypeError extends DecafError {
 
 	private String expect;
 
-	public BadArgTypeError(Location location, int count, String given,
-			String expect) {
-		super(location);
+	public BadArgTypeError(Pos pos, int count, String given,
+						   String expect) {
+		super(pos);
 		this.count = count;
 		this.given = given;
 		this.expect = expect;

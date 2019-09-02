@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：illegal class inheritance (should be a cyclic)<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BadInheritanceError extends DecafError {
 
-	public BadInheritanceError(Location location) {
-		super(location);
+	public BadInheritanceError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

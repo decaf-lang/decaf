@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：test expression must have bool type<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BadTestExpr extends DecafError {
 
-	public BadTestExpr(Location location) {
-		super(location);
+	public BadTestExpr(Pos pos) {
+		super(pos);
 	}
 
 	@Override

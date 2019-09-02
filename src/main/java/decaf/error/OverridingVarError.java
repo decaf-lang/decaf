@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：overriding variable is not allowed for var 'kittyboy'<br>
@@ -10,8 +10,8 @@ public class OverridingVarError extends DecafError {
 
 	private String name;
 
-	public OverridingVarError(Location location, String name) {
-		super(location);
+	public OverridingVarError(Pos pos, String name) {
+		super(pos);
 		this.name = name;
 	}
 

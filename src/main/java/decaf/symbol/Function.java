@@ -1,7 +1,7 @@
 package decaf.symbol;
 
 import decaf.Driver;
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.tree.Tree.Block;
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
@@ -55,9 +55,9 @@ public class Function extends Symbol {
 	}
 
 	public Function(boolean statik, String name, Type returnType,
-			Block node, Location location) {
+			Block node, Pos pos) {
 		this.name = name;
-		this.location = location;
+		this.pos = pos;
 
 		type = new FuncType(returnType);
 		associatedScope = new FormalScope(this, node);
@@ -66,7 +66,7 @@ public class Function extends Symbol {
 		this.statik = statik;
 		if (!statik) {
 			Variable _this = new Variable("this", cs.getOwner().getType(),
-					location);
+                    pos);
 			associatedScope.declare(_this);
 			appendParam(_this);
 		}
@@ -103,7 +103,7 @@ public class Function extends Symbol {
 
 	@Override
 	public String toString() {
-		return location + " -> " + (statik ? "static " : "") + "function "
+		return pos + " -> " + (statik ? "static " : "") + "function "
 				+ name + " : " + type;
 	}
 

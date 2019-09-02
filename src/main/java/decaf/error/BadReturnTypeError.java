@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：incompatible return: int[] given, int expected<br>
@@ -12,8 +12,8 @@ public class BadReturnTypeError extends DecafError {
 
 	private String given;
 
-	public BadReturnTypeError(Location location, String expect, String given) {
-		super(location);
+	public BadReturnTypeError(Pos pos, String expect, String given) {
+		super(pos);
 		this.expect = expect;
 		this.given = given;
 	}

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * can not reference a non-static field 'kylin' from static method from 'dove'
@@ -12,8 +12,8 @@ public class RefNonStaticError extends DecafError {
 
 	private String ref;
 
-	public RefNonStaticError(Location location, String from, String ref) {
-		super(location);
+	public RefNonStaticError(Pos pos, String from, String ref) {
+		super(pos);
 		this.from = from;
 		this.ref = ref;
 	}

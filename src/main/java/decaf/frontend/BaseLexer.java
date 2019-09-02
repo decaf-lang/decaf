@@ -1,73 +1,70 @@
 package decaf.frontend;
 
 import decaf.Driver;
-import decaf.Location;
 import decaf.error.DecafError;
 import decaf.error.IntTooLargeError;
-import decaf.tree.Tree;
+import decaf.tree.Pos;
 
 import java.io.IOException;
 
 public abstract class BaseLexer {
 
-	private Parser parser;
+    private Parser parser;
 
-	public void setParser(Parser parser) {
-		this.parser = parser;
-	}
+    public void setParser(Parser parser) {
+        this.parser = parser;
+    }
 
-	abstract int yylex() throws IOException;
+    abstract int yylex() throws IOException;
 
-	abstract Location getLocation();
+    abstract Pos getLocation();
 
-	protected void issueError(DecafError error) {
-		Driver.getDriver().issueError(error);
-	}
+    protected void issueError(DecafError error) {
+        Driver.getDriver().issueError(error);
+    }
 
-	protected void setSemantic(Location where, SemValue v) {
-		v.loc = where;
-		parser.yylval = v;
-	}
+    protected void setSemantic(Pos where, SemValue v) {
+        v.loc = where;
+        parser.yylval = v;
+    }
 
-	protected int keyword(int code) {
-		setSemantic(getLocation(), SemValue.createKeyword(code));
-		return code;
-	}
+    protected int keyword(int code) {
+        setSemantic(getLocation(), SemValue.createKeyword(code));
+        return code;
+    }
 
-	protected int operator(int code) {
-		setSemantic(getLocation(), SemValue.createOperator(code));
-		return code;
-	}
+    protected int operator(int code) {
+        setSemantic(getLocation(), SemValue.createOperator(code));
+        return code;
+    }
 
-	protected int boolConst(boolean bval) {
-		setSemantic(getLocation(), SemValue.createLiteral(Tree.BOOL, bval));
-		return Parser.LITERAL;
-	}
+    protected int boolConst(boolean bval) {
+        setSemantic(getLocation(), SemValue.createBoolLit(bval));
+        return Parser.BOOL_LIT;
+    }
 
-	protected int StringConst(String sval, Location loc) {
-		setSemantic(loc, SemValue.createLiteral(Tree.STRING, sval));
-		return Parser.LITERAL;
-	}
+    protected int StringConst(String sval, Pos loc) {
+        setSemantic(loc, SemValue.createStringLit(sval));
+        return Parser.STRING_LIT;
+    }
 
-	protected int intConst(String ival) {
-		try {
-			setSemantic(getLocation(), SemValue.createLiteral(
-					Tree.INT, Integer.decode(ival)));
-		} catch (NumberFormatException e) {
-			Driver.getDriver().issueError(
-					new IntTooLargeError(getLocation(), ival));
-		}
-		return Parser.LITERAL;
-	}
+    protected int intConst(String ival) {
+        try {
+            setSemantic(getLocation(), SemValue.createIntLit(Integer.decode(ival)));
+        } catch (NumberFormatException e) {
+            Driver.getDriver().issueError(new IntTooLargeError(getLocation(), ival));
+        }
+        return Parser.INT_LIT;
+    }
 
-	protected int identifier(String name) {
-		setSemantic(getLocation(), SemValue.createIdentifier(name));
-		return Parser.IDENTIFIER;
-	}
+    protected int identifier(String name) {
+        setSemantic(getLocation(), SemValue.createIdentifier(name));
+        return Parser.IDENTIFIER;
+    }
 
-	public void diagnose() throws IOException {
-		while (yylex() != 0) {
-			System.out.println(parser.yylval);
-		}
-	}
+    public void diagnose() throws IOException {
+        while (yylex() != 0) {
+            System.out.println(parser.yylval);
+        }
+    }
 }

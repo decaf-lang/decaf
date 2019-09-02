@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * 仅供Parser的yyerror函数使用
@@ -9,8 +9,8 @@ public class MsgError extends DecafError {
 
 	private String msg;
 
-	public MsgError(Location location, String msg) {
-		super(location);
+	public MsgError(Pos pos, String msg) {
+		super(pos);
 		this.msg = msg;
 	}
 

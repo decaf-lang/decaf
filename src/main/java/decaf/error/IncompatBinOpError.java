@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：incompatible operands: int + bool<br>
@@ -14,9 +14,9 @@ public class IncompatBinOpError extends DecafError {
 
 	private String op;
 
-	public IncompatBinOpError(Location location, String left, String op,
-			String right) {
-		super(location);
+	public IncompatBinOpError(Pos pos, String left, String op,
+							  String right) {
+		super(pos);
 		this.left = left;
 		this.right = right;
 		this.op = op;

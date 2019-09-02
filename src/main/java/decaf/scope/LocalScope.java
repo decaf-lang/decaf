@@ -26,7 +26,7 @@ public class LocalScope extends Scope {
 			pw.println(symbol);
 		}
 
-		for (Tree s : node.block) {
+		for (var s : node.block) {
 			if (s instanceof Block) {
 				((Block) s).associatedScope.printTo(pw);
 			}

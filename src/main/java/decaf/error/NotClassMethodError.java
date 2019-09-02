@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：'orz' is not a method in class 'Person'<br>
@@ -12,8 +12,8 @@ public class NotClassMethodError extends DecafError {
 
 	private String owner;
 
-	public NotClassMethodError(Location location, String name, String owner) {
-		super(location);
+	public NotClassMethodError(Pos pos, String name, String owner) {
+		super(pos);
 		this.name = name;
 		this.owner = owner;
 	}

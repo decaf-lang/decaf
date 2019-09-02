@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：new array length must be an integer<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BadNewArrayLength extends DecafError {
 
-	public BadNewArrayLength(Location location) {
-		super(location);
+	public BadNewArrayLength(Pos pos) {
+		super(pos);
 	}
 
 	@Override

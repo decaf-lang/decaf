@@ -3,7 +3,7 @@ package decaf.scope;
 import java.util.ListIterator;
 import java.util.Stack;
 
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.scope.Scope.Kind;
 import decaf.symbol.Class;
 import decaf.symbol.Symbol;
@@ -29,14 +29,14 @@ public class ScopeStack {
 		}
 	}
 
-	public Symbol lookupBeforeLocation(String name, Location loc) {
+	public Symbol lookupBeforeLocation(String name, Pos loc) {
 		ListIterator<Scope> iter = scopeStack.listIterator(scopeStack.size());
 		while (iter.hasPrevious()) {
 			Scope scope = iter.previous();
 			Symbol symbol = scope.lookup(name);
 			if (symbol != null) {
 				if (scope.isLocalScope()
-						&& symbol.getLocation().compareTo(loc) > 0) {
+						&& symbol.getPos().compareTo(loc) > 0) {
 					continue;
 				}
 				return symbol;

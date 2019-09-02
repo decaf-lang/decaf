@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：overriding method 'tooold' doesn't match the type signature in class
@@ -13,9 +13,9 @@ public class BadOverrideError extends DecafError {
 
 	private String parentName;
 
-	public BadOverrideError(Location location, String funcName,
-			String parentName) {
-		super(location);
+	public BadOverrideError(Pos pos, String funcName,
+							String parentName) {
+		super(pos);
 		this.funcName = funcName;
 		this.parentName = parentName;
 	}

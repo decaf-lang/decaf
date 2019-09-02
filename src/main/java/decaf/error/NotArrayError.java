@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：[] can only be applied to arrays<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class NotArrayError extends DecafError {
 
-	public NotArrayError(Location location) {
-		super(location);
+	public NotArrayError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

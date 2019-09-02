@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：array base type must be non-void type<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class BadArrElementError extends DecafError {
 
-	public BadArrElementError(Location location) {
-		super(location);
+	public BadArrElementError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

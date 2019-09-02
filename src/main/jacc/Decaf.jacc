@@ -27,8 +27,8 @@ import java.util.*;
 %token NULL   EXTENDS     THIS     WHILE   FOR   
 %token IF     ELSE        RETURN   BREAK   NEW
 %token PRINT  READ_INTEGER         READ_LINE
-%token LITERAL
-%token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
+%token BOOL_LIT INT_LIT STRING_LIT
+%token IDENTIFIER   AND    OR    STATIC  INSTANCEOF
 %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
 %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
@@ -59,7 +59,7 @@ ClassList       :	ClassList ClassDef
 					}
                 |	ClassDef
                 	{
-                		$$.clist = new ArrayList<Tree.ClassDef>();
+                		$$.clist = new ArrayList<>();
                 		$$.clist.add($1.cdef);
                 	}
                 ;
@@ -67,51 +67,51 @@ ClassList       :	ClassList ClassDef
 VariableDef     :	Variable ';'
 				;
 
-Variable        :	Type IDENTIFIER
+Variable        :	Type Id
 					{
-						$$.vdef = new Tree.VarDef($2.ident, $1.type, $2.loc);
+						$$.vdef = new Tree.VarDef($1.type, $2.id, $2.loc);
 					}
 				;
 				
 Type            :	INT
 					{
-						$$.type = new Tree.TypeIdent(Tree.INT, $1.loc);
+						$$.type = new Tree.TInt($1.loc);
 					}
                 |	VOID
                 	{
-                		$$.type = new Tree.TypeIdent(Tree.VOID, $1.loc);
+                		$$.type = new Tree.TVoid($1.loc);
                 	}
                 |	BOOL
                 	{
-                		$$.type = new Tree.TypeIdent(Tree.BOOL, $1.loc);
+                		$$.type = new Tree.TBool($1.loc);
                 	}
                 |	STRING
                 	{
-                		$$.type = new Tree.TypeIdent(Tree.STRING, $1.loc);
+                		$$.type = new Tree.TString($1.loc);
                 	}
-                |	CLASS IDENTIFIER
+                |	CLASS Id
                 	{
-                		$$.type = new Tree.TypeClass($2.ident, $1.loc);
+                		$$.type = new Tree.TClass($2.id, $1.loc);
                 	}
                 |	Type '[' ']'
                 	{
-                		$$.type = new Tree.TypeArray($1.type, $1.loc);
+                		$$.type = new Tree.TArray($1.type, $1.loc);
                 	}
                 ;
 
-ClassDef        :	CLASS IDENTIFIER ExtendsClause '{' FieldList '}'
+ClassDef        :	CLASS Id ExtendsClause '{' FieldList '}'
 					{
-						$$.cdef = new Tree.ClassDef($2.ident, $3.ident, $5.flist, $1.loc);
+						$$.cdef = new Tree.ClassDef($2.id, Optional.ofNullable($3.id), $5.flist, $1.loc);
 					}
                 ;
 
-ExtendsClause	:	EXTENDS IDENTIFIER
+ExtendsClause	:	EXTENDS Id
 					{
-						$$.ident = $2.ident;
+						$$.id = $2.id;
 					}
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
+                	    $$ = new SemValue();
                 	}
                 ;
 
@@ -126,7 +126,7 @@ FieldList       :	FieldList VariableDef
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
-                		$$.flist = new ArrayList<Tree>();
+                		$$.flist = new ArrayList<>();
                 	}
                 ;
  
@@ -134,28 +134,34 @@ Formals         :	VariableList
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
-                		$$.vlist = new ArrayList<Tree.VarDef>(); 
+                		$$.vlist = new ArrayList<>();
                 	}
                 ;
 
-VariableList    :	VariableList ',' Variable
+VariableList    :	VariableList ',' LocalVar
 					{
-						$$.vlist.add($3.vdef);
+						$$.lvlist.add($3.lvdef);
 					}
-                |	Variable
+                |	LocalVar
                 	{
-                		$$.vlist = new ArrayList<Tree.VarDef>();
-						$$.vlist.add($1.vdef);
+                		$$.lvlist = new ArrayList<>();
+						$$.lvlist.add($1.lvdef);
                 	}
                 ;
 
-FunctionDef    :	STATIC Type IDENTIFIER '(' Formals ')' StmtBlock
+LocalVar        :	Type Id
 					{
-						$$.fdef = new MethodDef(true, $3.ident, $2.type, $5.vlist, (Block) $7.stmt, $3.loc);
+						$$.lvdef = new Tree.LocalVarDef($1.type, $2.id, $2.loc);
 					}
-				|	Type IDENTIFIER '(' Formals ')' StmtBlock
+				;
+
+FunctionDef    :	STATIC Type Id '(' Formals ')' StmtBlock
 					{
-						$$.fdef = new MethodDef(false, $2.ident, $1.type, $4.vlist, (Block) $6.stmt, $2.loc);
+						$$.fdef = new MethodDef(true, $3.id, $2.type, $5.lvlist, (Block) $7.stmt, $3.loc);
+					}
+				|	Type Id '(' Formals ')' StmtBlock
+					{
+						$$.fdef = new MethodDef(false, $2.id, $1.type, $4.lvlist, (Block) $6.stmt, $2.loc);
 					}
                 ;
 
@@ -172,13 +178,13 @@ StmtList        :	StmtList Stmt
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
-                		$$.slist = new ArrayList<Tree>();
+                		$$.slist = new ArrayList<>();
                 	}
                 ;
 
-Stmt		    :	VariableDef
+Stmt		    :	LocalVar ';'
 					{
-						$$.stmt = $1.vdef;
+						$$.stmt = $1.lvdef;
 					}
 					
                 |	SimpleStmt ';'
@@ -202,7 +208,7 @@ SimpleStmt      :	LValue '=' Expr
 					}
                 |	Call
                 	{
-                		$$.stmt = new Tree.Exec($1.expr, $1.loc);
+                		$$.stmt = new ExprEval($1.expr, $1.loc);
                 	}
                 |	/* empty */
                 	{
@@ -215,24 +221,24 @@ Receiver     	:	Expr '.'
                 	{
                 		$$ = new SemValue();
                 	}
-                ; 
+                ;
 
-LValue          :	Receiver IDENTIFIER
+LValue          :	Receiver Id
 					{
-						$$.lvalue = new Tree.Ident($1.expr, $2.ident, $2.loc);
+						$$.lvalue = new Tree.VarSel(Optional.ofNullable($1.expr), $2.id, $2.loc);
 						if ($1.loc == null) {
 							$$.loc = $2.loc;
 						}
 					}
                 |	Expr '[' Expr ']'
                 	{
-                		$$.lvalue = new Tree.Indexed($1.expr, $3.expr, $1.loc);
+                		$$.lvalue = new Tree.IndexSel($1.expr, $3.expr, $1.loc);
                 	}
                 ;
 
-Call            :	Receiver IDENTIFIER '(' Actuals ')'
+Call            :	Receiver Id '(' Actuals ')'
 					{
-						$$.expr = new Tree.CallExpr($1.expr, $2.ident, $4.elist, $2.loc);
+						$$.expr = new Tree.Call(Optional.ofNullable($1.expr), $2.id, $4.elist, $2.loc);
 						if ($1.loc == null) {
 							$$.loc = $2.loc;
 						}
@@ -247,55 +253,55 @@ Expr            :	LValue
                 |	Constant
                 |	Expr '+' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.ADD, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '-' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.MINUS, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.SUB, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '*' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.MUL, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.MUL, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '/' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.DIV, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.DIV, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '%' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.MOD, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.MOD, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.EQ, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.EQ, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr NOT_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.NE, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.NE, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '<' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.LT, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.LT, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr '>' Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.GT, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.GT, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr LESS_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.LE, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.LE, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr GREATER_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.GE, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.GE, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr AND Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.AND, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.AND, $1.expr, $3.expr, $2.loc);
                 	}
                 |	Expr OR Expr
                 	{
-                		$$.expr = new Tree.Binary(Tree.OR, $1.expr, $3.expr, $2.loc);
+                		$$.expr = new Tree.Binary(BinaryOp.OR, $1.expr, $3.expr, $2.loc);
                 	}
                 |	'(' Expr ')'
                 	{
@@ -303,49 +309,57 @@ Expr            :	LValue
                 	}
                 |	'-' Expr  				%prec UMINUS
                 	{
-                		$$.expr = new Tree.Unary(Tree.NEG, $2.expr, $1.loc);
+                		$$.expr = new Tree.Unary(UnaryOp.NEG, $2.expr, $1.loc);
                 	}
                 |	'!' Expr
                 	{
-                		$$.expr = new Tree.Unary(Tree.NOT, $2.expr, $1.loc);
+                		$$.expr = new Tree.Unary(UnaryOp.NOT, $2.expr, $1.loc);
                 	}
                 |	READ_INTEGER '(' ')'
                 	{
-                		$$.expr = new Tree.ReadIntExpr($1.loc);
+                		$$.expr = new Tree.ReadInt($1.loc);
                 	}
                 |	READ_LINE '(' ')'
                 	{
-                		$$.expr = new Tree.ReadLineExpr($1.loc);
+                		$$.expr = new Tree.ReadLine($1.loc);
                 	}
                 |	THIS
                 	{
-                		$$.expr = new Tree.ThisExpr($1.loc);
+                		$$.expr = new Tree.This($1.loc);
                 	}
-                |	NEW IDENTIFIER '(' ')'
+                |	NEW Id '(' ')'
                 	{
-                		$$.expr = new Tree.NewClass($2.ident, $1.loc);
+                		$$.expr = new Tree.NewClass($2.id, $1.loc);
                 	}
                 |	NEW Type '[' Expr ']'
                 	{
                 		$$.expr = new Tree.NewArray($2.type, $4.expr, $1.loc);
                 	}
-                |	INSTANCEOF '(' Expr ',' IDENTIFIER ')'
+                |	INSTANCEOF '(' Expr ',' Id ')'
                 	{
-                		$$.expr = new Tree.TypeTest($3.expr, $5.ident, $1.loc);
+                		$$.expr = new ClassTest($3.expr, $5.id, $1.loc);
                 	}
-                |	'(' CLASS IDENTIFIER ')' Expr
+                |	'(' CLASS Id ')' Expr
                 	{
-                		$$.expr = new Tree.TypeCast($3.ident, $5.expr, $5.loc);
-                	} 
+                		$$.expr = new ClassCast($5.expr, $3.id, $5.loc);
+                	}
                 ;
 	
-Constant        :	LITERAL
+Constant        :	INT_LIT
 					{
-						$$.expr = new Tree.Literal($1.typeTag, $1.literal, $1.loc);
+						$$.expr = new IntLit($1.intValue, $1.loc);
 					}
+			    |   BOOL_LIT
+			        {
+			            $$.expr = new BoolLit($1.boolValue, $1.loc);
+			        }
+			    |   STRING_LIT
+			        {
+			            $$.expr = new StringLit($1.stringValue, $1.loc);
+			        }
                 |	NULL
                 	{
-						$$.expr = new Null($1.loc);
+						$$.expr = new NullLit($1.loc);
 					}
                 ;
 
@@ -353,7 +367,7 @@ Actuals         :	ExprList
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
-                		$$.elist = new ArrayList<Tree.Expr>();
+                		$$.elist = new ArrayList<>();
                 	}
                 ;
 
@@ -363,20 +377,20 @@ ExprList        :	ExprList ',' Expr
 					}
                 |	Expr
                 	{
-                		$$.elist = new ArrayList<Tree.Expr>();
+                		$$.elist = new ArrayList<>();
 						$$.elist.add($1.expr);
                 	}
                 ;
     
 WhileStmt       :	WHILE '(' Expr ')' Stmt
 					{
-						$$.stmt = new Tree.WhileLoop($3.expr, $5.stmt, $1.loc);
+						$$.stmt = new Tree.While($3.expr, $5.stmt, $1.loc);
 					}
                 ;
 
 ForStmt         :	FOR '(' SimpleStmt ';' Expr ';'	SimpleStmt ')' Stmt
 					{
-						$$.stmt = new Tree.ForLoop($3.stmt, $5.expr, $7.stmt, $9.stmt, $1.loc);
+						$$.stmt = new Tree.For($3.stmt, $5.expr, $7.stmt, $9.stmt, $1.loc);
 					}
                 ;
 
@@ -388,7 +402,7 @@ BreakStmt       :	BREAK
 
 IfStmt          :	IF '(' Expr ')' Stmt ElseClause
 					{
-						$$.stmt = new Tree.If($3.expr, $5.stmt, $6.stmt, $1.loc);
+						$$.stmt = new Tree.If($3.expr, $5.stmt, Optional.ofNullable($6.stmt), $1.loc);
 					}
                 ;
 
@@ -404,11 +418,11 @@ ElseClause      :	ELSE Stmt
 
 ReturnStmt      :	RETURN Expr
 					{
-						$$.stmt = new Tree.Return($2.expr, $1.loc);
+						$$.stmt = new Tree.Return(Optional.of($2.expr), $1.loc);
 					}
                 |	RETURN
                 	{
-                		$$.stmt = new Tree.Return(null, $1.loc);
+                		$$.stmt = new Tree.Return(Optional.empty(), $1.loc);
                 	}
                 ;
 
@@ -416,6 +430,12 @@ PrintStmt       :	PRINT '(' ExprList ')'
 					{
 						$$.stmt = new Print($3.elist, $1.loc);
 					}
+                ;
+
+Id              :   IDENTIFIER
+                    {
+                        $$.id = new Id($1.ident, $1.loc);
+                    }
                 ;
 
 %%

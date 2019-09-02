@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：field 'money' not found in 'Student'<br>
@@ -12,8 +12,8 @@ public class FieldNotFoundError extends DecafError {
 
 	private String owner;
 
-	public FieldNotFoundError(Location location, String name, String owner) {
-		super(location);
+	public FieldNotFoundError(Pos pos, String name, String owner) {
+		super(pos);
 		this.name = name;
 		this.owner = owner;
 	}

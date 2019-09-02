@@ -53,40 +53,47 @@ public abstract class BaseParser {
     /**
      * 获得操作符的字符串表示
      *
-     * @param opCode 操作符的符号码
+     * @param op 操作符的符号码
      * @return 该操作符的字符串形式
      */
-    public static String opStr(int opCode) {
+    public static String opStr(Tree.UnaryOp op) {
+        return switch (op) {
+            case NEG -> "-";
+            case NOT -> "!";
+        };
+    }
+
+    // TODO: rewrite using case expression
+    public static String opStr(Tree.BinaryOp opCode) {
         switch (opCode) {
-            case Tree.AND:
+            case AND:
                 return "&&";
-            case Tree.EQ:
+            case EQ:
                 return "==";
-            case Tree.GE:
+            case GE:
                 return ">=";
-            case Tree.LE:
+            case LE:
                 return "<=";
-            case Tree.NE:
+            case NE:
                 return "!=";
-            case Tree.OR:
+            case OR:
                 return "||";
-            case Tree.PLUS:
+            case ADD:
                 return "+";
-            case Tree.MINUS:
-            case Tree.NEG:
+            case SUB:
                 return "-";
-            case Tree.MUL:
+            case MUL:
                 return "*";
-            case Tree.DIV:
+            case DIV:
                 return "/";
-            case Tree.MOD:
+            case MOD:
                 return "%";
-            case Tree.GT:
+            case GT:
                 return ">";
-            case Tree.LT:
+            case LT:
                 return "<";
             default:
-                return "unknow";
+                return "<unknown>";
         }
     }
 }

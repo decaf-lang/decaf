@@ -3,7 +3,7 @@ package decaf.symbol;
 import java.util.Iterator;
 
 import decaf.Driver;
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.backend.OffsetCounter;
 import decaf.scope.ClassScope;
 import decaf.scope.GlobalScope;
@@ -71,10 +71,10 @@ public class Class extends Symbol {
 		this.numVar = numVar;
 	}
 
-	public Class(String name, String parentName, Location location) {
+	public Class(String name, String parentName, Pos pos) {
 		this.name = name;
 		this.parentName = parentName;
-		this.location = location;
+		this.pos = pos;
 		this.order = -1;
 		this.check = false;
 		this.numNonStaticFunc = -1;
@@ -104,7 +104,7 @@ public class Class extends Symbol {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(location + " -> class " + name);
+		StringBuilder sb = new StringBuilder(pos + " -> class " + name);
 		if (parentName != null) {
 			sb.append(" : " + parentName);
 		}

@@ -24,124 +24,124 @@ import decaf.utils.IndentPrintWriter;
 
 public final class Driver {
 
-	private static Driver driver;
+    private static Driver driver;
 
-	private Option option;
+    private Option option;
 
-	private List<DecafError> errors;
+    private List<DecafError> errors;
 
-	private ScopeStack table;
+    private ScopeStack table;
 
-	private Lexer lexer;
+    private Lexer lexer;
 
-	private Parser parser;
+    private Parser parser;
 
-	public ScopeStack getTable() {
-		return table;
-	}
+    public ScopeStack getTable() {
+        return table;
+    }
 
-	public static Driver getDriver() {
-		return driver;
-	}
+    public static Driver getDriver() {
+        return driver;
+    }
 
-	public Option getOption() {
-		return option;
-	}
+    public Option getOption() {
+        return option;
+    }
 
-	public void issueError(DecafError error) {
-		errors.add(error);
-	}
+    public void issueError(DecafError error) {
+        errors.add(error);
+    }
 
-	// Only allow construction by Driver.main
-	private Driver() {
-	}
+    // Only allow construction by Driver.main
+    private Driver() {
+    }
 
-	/**
-	 * 如果有错误，输出错误并退出
-	 */
-	private void checkPoint() {
-		if (errors.size() > 0) {
-			Collections.sort(errors, new Comparator<DecafError>() {
+    /**
+     * 如果有错误，输出错误并退出
+     */
+    private void checkPoint() {
+        if (errors.size() > 0) {
+            Collections.sort(errors, new Comparator<DecafError>() {
 
-				@Override
-				public int compare(DecafError o1, DecafError o2) {
-					return o1.getLocation().compareTo(o2.getLocation());
-				}
+                @Override
+                public int compare(DecafError o1, DecafError o2) {
+                    return o1.getPos().compareTo(o2.getPos());
+                }
 
-			});
-			for (DecafError error : errors) {
-				option.getErr().println(error);
-			}
-			System.exit(1);
-		}
-	}
+            });
+            for (DecafError error : errors) {
+                option.getErr().println(error);
+            }
+            System.exit(1);
+        }
+    }
 
-	private void init() {
-		lexer = new Lexer(new InputStreamReader(option.getInput()));
-		parser = new Parser();
-		lexer.setParser(parser);
-		parser.setLexer(lexer);
-		errors = new ArrayList<DecafError>();
-		table = new ScopeStack();
-	}
+    private void init() {
+        lexer = new Lexer(new InputStreamReader(option.getInput()));
+        parser = new Parser();
+        lexer.setParser(parser);
+        parser.setLexer(lexer);
+        errors = new ArrayList<DecafError>();
+        table = new ScopeStack();
+    }
 
-	private void compile() {
+    private void compile() {
 
-		Tree.TopLevel tree = parser.parseFile();
-		checkPoint();
-		if (option.getLevel() == Option.Level.LEVEL0) {
-			IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
-			tree.printTo(pw);
-			pw.close();
-			return;
-		}
-		BuildSym.buildSymbol(tree);
-		checkPoint();
-		TypeCheck.checkType(tree);
-		checkPoint();
-		if (option.getLevel() == Option.Level.LEVEL1) {
-			IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
-			tree.globalScope.printTo(pw);
-			pw.close();
-			return;
-		}
-		PrintWriter pw = new PrintWriter(option.getOutput());
-		Translater tr = Translater.translate(tree);
-		checkPoint();
-		if (option.getLevel() == Option.Level.LEVEL2) {
-			tr.printTo(pw);
-			pw.close();
-			return;
-		}
+        Tree.TopLevel tree = parser.parseFile();
+        checkPoint();
+        if (option.getLevel() == Option.Level.LEVEL0) {
+            IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
+//			tree.printTo(pw);
+            pw.close();
+            return;
+        }
+        BuildSym.buildSymbol(tree);
+        checkPoint();
+        TypeCheck.checkType(tree);
+        checkPoint();
+        if (option.getLevel() == Option.Level.LEVEL1) {
+            IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
+            tree.globalScope.printTo(pw);
+            pw.close();
+            return;
+        }
+        PrintWriter pw = new PrintWriter(option.getOutput());
+        Translater tr = Translater.translate(tree);
+        checkPoint();
+        if (option.getLevel() == Option.Level.LEVEL2) {
+            tr.printTo(pw);
+            pw.close();
+            return;
+        }
 
-		List<FlowGraph> graphs = new ArrayList<FlowGraph>();
-		for (Functy func : tr.getFuncs()) {
-			graphs.add(new FlowGraph(func));
-		}
+        List<FlowGraph> graphs = new ArrayList<FlowGraph>();
+        for (Functy func : tr.getFuncs()) {
+            graphs.add(new FlowGraph(func));
+        }
 
-		if (option.getLevel() == Option.Level.LEVEL3) {
-			for (FlowGraph g : graphs) {
-				g.printLivenessTo(pw);
-				pw.println();
-			}
-			pw.close();
-			return;
-		}
+        if (option.getLevel() == Option.Level.LEVEL3) {
+            for (FlowGraph g : graphs) {
+                g.printLivenessTo(pw);
+                pw.println();
+            }
+            pw.close();
+            return;
+        }
 
-		MachineDescription md = new Mips();
-		md.setOutputStream(pw);
-		md.emitVTable(tr.getVtables());
-		for (int i = 0; i < 3; i++) {
-			pw.println();
-		}
-		md.emitAsm(graphs);
-		pw.close();
-	}
+        MachineDescription md = new Mips();
+        md.setOutputStream(pw);
+        md.emitVTable(tr.getVtables());
+        for (int i = 0; i < 3; i++) {
+            pw.println();
+        }
+        md.emitAsm(graphs);
+        pw.close();
+    }
 
-	public static void main(String[] args) throws IOException {
-		driver = new Driver();
-		driver.option = new Option(args);
-		driver.init();
-		driver.compile();
-	}
+    public static void main(String[] args) throws IOException {
+        driver = new Driver();
+        driver.option = new Option(args);
+        driver.init();
+        driver.compile();
+    }
 }

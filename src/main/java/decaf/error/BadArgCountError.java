@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：function 'gotoMars' expects 1 argument(s) but 3 given<br>
@@ -14,9 +14,9 @@ public class BadArgCountError extends DecafError {
 
 	private int count;
 
-	public BadArgCountError(Location location, String method, int expect,
-			int count) {
-		super(location);
+	public BadArgCountError(Pos pos, String method, int expect,
+							int count) {
+		super(pos);
 		this.method = method;
 		this.expect = expect;
 		this.count = count;

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：incompatible argument 3: int[] given, int/bool/string expected<br>
@@ -13,8 +13,8 @@ public class BadPrintArgError extends DecafError {
 
 	private String type;
 
-	public BadPrintArgError(Location location, String count, String type) {
-		super(location);
+	public BadPrintArgError(Pos pos, String count, String type) {
+		super(pos);
 		this.count = count;
 		this.type = type;
 	}

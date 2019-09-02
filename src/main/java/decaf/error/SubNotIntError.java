@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：array subscript must be an integer<br>
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class SubNotIntError extends DecafError {
 
-	public SubNotIntError(Location location) {
-		super(location);
+	public SubNotIntError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

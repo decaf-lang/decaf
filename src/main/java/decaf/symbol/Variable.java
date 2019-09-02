@@ -1,6 +1,6 @@
 package decaf.symbol;
 
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.tac.Temp;
 import decaf.type.Type;
 
@@ -26,10 +26,10 @@ public class Variable extends Symbol {
 		this.offset = offset;
 	}
 
-	public Variable(String name, Type type, Location location) {
+	public Variable(String name, Type type, Pos pos) {
 		this.name = name;
 		this.type = type;
-		this.location = location;
+		this.pos = pos;
 	}
 
 	public boolean isLocalVar() {
@@ -47,7 +47,7 @@ public class Variable extends Symbol {
 
 	@Override
 	public String toString() {
-		return location + " -> variable " + (isParam() ? "@" : "") + name
+		return pos + " -> variable " + (isParam() ? "@" : "") + name
 				+ " : " + type;
 	}
 

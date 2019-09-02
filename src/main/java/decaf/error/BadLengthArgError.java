@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：function 'length' expects 0 argument(s) but 2 given<br>
@@ -10,8 +10,8 @@ public class BadLengthArgError extends DecafError {
 
 	private int count;
 
-	public BadLengthArgError(Location location, int count) {
-		super(location);
+	public BadLengthArgError(Pos pos, int count) {
+		super(pos);
 		this.count = count;
 	}
 

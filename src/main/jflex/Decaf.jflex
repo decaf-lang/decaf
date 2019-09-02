@@ -7,7 +7,7 @@
 
 package decaf.frontend;
 
-import decaf.Location;
+import decaf.tree.Pos;
 import decaf.error.*;
 import decaf.utils.MiscUtils;
  
@@ -18,15 +18,14 @@ import decaf.utils.MiscUtils;
 %byaccj
 %line
 %column
-//%switch
 %unicode
-	
+
 %{
-	private Location sloc = null;
+	private Pos sloc = null;
 	private StringBuilder buffer = new StringBuilder();
 
-	public Location getLocation() {
-		return new decaf.Location(yyline + 1, yycolumn + 1);
+	public Pos getLocation() {
+		return new decaf.tree.Pos(yyline + 1, yycolumn + 1);
 	}
 %}
 

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：cannot declare identifier 'boost' as void type<br>
@@ -10,8 +10,8 @@ public class BadVarTypeError extends DecafError {
 
 	private String name;
 
-	public BadVarTypeError(Location location, String name) {
-		super(location);
+	public BadVarTypeError(Pos pos, String name) {
+		super(pos);
 		this.name = name;
 	}
 

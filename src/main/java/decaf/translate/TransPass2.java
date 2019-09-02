@@ -1,389 +1,380 @@
 package decaf.translate;
 
-import java.util.Stack;
-
-import decaf.tree.Tree;
 import decaf.backend.OffsetCounter;
 import decaf.machdesc.Intrinsic;
 import decaf.symbol.Variable;
 import decaf.tac.Label;
 import decaf.tac.Temp;
+import decaf.tree.Tree;
 import decaf.type.BaseType;
+
+import java.util.Stack;
 
 public class TransPass2 extends Tree.Visitor {
 
-	private Translater tr;
+    private Translater tr;
 
-	private Temp currentThis;
+    private Temp currentThis;
 
-	private Stack<Label> loopExits;
+    private Stack<Label> loopExits;
 
-	public TransPass2(Translater tr) {
-		this.tr = tr;
-		loopExits = new Stack<Label>();
-	}
+    public TransPass2(Translater tr) {
+        this.tr = tr;
+        loopExits = new Stack<Label>();
+    }
 
-	@Override
-	public void visitClassDef(Tree.ClassDef classDef) {
-		for (Tree f : classDef.fields) {
-			f.accept(this);
-		}
-	}
+    @Override
+    public void visitClassDef(Tree.ClassDef classDef) {
+        for (var f : classDef.fields) {
+            f.accept(this);
+        }
+    }
 
-	@Override
-	public void visitMethodDef(Tree.MethodDef funcDefn) {
-		if (!funcDefn.statik) {
-			currentThis = ((Variable) funcDefn.symbol.getAssociatedScope()
-					.lookup("this")).getTemp();
-		}
-		tr.beginFunc(funcDefn.symbol);
-		funcDefn.body.accept(this);
-		tr.endFunc();
-		currentThis = null;
-	}
+    @Override
+    public void visitMethodDef(Tree.MethodDef funcDefn) {
+        if (!funcDefn.isStatic) {
+            currentThis = ((Variable) funcDefn.symbol.getAssociatedScope()
+                    .lookup("this")).getTemp();
+        }
+        tr.beginFunc(funcDefn.symbol);
+        funcDefn.body.accept(this);
+        tr.endFunc();
+        currentThis = null;
+    }
 
-	@Override
-	public void visitTopLevel(Tree.TopLevel program) {
-		for (Tree.ClassDef cd : program.classes) {
-			cd.accept(this);
-		}
-	}
+    @Override
+    public void visitTopLevel(Tree.TopLevel program) {
+        for (Tree.ClassDef cd : program.classes) {
+            cd.accept(this);
+        }
+    }
 
-	@Override
-	public void visitVarDef(Tree.VarDef varDef) {
-		if (varDef.symbol.isLocalVar()) {
-			Temp t = Temp.createTempI4();
-			t.sym = varDef.symbol;
-			varDef.symbol.setTemp(t);
-		}
-	}
+    @Override
+    public void visitVarDef(Tree.VarDef varDef) {
+        if (varDef.symbol.isLocalVar()) {
+            Temp t = Temp.createTempI4();
+            t.sym = varDef.symbol;
+            varDef.symbol.setTemp(t);
+        }
+    }
 
-	@Override
-	public void visitBinary(Tree.Binary expr) {
-		expr.left.accept(this);
-		expr.right.accept(this);
-		switch (expr.tag) {
-		case Tree.PLUS:
-			expr.val = tr.genAdd(expr.left.val, expr.right.val);
-			break;
-		case Tree.MINUS:
-			expr.val = tr.genSub(expr.left.val, expr.right.val);
-			break;
-		case Tree.MUL:
-			expr.val = tr.genMul(expr.left.val, expr.right.val);
-			break;
-		case Tree.DIV:
-			expr.val = tr.genDiv(expr.left.val, expr.right.val);
-			break;
-		case Tree.MOD:
-			expr.val = tr.genMod(expr.left.val, expr.right.val);
-			break;
-		case Tree.AND:
-			expr.val = tr.genLAnd(expr.left.val, expr.right.val);
-			break;
-		case Tree.OR:
-			expr.val = tr.genLOr(expr.left.val, expr.right.val);
-			break;
-		case Tree.LT:
-			expr.val = tr.genLes(expr.left.val, expr.right.val);
-			break;
-		case Tree.LE:
-			expr.val = tr.genLeq(expr.left.val, expr.right.val);
-			break;
-		case Tree.GT:
-			expr.val = tr.genGtr(expr.left.val, expr.right.val);
-			break;
-		case Tree.GE:
-			expr.val = tr.genGeq(expr.left.val, expr.right.val);
-			break;
-		case Tree.EQ:
-		case Tree.NE:
-			genEquNeq(expr);
-			break;
-		}
-	}
+    @Override
+    public void visitBinary(Tree.Binary expr) {
+        expr.lhs.accept(this);
+        expr.rhs.accept(this);
+        switch (expr.op) {
+            case ADD:
+                expr.val = tr.genAdd(expr.lhs.val, expr.rhs.val);
+                break;
+            case SUB:
+                expr.val = tr.genSub(expr.lhs.val, expr.rhs.val);
+                break;
+            case MUL:
+                expr.val = tr.genMul(expr.lhs.val, expr.rhs.val);
+                break;
+            case DIV:
+                expr.val = tr.genDiv(expr.lhs.val, expr.rhs.val);
+                break;
+            case MOD:
+                expr.val = tr.genMod(expr.lhs.val, expr.rhs.val);
+                break;
+            case AND:
+                expr.val = tr.genLAnd(expr.lhs.val, expr.rhs.val);
+                break;
+            case OR:
+                expr.val = tr.genLOr(expr.lhs.val, expr.rhs.val);
+                break;
+            case LT:
+                expr.val = tr.genLes(expr.lhs.val, expr.rhs.val);
+                break;
+            case LE:
+                expr.val = tr.genLeq(expr.lhs.val, expr.rhs.val);
+                break;
+            case GT:
+                expr.val = tr.genGtr(expr.lhs.val, expr.rhs.val);
+                break;
+            case GE:
+                expr.val = tr.genGeq(expr.lhs.val, expr.rhs.val);
+                break;
+            case EQ:
+            case NE:
+                genEquNeq(expr);
+                break;
+        }
+    }
 
-	private void genEquNeq(Tree.Binary expr) {
-		if (expr.left.type.equal(BaseType.STRING)
-				|| expr.right.type.equal(BaseType.STRING)) {
-			tr.genParm(expr.left.val);
-			tr.genParm(expr.right.val);
-			expr.val = tr.genDirectCall(Intrinsic.STRING_EQUAL.label,
-					BaseType.BOOL);
-			if(expr.tag == Tree.NE){
-				expr.val = tr.genLNot(expr.val);
-			}
-		} else {
-			if(expr.tag == Tree.EQ)
-				expr.val = tr.genEqu(expr.left.val, expr.right.val);
-			else
-				expr.val = tr.genNeq(expr.left.val, expr.right.val);
-		}
-	}
+    private void genEquNeq(Tree.Binary expr) {
+        if (expr.lhs.type.equal(BaseType.STRING)
+                || expr.rhs.type.equal(BaseType.STRING)) {
+            tr.genParm(expr.lhs.val);
+            tr.genParm(expr.rhs.val);
+            expr.val = tr.genDirectCall(Intrinsic.STRING_EQUAL.label,
+                    BaseType.BOOL);
+            if (expr.op == Tree.BinaryOp.NE) {
+                expr.val = tr.genLNot(expr.val);
+            }
+        } else {
+            if (expr.op == Tree.BinaryOp.EQ)
+                expr.val = tr.genEqu(expr.lhs.val, expr.rhs.val);
+            else
+                expr.val = tr.genNeq(expr.lhs.val, expr.rhs.val);
+        }
+    }
 
-	@Override
-	public void visitAssign(Tree.Assign assign) {
-		assign.left.accept(this);
-		assign.expr.accept(this);
-		switch (assign.left.lvKind) {
-		case ARRAY_ELEMENT:
-			Tree.Indexed arrayRef = (Tree.Indexed) assign.left;
-			Temp esz = tr.genLoadImm4(OffsetCounter.WORD_SIZE);
-			Temp t = tr.genMul(arrayRef.index.val, esz);
-			Temp base = tr.genAdd(arrayRef.array.val, t);
-			tr.genStore(assign.expr.val, base, 0);
-			break;
-		case MEMBER_VAR:
-			Tree.Ident varRef = (Tree.Ident) assign.left;
-			tr.genStore(assign.expr.val, varRef.owner.val, varRef.symbol
-					.getOffset());
-			break;
-		case PARAM_VAR:
-		case LOCAL_VAR:
-			tr.genAssign(((Tree.Ident) assign.left).symbol.getTemp(),
-					assign.expr.val);
-			break;
-		}
-	}
+    @Override
+    public void visitAssign(Tree.Assign assign) {
+        assign.lhs.accept(this);
+        assign.rhs.accept(this);
+        switch (assign.lhs.lvKind) {
+            case ARRAY_ELEMENT:
+                Tree.IndexSel arrayRef = (Tree.IndexSel) assign.lhs;
+                Temp esz = tr.genLoadImm4(OffsetCounter.WORD_SIZE);
+                Temp t = tr.genMul(arrayRef.index.val, esz);
+                Temp base = tr.genAdd(arrayRef.array.val, t);
+                tr.genStore(assign.rhs.val, base, 0);
+                break;
+            case MEMBER_VAR:
+                Tree.VarSel varRef = (Tree.VarSel) assign.lhs;
+                tr.genStore(assign.rhs.val, varRef.receiver.get().val, varRef.symbol
+                        .getOffset());
+                break;
+            case PARAM_VAR:
+            case LOCAL_VAR:
+                tr.genAssign(((Tree.VarSel) assign.lhs).symbol.getTemp(),
+                        assign.rhs.val);
+                break;
+        }
+    }
 
-	@Override
-	public void visitLiteral(Tree.Literal literal) {
-		switch (literal.typeTag) {
-		case Tree.INT:
-			literal.val = tr.genLoadImm4(((Integer)literal.value).intValue());
-			break;
-		case Tree.BOOL:
-			literal.val = tr.genLoadImm4((Boolean)(literal.value) ? 1 : 0);
-			break;
-		default:
-			literal.val = tr.genLoadStrConst((String)literal.value);
-		}
-	}
+    @Override
+    public void visitIntLit(Tree.IntLit that) {
+        that.val = tr.genLoadImm4(that.value);
+    }
 
-	@Override
-	public void visitExec(Tree.Exec exec) {
-		exec.expr.accept(this);
-	}
+    @Override
+    public void visitBoolLit(Tree.BoolLit that) {
+        that.val = tr.genLoadImm4(that.value ? 1 : 0);
+    }
 
-	@Override
-	public void visitUnary(Tree.Unary expr) {
-		expr.expr.accept(this);
-		switch (expr.tag){
-		case Tree.NEG:
-			expr.val = tr.genNeg(expr.expr.val);
-			break;
-		default:
-			expr.val = tr.genLNot(expr.expr.val);
-		}
-	}
+    @Override
+    public void visitStringLit(Tree.StringLit that) {
+        that.val = tr.genLoadStrConst(that.value);
+    }
 
-	@Override
-	public void visitNull(Tree.Null nullExpr) {
-		nullExpr.val = tr.genLoadImm4(0);
-	}
+    @Override
+    public void visitNullLit(Tree.NullLit that) {
+        that.val = tr.genLoadImm4(0);
+    }
 
-	@Override
-	public void visitBlock(Tree.Block block) {
-		for (Tree s : block.block) {
-			s.accept(this);
-		}
-	}
+    @Override
+    public void visitExprEval(Tree.ExprEval exec) {
+        exec.expr.accept(this);
+    }
 
-	@Override
-	public void visitThisExpr(Tree.ThisExpr thisExpr) {
-		thisExpr.val = currentThis;
-	}
+    @Override
+    public void visitUnary(Tree.Unary expr) {
+        expr.operand.accept(this);
+        switch (expr.op) {
+            case NEG:
+                expr.val = tr.genNeg(expr.operand.val);
+                break;
+            default:
+                expr.val = tr.genLNot(expr.operand.val);
+        }
+    }
 
-	@Override
-	public void visitReadIntExpr(Tree.ReadIntExpr readIntExpr) {
-		readIntExpr.val = tr.genIntrinsicCall(Intrinsic.READ_INT);
-	}
+    @Override
+    public void visitBlock(Tree.Block block) {
+        for (var s : block.block) {
+            s.accept(this);
+        }
+    }
 
-	@Override
-	public void visitReadLineExpr(Tree.ReadLineExpr readStringExpr) {
-		readStringExpr.val = tr.genIntrinsicCall(Intrinsic.READ_LINE);
-	}
+    @Override
+    public void visitThis(Tree.This thisExpr) {
+        thisExpr.val = currentThis;
+    }
 
-	@Override
-	public void visitReturn(Tree.Return returnStmt) {
-		if (returnStmt.expr != null) {
-			returnStmt.expr.accept(this);
-			tr.genReturn(returnStmt.expr.val);
-		} else {
-			tr.genReturn(null);
-		}
+    @Override
+    public void visitReadInt(Tree.ReadInt readInt) {
+        readInt.val = tr.genIntrinsicCall(Intrinsic.READ_INT);
+    }
 
-	}
+    @Override
+    public void visitReadLine(Tree.ReadLine readStringExpr) {
+        readStringExpr.val = tr.genIntrinsicCall(Intrinsic.READ_LINE);
+    }
 
-	@Override
-	public void visitPrint(Tree.Print printStmt) {
-		for (Tree.Expr r : printStmt.exprs) {
-			r.accept(this);
-			tr.genParm(r.val);
-			if (r.type.equal(BaseType.BOOL)) {
-				tr.genIntrinsicCall(Intrinsic.PRINT_BOOL);
-			} else if (r.type.equal(BaseType.INT)) {
-				tr.genIntrinsicCall(Intrinsic.PRINT_INT);
-			} else if (r.type.equal(BaseType.STRING)) {
-				tr.genIntrinsicCall(Intrinsic.PRINT_STRING);
-			}
-		}
-	}
+    @Override
+    public void visitReturn(Tree.Return returnStmt) {
+        if (returnStmt.expr.isPresent()) {
+            returnStmt.expr.get().accept(this);
+            tr.genReturn(returnStmt.expr.get().val);
+        } else {
+            tr.genReturn(null);
+        }
 
-	@Override
-	public void visitIndexed(Tree.Indexed indexed) {
-		indexed.array.accept(this);
-		indexed.index.accept(this);
-		tr.genCheckArrayIndex(indexed.array.val, indexed.index.val);
-		
-		Temp esz = tr.genLoadImm4(OffsetCounter.WORD_SIZE);
-		Temp t = tr.genMul(indexed.index.val, esz);
-		Temp base = tr.genAdd(indexed.array.val, t);
-		indexed.val = tr.genLoad(base, 0);
-	}
+    }
 
-	@Override
-	public void visitIdent(Tree.Ident ident) {
-		if(ident.lvKind == Tree.LValue.Kind.MEMBER_VAR){
-			ident.owner.accept(this);
-		}
-		
-		switch (ident.lvKind) {
-		case MEMBER_VAR:
-			ident.val = tr.genLoad(ident.owner.val, ident.symbol.getOffset());
-			break;
-		default:
-			ident.val = ident.symbol.getTemp();
-			break;
-		}
-	}
-	
-	@Override
-	public void visitBreak(Tree.Break breakStmt) {
-		tr.genBranch(loopExits.peek());
-	}
+    @Override
+    public void visitPrint(Tree.Print printStmt) {
+        for (Tree.Expr r : printStmt.exprs) {
+            r.accept(this);
+            tr.genParm(r.val);
+            if (r.type.equal(BaseType.BOOL)) {
+                tr.genIntrinsicCall(Intrinsic.PRINT_BOOL);
+            } else if (r.type.equal(BaseType.INT)) {
+                tr.genIntrinsicCall(Intrinsic.PRINT_INT);
+            } else if (r.type.equal(BaseType.STRING)) {
+                tr.genIntrinsicCall(Intrinsic.PRINT_STRING);
+            }
+        }
+    }
 
-	@Override
-	public void visitCallExpr(Tree.CallExpr callExpr) {
-		if (callExpr.isArrayLength) {
-			callExpr.receiver.accept(this);
-			callExpr.val = tr.genLoad(callExpr.receiver.val,
-					-OffsetCounter.WORD_SIZE);
-		} else {
-			if (callExpr.receiver != null) {
-				callExpr.receiver.accept(this);
-			}
-			for (Tree.Expr expr : callExpr.actuals) {
-				expr.accept(this);
-			}
-			if (callExpr.receiver != null) {
-				tr.genParm(callExpr.receiver.val);
-			}
-			for (Tree.Expr expr : callExpr.actuals) {
-				tr.genParm(expr.val);
-			}
-			if (callExpr.receiver == null) {
-				callExpr.val = tr.genDirectCall(
-						callExpr.symbol.getFuncty().label, callExpr.symbol
-								.getReturnType());
-			} else {
-				Temp vt = tr.genLoad(callExpr.receiver.val, 0);
-				Temp func = tr.genLoad(vt, callExpr.symbol.getOffset());
-				callExpr.val = tr.genIndirectCall(func, callExpr.symbol
-						.getReturnType());
-			}
-		}
+    @Override
+    public void visitIndexSel(Tree.IndexSel indexed) {
+        indexed.array.accept(this);
+        indexed.index.accept(this);
+        tr.genCheckArrayIndex(indexed.array.val, indexed.index.val);
 
-	}
+        Temp esz = tr.genLoadImm4(OffsetCounter.WORD_SIZE);
+        Temp t = tr.genMul(indexed.index.val, esz);
+        Temp base = tr.genAdd(indexed.array.val, t);
+        indexed.val = tr.genLoad(base, 0);
+    }
 
-	@Override
-	public void visitForLoop(Tree.ForLoop forLoop) {
-		if (forLoop.init != null) {
-			forLoop.init.accept(this);
-		}
-		Label cond = Label.createLabel();
-		Label loop = Label.createLabel();
-		tr.genBranch(cond);
-		tr.genMark(loop);
-		if (forLoop.update != null) {
-			forLoop.update.accept(this);
-		}
-		tr.genMark(cond);
-		forLoop.condition.accept(this);
-		Label exit = Label.createLabel();
-		tr.genBeqz(forLoop.condition.val, exit);
-		loopExits.push(exit);
-		if (forLoop.loopBody != null) {
-			forLoop.loopBody.accept(this);
-		}
-		tr.genBranch(loop);
-		loopExits.pop();
-		tr.genMark(exit);
-	}
+    @Override
+    public void visitVarSel(Tree.VarSel varSel) {
+        if (varSel.lvKind == Tree.LValue.LVKind.MEMBER_VAR) {
+            varSel.receiver.get().accept(this);
+        }
 
-	@Override
-	public void visitIf(Tree.If ifStmt) {
-		ifStmt.condition.accept(this);
-		if (ifStmt.falseBranch != null) {
-			Label falseLabel = Label.createLabel();
-			tr.genBeqz(ifStmt.condition.val, falseLabel);
-			ifStmt.trueBranch.accept(this);
-			Label exit = Label.createLabel();
-			tr.genBranch(exit);
-			tr.genMark(falseLabel);
-			ifStmt.falseBranch.accept(this);
-			tr.genMark(exit);
-		} else if (ifStmt.trueBranch != null) {
-			Label exit = Label.createLabel();
-			tr.genBeqz(ifStmt.condition.val, exit);
-			if (ifStmt.trueBranch != null) {
-				ifStmt.trueBranch.accept(this);
-			}
-			tr.genMark(exit);
-		}
-	}
+        switch (varSel.lvKind) {
+            case MEMBER_VAR:
+                varSel.val = tr.genLoad(varSel.receiver.get().val, varSel.symbol.getOffset());
+                break;
+            default:
+                varSel.val = varSel.symbol.getTemp();
+                break;
+        }
+    }
 
-	@Override
-	public void visitNewArray(Tree.NewArray newArray) {
-		newArray.length.accept(this);
-		newArray.val = tr.genNewArray(newArray.length.val);
-	}
+    @Override
+    public void visitBreak(Tree.Break breakStmt) {
+        tr.genBranch(loopExits.peek());
+    }
 
-	@Override
-	public void visitNewClass(Tree.NewClass newClass) {
-		newClass.val = tr.genDirectCall(newClass.symbol.getNewFuncLabel(),
-				BaseType.INT);
-	}
+    @Override
+    public void visitCall(Tree.Call callExpr) {
+        if (callExpr.isArrayLength) {
+            callExpr.receiver.get().accept(this);
+            callExpr.val = tr.genLoad(callExpr.receiver.get().val,
+                    -OffsetCounter.WORD_SIZE);
+        } else {
+            callExpr.receiver.ifPresent(expr -> expr.accept(this));
+            for (Tree.Expr expr : callExpr.args) {
+                expr.accept(this);
+            }
+            callExpr.receiver.ifPresent(expr -> tr.genParm(expr.val));
+            for (Tree.Expr expr : callExpr.args) {
+                tr.genParm(expr.val);
+            }
+            if (callExpr.receiver.isEmpty()) {
+                callExpr.val = tr.genDirectCall(
+                        callExpr.symbol.getFuncty().label, callExpr.symbol
+                                .getReturnType());
+            } else {
+                Temp vt = tr.genLoad(callExpr.receiver.get().val, 0);
+                Temp func = tr.genLoad(vt, callExpr.symbol.getOffset());
+                callExpr.val = tr.genIndirectCall(func, callExpr.symbol
+                        .getReturnType());
+            }
+        }
 
-	@Override
-	public void visitWhileLoop(Tree.WhileLoop whileLoop) {
-		Label loop = Label.createLabel();
-		tr.genMark(loop);
-		whileLoop.condition.accept(this);
-		Label exit = Label.createLabel();
-		tr.genBeqz(whileLoop.condition.val, exit);
-		loopExits.push(exit);
-		if (whileLoop.loopBody != null) {
-			whileLoop.loopBody.accept(this);
-		}
-		tr.genBranch(loop);
-		loopExits.pop();
-		tr.genMark(exit);
-	}
+    }
 
-	@Override
-	public void visitTypeTest(Tree.TypeTest typeTest) {
-		typeTest.instance.accept(this);
-		typeTest.val = tr.genInstanceof(typeTest.instance.val,
-				typeTest.symbol);
-	}
+    @Override
+    public void visitFor(Tree.For forLoop) {
+        forLoop.init.accept(this);
+        Label cond = Label.createLabel();
+        Label loop = Label.createLabel();
+        tr.genBranch(cond);
+        tr.genMark(loop);
+        forLoop.update.accept(this);
+        tr.genMark(cond);
+        forLoop.cond.accept(this);
+        Label exit = Label.createLabel();
+        tr.genBeqz(forLoop.cond.val, exit);
+        loopExits.push(exit);
+        forLoop.body.accept(this);
+        tr.genBranch(loop);
+        loopExits.pop();
+        tr.genMark(exit);
+    }
 
-	@Override
-	public void visitTypeCast(Tree.TypeCast typeCast) {
-		typeCast.expr.accept(this);
-		if (!typeCast.expr.type.compatible(typeCast.symbol.getType())) {
-			tr.genClassCast(typeCast.expr.val, typeCast.symbol);
-		}
-		typeCast.val = typeCast.expr.val;
-	}
+    @Override
+    public void visitIf(Tree.If ifStmt) {
+        ifStmt.cond.accept(this);
+        if (ifStmt.falseBranch.isPresent()) {
+            Label falseLabel = Label.createLabel();
+            tr.genBeqz(ifStmt.cond.val, falseLabel);
+            ifStmt.trueBranch.accept(this);
+            Label exit = Label.createLabel();
+            tr.genBranch(exit);
+            tr.genMark(falseLabel);
+            ifStmt.falseBranch.get().accept(this);
+            tr.genMark(exit);
+        } else if (ifStmt.trueBranch != null) {
+            Label exit = Label.createLabel();
+            tr.genBeqz(ifStmt.cond.val, exit);
+            if (ifStmt.trueBranch != null) {
+                ifStmt.trueBranch.accept(this);
+            }
+            tr.genMark(exit);
+        }
+    }
+
+    @Override
+    public void visitNewArray(Tree.NewArray newArray) {
+        newArray.length.accept(this);
+        newArray.val = tr.genNewArray(newArray.length.val);
+    }
+
+    @Override
+    public void visitNewClass(Tree.NewClass newClass) {
+        newClass.val = tr.genDirectCall(newClass.symbol.getNewFuncLabel(),
+                BaseType.INT);
+    }
+
+    @Override
+    public void visitWhile(Tree.While aWhile) {
+        Label loop = Label.createLabel();
+        tr.genMark(loop);
+        aWhile.cond.accept(this);
+        Label exit = Label.createLabel();
+        tr.genBeqz(aWhile.cond.val, exit);
+        loopExits.push(exit);
+        if (aWhile.body != null) {
+            aWhile.body.accept(this);
+        }
+        tr.genBranch(loop);
+        loopExits.pop();
+        tr.genMark(exit);
+    }
+
+    @Override
+    public void visitClassTest(Tree.ClassTest classTest) {
+        classTest.obj.accept(this);
+        classTest.val = tr.genInstanceof(classTest.obj.val,
+                classTest.symbol);
+    }
+
+    @Override
+    public void visitClassCast(Tree.ClassCast classCast) {
+        classCast.obj.accept(this);
+        if (!classCast.obj.type.compatible(classCast.symbol.getType())) {
+            tr.genClassCast(classCast.obj.val, classCast.symbol);
+        }
+        classCast.val = classCast.obj.val;
+    }
 }

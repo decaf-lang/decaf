@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * can not use this in static function
@@ -8,8 +8,8 @@ import decaf.Location;
  */
 public class ThisInStaticFuncError extends DecafError {
 
-	public ThisInStaticFuncError(Location location) {
-		super(location);
+	public ThisInStaticFuncError(Pos pos) {
+		super(pos);
 	}
 
 	@Override

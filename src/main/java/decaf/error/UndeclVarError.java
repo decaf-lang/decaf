@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：undeclared variable 'python'<br>
@@ -10,8 +10,8 @@ public class UndeclVarError extends DecafError {
 
 	private String name;
 
-	public UndeclVarError(Location location, String name) {
-		super(location);
+	public UndeclVarError(Pos pos, String name) {
+		super(pos);
 		this.name = name;
 	}
 

@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：incompatible operand: - int[]<br>
@@ -12,8 +12,8 @@ public class IncompatUnOpError extends DecafError {
 
 	private String expr;
 
-	public IncompatUnOpError(Location location, String op, String expr) {
-		super(location);
+	public IncompatUnOpError(Pos pos, String op, String expr) {
+		super(pos);
 		this.op = op;
 		this.expr = expr;
 	}

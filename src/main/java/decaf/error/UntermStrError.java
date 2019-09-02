@@ -1,6 +1,6 @@
 package decaf.error;
 
-import decaf.Location;
+import decaf.tree.Pos;
 
 /**
  * example：unterminated string constant: "this is str"<br>
@@ -10,8 +10,8 @@ public class UntermStrError extends DecafError {
 
 	private String str;
 
-	public UntermStrError(Location location, String str) {
-		super(location);
+	public UntermStrError(Pos pos, String str) {
+		super(pos);
 		this.str = str;
 	}
 
