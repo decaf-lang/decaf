@@ -5,7 +5,7 @@ import java.util.TreeSet;
 import decaf.symbol.Class;
 import decaf.symbol.Function;
 import decaf.symbol.Symbol;
-import decaf.utils.IndentPrintWriter;
+import decaf.printing.IndentPrinter;
 
 public class ClassScope extends Scope {
 
@@ -36,7 +36,7 @@ public class ClassScope extends Scope {
 	}
 
 	@Override
-	public void printTo(IndentPrintWriter pw) {
+	public void printTo(IndentPrinter pw) {
 		TreeSet<Symbol> ss = new TreeSet<Symbol>(Symbol.LOCATION_COMPARATOR);
 		for (Symbol symbol : symbols.values()) {
 			ss.add(symbol);

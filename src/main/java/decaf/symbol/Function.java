@@ -1,12 +1,10 @@
 package decaf.symbol;
 
-import decaf.Driver;
-import decaf.tree.Pos;
-import decaf.tree.Tree.Block;
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
-import decaf.scope.Scope;
 import decaf.tac.Functy;
+import decaf.tree.Pos;
+import decaf.tree.Tree.Block;
 import decaf.type.FuncType;
 import decaf.type.Type;
 
@@ -61,8 +59,7 @@ public class Function extends Symbol {
 
 		type = new FuncType(returnType);
 		associatedScope = new FormalScope(this, node);
-		ClassScope cs = (ClassScope) Driver.getDriver().getTable()
-				.lookForScope(Scope.Kind.CLASS);
+		ClassScope cs = null; // FIXME
 		this.statik = statik;
 		if (!statik) {
 			Variable _this = new Variable("this", cs.getOwner().getType(),

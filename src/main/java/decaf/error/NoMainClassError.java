@@ -8,16 +8,13 @@ import decaf.tree.Pos;
  */
 public class NoMainClassError extends DecafError {
 
-	private String name;
+    public NoMainClassError() {
+        super(Pos.NoPos);
+    }
 
-	public NoMainClassError(String name) {
-		super(Pos.NoPos);
-		this.name = name;
-	}
-
-	@Override
-	protected String getErrMsg() {
-		return "no legal Main class named '" + name + "' was found";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "no legal Main class named 'Main' was found";
+    }
 
 }

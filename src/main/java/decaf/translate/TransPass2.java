@@ -6,11 +6,12 @@ import decaf.symbol.Variable;
 import decaf.tac.Label;
 import decaf.tac.Temp;
 import decaf.tree.Tree;
+import decaf.tree.Visitor;
 import decaf.type.BaseType;
 
 import java.util.Stack;
 
-public class TransPass2 extends Tree.Visitor {
+public class TransPass2 implements Visitor {
 
     private Translater tr;
 

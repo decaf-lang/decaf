@@ -1,7 +1,6 @@
 package decaf.parsing;
 
-import decaf.Driver;
-import decaf.error.DecafError;
+import decaf.error.ErrorIssuer;
 import decaf.error.MsgError;
 import decaf.tree.Tree;
 
@@ -34,6 +33,8 @@ public abstract class AbstractParser {
      * When parsing, we need to interact with the lexer.
      */
     AbstractLexer lexer;
+
+    ErrorIssuer issuer;
 
     /**
      * Final parsing result to be written by the concrete parser. Remember in `Decaf.jacc`, we designed an action for
@@ -78,10 +79,6 @@ public abstract class AbstractParser {
      * @param msg the error message
      */
     protected void yyerror(String msg) {
-        issueError(new MsgError(lexer.getPos(), msg));
-    }
-
-    protected void issueError(DecafError error) {
-        Driver.getDriver().issueError(error);
+        issuer.issue(new MsgError(lexer.getPos(), msg));
     }
 }

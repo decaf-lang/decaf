@@ -1,7 +1,7 @@
 package decaf.parsing;
 
-import decaf.Driver;
 import decaf.error.DecafError;
+import decaf.error.ErrorIssuer;
 import decaf.error.IntTooLargeError;
 import decaf.tree.Pos;
 
@@ -29,6 +29,8 @@ public abstract class AbstractLexer {
      * When lexing, we need to set parser's semantic value.
      */
     AbstractParser parser;
+
+    ErrorIssuer issuer;
 
     /**
      * A helper method for setting the parser's semantic value.
@@ -70,7 +72,7 @@ public abstract class AbstractLexer {
         try {
             setSemantic(getPos(), SemValue.createIntLit(Integer.decode(value)));
         } catch (NumberFormatException e) {
-            Driver.getDriver().issueError(new IntTooLargeError(getPos(), value));
+            issueError(new IntTooLargeError(getPos(), value));
         }
         return Tokens.INT_LIT;
     }
@@ -109,7 +111,7 @@ public abstract class AbstractLexer {
     }
 
     protected void issueError(DecafError error) {
-        Driver.getDriver().issueError(error);
+        issuer.issue(error);
     }
 
     public void diagnose() throws IOException {

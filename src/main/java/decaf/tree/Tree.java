@@ -2,6 +2,7 @@ package decaf.tree;
 
 import decaf.scope.GlobalScope;
 import decaf.scope.LocalScope;
+import decaf.scope.ScopeStack;
 import decaf.symbol.Class;
 import decaf.symbol.Function;
 import decaf.symbol.Variable;
@@ -30,6 +31,7 @@ public abstract class Tree {
         // For type check
         public Class main;
         public GlobalScope globalScope;
+        public ScopeStack table;
 
         public TopLevel(List<ClassDef> classes, Pos pos) {
             super(Kind.TOP_LEVEL, "TopLevel", pos);
@@ -1469,127 +1471,6 @@ public abstract class Tree {
         @Override
         public String toString() {
             return name;
-        }
-    }
-
-
-    /**
-     * A generic visitor class for trees.
-     */
-    public static abstract class Visitor {
-        public void visitTopLevel(TopLevel that) {
-        }
-
-        public void visitClassDef(ClassDef that) {
-        }
-
-        public void visitVarDef(VarDef that) {
-        }
-
-        public void visitMethodDef(MethodDef that) {
-        }
-
-        public void visitTInt(TInt that) {
-        }
-
-        public void visitTBool(TBool that) {
-        }
-
-        public void visitTString(TString that) {
-        }
-
-        public void visitTVoid(TVoid that) {
-        }
-
-        public void visitTClass(TClass that) {
-        }
-
-        public void visitTArray(TArray that) {
-        }
-
-        public void visitLocalVarDef(LocalVarDef that) {
-        }
-
-        public void visitBlock(Block that) {
-        }
-
-        public void visitAssign(Assign that) {
-        }
-
-        public void visitExprEval(ExprEval that) {
-        }
-
-        public void visitSkip(Skip that) {
-        }
-
-        public void visitIf(If that) {
-        }
-
-        public void visitWhile(While that) {
-        }
-
-        public void visitFor(For that) {
-        }
-
-
-        public void visitBreak(Break that) {
-        }
-
-        public void visitReturn(Return that) {
-        }
-
-        public void visitPrint(Print that) {
-        }
-
-        public void visitIntLit(IntLit that) {
-        }
-
-        public void visitBoolLit(BoolLit that) {
-        }
-
-        public void visitStringLit(StringLit that) {
-        }
-
-        public void visitNullLit(NullLit that) {
-        }
-
-        public void visitVarSel(VarSel that) {
-        }
-
-        public void visitIndexSel(IndexSel that) {
-        }
-
-        public void visitCall(Call that) {
-        }
-
-        public void visitThis(This that) {
-        }
-
-        public void visitUnary(Unary that) {
-        }
-
-        public void visitBinary(Binary that) {
-        }
-
-        public void visitReadInt(ReadInt that) {
-        }
-
-        public void visitReadLine(ReadLine that) {
-        }
-
-        public void visitNewClass(NewClass that) {
-        }
-
-        public void visitNewArray(NewArray that) {
-        }
-
-        public void visitClassTest(ClassTest that) {
-        }
-
-        public void visitClassCast(ClassCast that) {
-        }
-
-        public void visitId(Id that) {
         }
     }
 }

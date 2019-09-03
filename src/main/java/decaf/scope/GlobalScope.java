@@ -2,7 +2,7 @@ package decaf.scope;
 
 import decaf.symbol.Class;
 import decaf.symbol.Symbol;
-import decaf.utils.IndentPrintWriter;
+import decaf.printing.IndentPrinter;
 
 public class GlobalScope extends Scope {
 
@@ -17,7 +17,7 @@ public class GlobalScope extends Scope {
 	}
 
 	@Override
-	public void printTo(IndentPrintWriter pw) {
+	public void printTo(IndentPrinter pw) {
 		pw.println("GLOBAL SCOPE:");
 		pw.incIndent();
 		for (Symbol symbol : symbols.values()) {

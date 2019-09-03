@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import decaf.symbol.Symbol;
-import decaf.utils.IndentPrintWriter;
+import decaf.printing.IndentPrinter;
 
 public abstract class Scope {
 	public enum Kind {
@@ -16,7 +16,7 @@ public abstract class Scope {
 
 	public abstract Kind getKind();
 
-	public abstract void printTo(IndentPrintWriter pw);
+	public abstract void printTo(IndentPrinter pw);
 
 	public boolean isGlobalScope() {
 		return false;

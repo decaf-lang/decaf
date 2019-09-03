@@ -3,7 +3,7 @@ package decaf.scope;
 import decaf.tree.Tree.Block;
 import decaf.symbol.Function;
 import decaf.symbol.Symbol;
-import decaf.utils.IndentPrintWriter;
+import decaf.printing.IndentPrinter;
 
 public class FormalScope extends Scope {
 
@@ -31,7 +31,7 @@ public class FormalScope extends Scope {
 	}
 
 	@Override
-	public void printTo(IndentPrintWriter pw) {
+	public void printTo(IndentPrinter pw) {
 		pw.println("FORMAL SCOPE OF '" + owner.getName() + "':");
 		pw.incIndent();
 		for (Symbol symbol : symbols.values()) {

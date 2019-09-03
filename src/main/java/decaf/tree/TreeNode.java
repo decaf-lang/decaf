@@ -1,6 +1,8 @@
 package decaf.tree;
 
-public abstract class TreeNode {
+import java.util.Iterator;
+
+public abstract class TreeNode implements Iterable<Object> {
     public final Tree.Kind kind;
 
     public final String displayName;
@@ -11,7 +13,7 @@ public abstract class TreeNode {
 
     public abstract int treeArity();
 
-    public abstract void accept(Tree.Visitor v);
+    public abstract void accept(Visitor v);
 
     public TreeNode(Tree.Kind kind, String displayName, Pos pos) {
         this.kind = kind;
@@ -21,5 +23,24 @@ public abstract class TreeNode {
 
     public Pos getLocation() {
         return pos;
+    }
+
+    @Override
+    public Iterator<Object> iterator() {
+        return new Iterator<Object>() {
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < treeArity();
+            }
+
+            @Override
+            public Object next() {
+                var obj = treeElementAt(index);
+                index++;
+                return obj;
+            }
+        };
     }
 }

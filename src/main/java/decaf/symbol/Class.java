@@ -1,19 +1,20 @@
 package decaf.symbol;
 
-import java.util.Iterator;
-
-import decaf.Driver;
-import decaf.tree.Pos;
 import decaf.backend.OffsetCounter;
 import decaf.scope.ClassScope;
 import decaf.scope.GlobalScope;
 import decaf.tac.Label;
 import decaf.tac.VTable;
+import decaf.tree.Pos;
 import decaf.type.ClassType;
+
+import java.util.Iterator;
 
 public class Class extends Symbol {
 
 	private String parentName;
+
+	private Class parent;
 
 	private ClassScope associatedScope;
 
@@ -71,7 +72,7 @@ public class Class extends Symbol {
 		this.numVar = numVar;
 	}
 
-	public Class(String name, String parentName, Pos pos) {
+	public Class(String name, String parentName, Pos pos, Class parent) {
 		this.name = name;
 		this.parentName = parentName;
 		this.pos = pos;
@@ -80,6 +81,7 @@ public class Class extends Symbol {
 		this.numNonStaticFunc = -1;
 		this.numVar = -1;
 		this.associatedScope = new ClassScope(this);
+		this.parent = parent;
 	}
 
 	public void createType() {
@@ -116,7 +118,7 @@ public class Class extends Symbol {
 	}
 
 	public Class getParent() {
-		return Driver.getDriver().getTable().lookupClass(parentName);
+		return parent;
 	}
 
 	@Override

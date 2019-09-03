@@ -1,9 +1,8 @@
 package decaf.scope;
 
-import decaf.tree.Tree;
 import decaf.tree.Tree.Block;
 import decaf.symbol.Symbol;
-import decaf.utils.IndentPrintWriter;
+import decaf.printing.IndentPrinter;
 
 public class LocalScope extends Scope {
 
@@ -19,7 +18,7 @@ public class LocalScope extends Scope {
 	}
 
 	@Override
-	public void printTo(IndentPrintWriter pw) {
+	public void printTo(IndentPrinter pw) {
 		pw.println("LOCAL SCOPE:");
 		pw.incIndent();
 		for (Symbol symbol : symbols.values()) {

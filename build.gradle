@@ -18,5 +18,18 @@ repositories {
 }
 
 dependencies {
+    // https://mvnrepository.com/artifact/commons-cli/commons-cli
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'decaf.Main'
+    }
+
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}

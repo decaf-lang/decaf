@@ -2,6 +2,8 @@ package decaf.parsing;
 
 import decaf.driver.Config;
 import decaf.driver.Phase;
+import decaf.printing.IndentPrinter;
+import decaf.printing.PrettyTree;
 import decaf.tree.Pos;
 import decaf.tree.Tree;
 
@@ -21,6 +23,14 @@ public class Parser extends Phase<InputStream, Tree.TopLevel> {
         AbstractParser parser = new decaf.parsing.DecafParser();
         lexer.parser = parser;
         parser.lexer = lexer;
+        lexer.issuer = this;
+        parser.issuer = this;
         return parser.tree().orElse(new Tree.TopLevel(new ArrayList<>(), Pos.NoPos));
+    }
+
+    @Override
+    public void onSucceed(Tree.TopLevel tree) {
+        var printer = new PrettyTree(new IndentPrinter(config.outputStream));
+        printer.pretty(tree);
     }
 }
