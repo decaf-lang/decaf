@@ -2,7 +2,7 @@ package decaf.typecheck;
 
 import decaf.Driver;
 import decaf.error.*;
-import decaf.frontend.Parser;
+import decaf.parsing.Parser;
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
 import decaf.scope.Scope;
@@ -609,7 +609,7 @@ public class TypeCheck extends Tree.Visitor {
 
         if (!compatible) {
             issueError(new IncompatBinOpError(pos, left.type.toString(),
-                    Parser.opStr(op), right.type.toString()));
+                    Tree.opStr(op), right.type.toString()));
         }
         return returnType;
     }

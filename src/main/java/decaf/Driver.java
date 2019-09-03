@@ -1,26 +1,25 @@
 package decaf;
 
+import decaf.backend.mips.Mips;
+import decaf.dataflow.FlowGraph;
+import decaf.error.DecafError;
+import decaf.machdesc.MachineDescription;
+import decaf.parsing.DecafLexer;
+import decaf.parsing.DecafParser;
+import decaf.scope.ScopeStack;
+import decaf.tac.Functy;
+import decaf.translate.Translater;
+import decaf.tree.Tree;
+import decaf.typecheck.BuildSym;
+import decaf.typecheck.TypeCheck;
+import decaf.utils.IndentPrintWriter;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import decaf.frontend.Lexer;
-import decaf.tree.Tree;
-import decaf.backend.mips.Mips;
-import decaf.dataflow.FlowGraph;
-import decaf.error.DecafError;
-import decaf.frontend.Parser;
-import decaf.machdesc.MachineDescription;
-import decaf.scope.ScopeStack;
-import decaf.tac.Functy;
-import decaf.translate.Translater;
-import decaf.typecheck.BuildSym;
-import decaf.typecheck.TypeCheck;
-import decaf.utils.IndentPrintWriter;
 
 public final class Driver {
 
@@ -32,9 +31,9 @@ public final class Driver {
 
     private ScopeStack table;
 
-    private Lexer lexer;
+    private DecafLexer lexer;
 
-    private Parser parser;
+    private DecafParser parser;
 
     public ScopeStack getTable() {
         return table;
@@ -77,17 +76,13 @@ public final class Driver {
     }
 
     private void init() {
-        lexer = new Lexer(new InputStreamReader(option.getInput()));
-        parser = new Parser();
-        lexer.setParser(parser);
-        parser.setLexer(lexer);
         errors = new ArrayList<DecafError>();
         table = new ScopeStack();
     }
 
     private void compile() {
 
-        Tree.TopLevel tree = parser.parseFile();
+        Tree.TopLevel tree = null;
         checkPoint();
         if (option.getLevel() == Option.Level.LEVEL0) {
             IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);

@@ -1,11 +1,17 @@
-package decaf.frontend;
+package decaf.parsing;
 
 import decaf.tree.Pos;
-import decaf.tree.Tree.*;
+import decaf.tree.Tree;
 
 import java.util.List;
 
-public class SemValue {
+/**
+ * A semantic value simply simulates a "union" (which we see from C++, etc.), so that we can store all kinds of
+ * tree nodes in one class.
+ * <p>
+ * This class should be visible only in this package.
+ */
+class SemValue {
 
     public int code;
 
@@ -21,85 +27,73 @@ public class SemValue {
 
     public String ident;
 
-    public Id id;
+    public Tree.Id id;
 
-    public List<ClassDef> clist;
+    public List<Tree.ClassDef> clist;
 
     /**
      * field list
      */
-    public List<Field> flist;
+    public List<Tree.Field> flist;
 
-    public List<VarDef> vlist;
+    public List<Tree.VarDef> vlist;
 
-    public List<LocalVarDef> lvlist;
+    public List<Tree.LocalVarDef> lvlist;
 
 
     /**
      * statement list
      */
-    public List<Stmt> slist;
+    public List<Tree.Stmt> slist;
 
-    public List<Expr> elist;
+    public List<Tree.Expr> elist;
 
-    public TopLevel prog;
+    public Tree.TopLevel prog;
 
-    public ClassDef cdef;
+    public Tree.ClassDef cdef;
 
-    public VarDef vdef;
-    public LocalVarDef lvdef;
+    public Tree.VarDef vdef;
+    public Tree.LocalVarDef lvdef;
 
-    public MethodDef fdef;
+    public Tree.MethodDef fdef;
 
-    public TypeLit type;
+    public Tree.TypeLit type;
 
-    public Stmt stmt;
+    public Tree.Stmt stmt;
 
-    public Expr expr;
+    public Tree.Expr expr;
 
-    public LValue lvalue;
+    public Tree.LValue lvalue;
 
-    /**
-     * 创建一个关键字的语义值
-     *
-     * @param code 关键字的代表码
-     * @return 对应关键字的语义值
-     */
-    public static SemValue createKeyword(int code) {
+    static SemValue createKeyword(int code) {
         SemValue v = new SemValue();
         v.code = code;
         return v;
     }
 
-    /**
-     * 创建一个操作符的语义值
-     *
-     * @param code 操作符的代表码
-     * @return 对应操作符的语义值
-     */
-    public static SemValue createOperator(int code) {
+    static SemValue createOperator(int code) {
         SemValue v = new SemValue();
         v.code = code;
         return v;
     }
 
-    public static SemValue createIntLit(int value) {
+    static SemValue createIntLit(int value) {
         SemValue v = new SemValue();
-        v.code = Parser.INT_LIT;
+        v.code = Tokens.INT_LIT;
         v.intValue = value;
         return v;
     }
 
-    public static SemValue createBoolLit(boolean value) {
+    static SemValue createBoolLit(boolean value) {
         SemValue v = new SemValue();
-        v.code = Parser.BOOL_LIT;
+        v.code = Tokens.BOOL_LIT;
         v.boolValue = value;
         return v;
     }
 
-    public static SemValue createStringLit(String value) {
+    static SemValue createStringLit(String value) {
         SemValue v = new SemValue();
-        v.code = Parser.STRING_LIT;
+        v.code = Tokens.STRING_LIT;
         v.stringValue = value;
         return v;
     }
@@ -110,9 +104,9 @@ public class SemValue {
      * @param name 标识符的名字
      * @return 对应的语义值（标识符名字存放在sval域）
      */
-    public static SemValue createIdentifier(String name) {
+    static SemValue createIdentifier(String name) {
         SemValue v = new SemValue();
-        v.code = Parser.IDENTIFIER;
+        v.code = Tokens.IDENTIFIER;
         v.ident = name;
         return v;
     }
@@ -231,4 +225,27 @@ public class SemValue {
      }
      return (String.format("%-15s%s", loc, msg));
      }*/
+
+    /**
+     * 辅助模版（切勿直接调用）
+     *
+     * @param $$ 对应 YACC 语义动作中的 $$
+     * @param $1 对应 YACC 语义动作中的 $1
+     * @param $2 对应 YACC 语义动作中的 $2
+     * @param $3 对应 YACC 语义动作中的 $3
+     * @param $4 对应 YACC 语义动作中的 $4
+     * @param $5 对应 YACC 语义动作中的 $5
+     * @param $6 对应 YACC 语义动作中的 $6
+     */
+    void UserAction(SemValue $$, SemValue $1, SemValue $2, SemValue $3,
+                    SemValue $4, SemValue $5, SemValue $6) {
+        /*
+         * 这个函数作用是提供一个模版给你编写你的 YACC 语义动作。 因为在一般编辑器中编写 YACC 脚本的时候没法充分调用 IDE
+         * 的各种编辑功能， 因此专门开辟一个函数。使用的时候你只需要把语义动作写在下面的花括号中， 然后连同花括号一起复制-粘贴到 YACC
+         * 脚本对应位置即可。
+         */
+        {
+
+        }
+    }
 }

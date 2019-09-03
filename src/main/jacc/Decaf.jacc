@@ -7,7 +7,7 @@
  * DCST, Tsinghua University
  */
 
-%package decaf.frontend
+%package decaf.parsing
 
 %{
 import decaf.tree.Tree;
@@ -16,12 +16,12 @@ import decaf.error.*;
 import java.util.*;
 %}
 
-%class Parser
-%extends BaseParser
+%class DecafParser
+%extends AbstractParser
 %interface DecafTokens
-%next yylex()
+%next nextToken()
 %get token
-%semantic SemValue: yylval
+%semantic SemValue: semValue
 
 %token VOID   BOOL  INT   STRING  CLASS 
 %token NULL   EXTENDS     THIS     WHILE   FOR   

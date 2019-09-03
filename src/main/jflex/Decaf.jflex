@@ -5,7 +5,7 @@
  * 注意：在UNIX系统下你需要保证这个文件使用UNIX文本格式，可使用dos2unix命令进行文本各式转换。
  */
 
-package decaf.frontend;
+package decaf.parsing;
 
 import decaf.tree.Pos;
 import decaf.error.*;
@@ -13,8 +13,8 @@ import decaf.utils.MiscUtils;
  
 %%
 %public
-%class Lexer
-%extends BaseLexer
+%class DecafLexer
+%extends AbstractLexer
 %byaccj
 %line
 %column
@@ -24,8 +24,8 @@ import decaf.utils.MiscUtils;
 	private Pos sloc = null;
 	private StringBuilder buffer = new StringBuilder();
 
-	public Pos getLocation() {
-		return new decaf.tree.Pos(yyline + 1, yycolumn + 1);
+	public Pos getPos() {
+		return new Pos(yyline + 1, yycolumn + 1);
 	}
 %}
 
@@ -51,41 +51,41 @@ WHITESPACE			= ([ \t]+)
 
 
 	// 识别关键字的规则 
-"void"				{ return keyword(Parser.VOID);			}
-"int"				{ return keyword(Parser.INT);			}
-"bool"				{ return keyword(Parser.BOOL);			}
-"string"			{ return keyword(Parser.STRING);		}
-"new"				{ return keyword(Parser.NEW);			}
-"null"				{ return keyword(Parser.NULL);			}
-"class"				{ return keyword(Parser.CLASS);			}
-"extends"			{ return keyword(Parser.EXTENDS);		}
-"this"				{ return keyword(Parser.THIS);			}
-"while"				{ return keyword(Parser.WHILE);			}
-"for"				{ return keyword(Parser.FOR);			}
-"if"				{ return keyword(Parser.IF);			}
-"else"				{ return keyword(Parser.ELSE);			}
-"return"			{ return keyword(Parser.RETURN);		}
-"break"				{ return keyword(Parser.BREAK);			}
-"Print"				{ return keyword(Parser.PRINT);			}
-"ReadInteger"		{ return keyword(Parser.READ_INTEGER);	}
-"ReadLine"			{ return keyword(Parser.READ_LINE);		}
-"static"			{ return keyword(Parser.STATIC);		}
-"instanceof"		{ return keyword(Parser.INSTANCEOF);	}
+"void"				{ return keyword(Tokens.VOID);			}
+"int"				{ return keyword(Tokens.INT);			}
+"bool"				{ return keyword(Tokens.BOOL);			}
+"string"			{ return keyword(Tokens.STRING);		}
+"new"				{ return keyword(Tokens.NEW);			}
+"null"				{ return keyword(Tokens.NULL);			}
+"class"				{ return keyword(Tokens.CLASS);			}
+"extends"			{ return keyword(Tokens.EXTENDS);		}
+"this"				{ return keyword(Tokens.THIS);			}
+"while"				{ return keyword(Tokens.WHILE);			}
+"for"				{ return keyword(Tokens.FOR);			}
+"if"				{ return keyword(Tokens.IF);			}
+"else"				{ return keyword(Tokens.ELSE);			}
+"return"			{ return keyword(Tokens.RETURN);		}
+"break"				{ return keyword(Tokens.BREAK);			}
+"Print"				{ return keyword(Tokens.PRINT);			}
+"ReadInteger"		{ return keyword(Tokens.READ_INTEGER);	}
+"ReadLine"			{ return keyword(Tokens.READ_LINE);		}
+"static"			{ return keyword(Tokens.STATIC);		}
+"instanceof"		{ return keyword(Tokens.INSTANCEOF);	}
 
 	// 识别操作符的规则
-"<="				{ return operator(Parser.LESS_EQUAL);	}
-">="				{ return operator(Parser.GREATER_EQUAL);}
-"=="				{ return operator(Parser.EQUAL);		}
-"!="				{ return operator(Parser.NOT_EQUAL);	}
-"&&"				{ return operator(Parser.AND);			}
-"||"				{ return operator(Parser.OR);			}
+"<="				{ return operator(Tokens.LESS_EQUAL);	}
+">="				{ return operator(Tokens.GREATER_EQUAL);}
+"=="				{ return operator(Tokens.EQUAL);		}
+"!="				{ return operator(Tokens.NOT_EQUAL);	}
+"&&"				{ return operator(Tokens.AND);			}
+"||"				{ return operator(Tokens.OR);			}
 {SIMPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
 
 	// 识别常数的规则
 "true"				{ return boolConst(true);										}
 "false"				{ return boolConst(false);										}
 {INTEGER}			{ return intConst(yytext());			}
-<YYINITIAL>\"		{ sloc = getLocation();		  
+<YYINITIAL>\"		{ sloc = getPos();
 					  yybegin(S);
 					  buffer = new StringBuilder();								    }
 <S>{NEWLINE}		{ issueError(new NewlineInStrError(sloc, MiscUtils.quote(buffer.toString())));}
@@ -103,4 +103,4 @@ WHITESPACE			= ([ \t]+)
 {IDENTIFIER}		{ return identifier(yytext());			}
 	
 	// 上面规则不能识别的字符怎么处理
-.					{ issueError(new UnrecogCharError(getLocation(), yycharat(0))); 		}
+.					{ issueError(new UnrecogCharError(getPos(), yycharat(0))); 		}

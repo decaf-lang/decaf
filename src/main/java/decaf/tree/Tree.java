@@ -1061,6 +1061,19 @@ public abstract class Tree {
     }
 
     /**
+     * 获得操作符的字符串表示
+     *
+     * @param op 操作符的符号码
+     * @return 该操作符的字符串形式
+     */
+    public static String opStr(UnaryOp op) {
+        return switch (op) {
+            case NEG -> "-";
+            case NOT -> "!";
+        };
+    }
+
+    /**
      * Unary expression.
      */
     public static class Unary extends Expr {
@@ -1096,6 +1109,40 @@ public abstract class Tree {
 
     public enum BinaryOp {
         ADD, SUB, MUL, DIV, MOD, EQ, NE, GE, GT, LE, LT, AND, OR
+    }
+
+    // TODO: rewrite using case expression
+    public static String opStr(BinaryOp opCode) {
+        switch (opCode) {
+            case AND:
+                return "&&";
+            case EQ:
+                return "==";
+            case GE:
+                return ">=";
+            case LE:
+                return "<=";
+            case NE:
+                return "!=";
+            case OR:
+                return "||";
+            case ADD:
+                return "+";
+            case SUB:
+                return "-";
+            case MUL:
+                return "*";
+            case DIV:
+                return "/";
+            case MOD:
+                return "%";
+            case GT:
+                return ">";
+            case LT:
+                return "<";
+            default:
+                return "<unknown>";
+        }
     }
 
     /**
