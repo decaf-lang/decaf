@@ -25,12 +25,16 @@ public abstract class AbstractLexer {
      */
     abstract int yylex() throws IOException;
 
+    private AbstractParser parser;
+    private ErrorIssuer issuer;
+
     /**
      * When lexing, we need to set parser's semantic value.
      */
-    AbstractParser parser;
-
-    ErrorIssuer issuer;
+    void setup(AbstractParser parser, ErrorIssuer issuer) {
+        this.parser = parser;
+        this.issuer = issuer;
+    }
 
     /**
      * Helper method used by the concrete lexer: record a keyword.

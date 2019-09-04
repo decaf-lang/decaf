@@ -7,7 +7,6 @@ import decaf.tree.Tree;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Optional;
 
 /**
  * The abstract parser specifies all methods that a concrete parser should implement, and provide a couple of helper
@@ -16,29 +15,25 @@ import java.util.Optional;
 public abstract class AbstractParser {
 
     /**
-     * The exported method for invoking the parsing process.
-     *
-     * @return the parsed tree (if any)
-     */
-    public Optional<Tree.TopLevel> tree() {
-        nextToken();
-        parse();
-        return Optional.ofNullable(tree);
-    }
-
-    /**
      * The entry to the concrete parser.
      *
      * @return if parse succeeds?
      */
     abstract boolean parse();
 
+    private AbstractLexer lexer;
+
+    private ErrorIssuer issuer;
+
     /**
      * When parsing, we need to interact with the lexer.
      */
-    AbstractLexer lexer;
-
-    ErrorIssuer issuer;
+    void setup(AbstractLexer lexer, ErrorIssuer issuer) {
+        this.lexer = lexer;
+        this.issuer = issuer;
+        // The generated parser expects that, right now, `token` records the first token returned by lexer.
+        token = nextToken();
+    }
 
     /**
      * Final parsing result to be written by the concrete parser. Remember in `Decaf.jacc`, we designed an action for
@@ -47,7 +42,7 @@ public abstract class AbstractParser {
      * tree = new Tree.TopLevel($1.clist, $1.loc);
      * }}}
      */
-    protected Tree.TopLevel tree;
+    Tree.TopLevel tree;
 
     /**
      * Helper variable used by the concrete parser: the semantic value of the current token.
