@@ -51,6 +51,7 @@ ClassList       :	ClassList ClassDef
 					}
                 |	ClassDef
                 	{
+                	    $$.pos = $1.clazz.pos;
                 		$$.classList = new ArrayList<>();
                 		$$.classList.add($1.clazz);
                 	}
@@ -190,12 +191,33 @@ Stmt		    :	VariableDef
                 		}
                 	}
                 |	IfStmt
+                    {
+                        $$ = $1;
+                    }
                 |	WhileStmt
+                    {
+                        $$ = $1;
+                    }
                 |	ForStmt
+                    {
+                        $$ = $1;
+                    }
                 |	ReturnStmt ';'
+                    {
+                        $$ = $1;
+                    }
                 |	PrintStmt ';'
+                    {
+                        $$ = $1;
+                    }
                 |	BreakStmt ';'
+                    {
+                        $$ = $1;
+                    }
                 |	StmtBlock
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 SimpleStmt      :	LValue '=' Expr
