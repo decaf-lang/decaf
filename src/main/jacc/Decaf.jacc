@@ -1,10 +1,11 @@
+// Decaf grammar
+
 %package decaf.parsing
 
 %{
 import decaf.tree.Tree.*;
-import decaf.tree.*;
-import decaf.error.*;
-import java.util.*;
+
+import java.util.Optional;
 %}
 
 %class DecafParser
@@ -14,13 +15,13 @@ import java.util.*;
 %get token
 %semantic SemValue : semValue
 
-%token VOID   BOOL  INT   STRING  CLASS
-%token NULL   EXTENDS     THIS     WHILE   FOR
-%token IF     ELSE        RETURN   BREAK   NEW
-%token PRINT  READ_INTEGER         READ_LINE
-%token INT_LIT BOOL_LIT STRING_LIT
-%token IDENTIFIER	  AND    OR    STATIC  INSTANCE_OF
-%token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
+%token VOID   		BOOL  		INT			STRING  	CLASS
+%token NULL   		EXTENDS		THIS   		WHILE   	FOR
+%token IF     		ELSE     	RETURN 		BREAK   	NEW
+%token PRINT  		READ_INTEGER     		READ_LINE
+%token BOOL_LIT		INT_LIT 	STRING_LIT
+%token IDENTIFIER  	AND    		OR    		STATIC  	INSTANCE_OF
+%token LESS_EQUAL   GREATER_EQUAL  			EQUAL   	NOT_EQUAL
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
 %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
 
@@ -35,135 +36,179 @@ import java.util.*;
 %nonassoc ')' EMPTY
 %nonassoc ELSE
 
-%start Program
+%start TopLevel
 
 %%
-Program			:	ClassList
+
+// Warning: never do `$$.xxx = ???` until reassignment, e.g. `$$ = $1`.
+// Why? Because the time when we enter the action code you write, `$$` may currently points to some semValue you have
+// already created. If you do `$$.expr = some expression`, then the previously created semValue is also modified!
+// To avoid any potential bugs, you must reassign `$$` to a value that you know well (e.g. `$1`),
+// before overwrite its members.
+
+// A group of helper methods with prefix `sv` are provided in `SemValue`, go ahead and use them!
+
+// Classes and fields
+
+TopLevel		:	ClassList
 					{
-						tree = new Tree.TopLevel($1.classList, $1.pos);
+						tree = new TopLevel($1.classList, $1.pos);
 					}
 				;
 
 ClassList       :	ClassList ClassDef
 					{
-					    $$ = $1;
+						$$ = $1;
 						$$.classList.add($2.clazz);
 					}
                 |	ClassDef
                 	{
-                	    $$.pos = $1.clazz.pos;
-                		$$.classList = new ArrayList<>();
-                		$$.classList.add($1.clazz);
-                	}
-                ;
-
-VariableDef     :	Variable ';'
-                    {
-                        $$ = $1;
-                    }
-				;
-
-Variable        :	Type Id
-					{
-						$$.var = new Tree.Var($1.type, $2.id, $2.pos);
-					}
-				;
-
-Type            :	INT
-					{
-						$$.type = new Tree.TInt($1.pos);
-					}
-                |	VOID
-                	{
-                		$$.type = new Tree.TVoid($1.pos);
-                	}
-                |	BOOL
-                	{
-                		$$.type = new Tree.TBool($1.pos);
-                	}
-                |	STRING
-                	{
-                		$$.type = new Tree.TString($1.pos);
-                	}
-                |	CLASS Id
-                	{
-                		$$.type = new Tree.TClass($2.id, $1.pos);
-                	}
-                |	Type '[' ']'
-                	{
-                		$$.type = new Tree.TArray($1.type, $1.pos);
+						$$ = svClasses($1.clazz);
                 	}
                 ;
 
 ClassDef        :	CLASS Id ExtendsClause '{' FieldList '}'
 					{
-						$$.clazz = new Tree.ClassDef($2.id, Optional.ofNullable($3.id), $5.fieldList, $1.pos);
+						$$ = svClass(new ClassDef($2.id, Optional.ofNullable($3.id), $5.fieldList, $1.pos));
 					}
                 ;
 
 ExtendsClause	:	EXTENDS Id
 					{
-						$$.id = $2.id;
+						$$ = $2;
 					}
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
+                	    $$ = svId(null);
                 	}
                 ;
 
-FieldList       :	FieldList VariableDef
+FieldList       :	FieldList Var ';'
 					{
 					    $$ = $1;
-						$$.fieldList.add(new VarDef($2.var));
+						$$.fieldList.add(new VarDef($2.type, $2.id, $2.pos));
 					}
-				|	FieldList FunctionDef
+				|	FieldList MethodDef
 					{
 					    $$ = $1;
 						$$.fieldList.add($2.field);
 					}
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
-                		$$.fieldList = new ArrayList<>();
+                		$$ = svFields();
                 	}
                 ;
 
-Formals         :	VariableList
+Var        		:	Type Id
+					{
+						$$ = svVar($1.type, $2.id, $2.pos);
+					}
+				;
+
+MethodDef    	:	STATIC Type Id '(' VarList ')' Block
+					{
+						$$ = svField(new MethodDef(true, $3.id, $2.type, $5.varList, $7.block, $3.pos));
+					}
+				|	Type Id '(' VarList ')' Block
+					{
+						$$ = svField(new MethodDef(false, $2.id, $1.type, $4.varList, $6.block, $2.pos));
+					}
+                ;
+
+VarList         :	VarList1
                     {
                         $$ = $1;
                     }
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
-                		$$.varList = new ArrayList<>();
+                		$$ = svVars();
                 	}
                 ;
 
-VariableList    :	VariableList ',' Variable
+VarList1    	:	VarList1 ',' Var
 					{
-					    $$ = $1;
-						$$.varList.add(new LocalVarDef($3.var));
+						$$ = $1;
+						$$.varList.add(new LocalVarDef($3.type, $3.id, $3.pos));
 					}
-                |	Variable
+                |	Var
                 	{
-                		$$.varList = new ArrayList<>();
-						$$.varList.add(new LocalVarDef($1.var));
+						$$ = svVars(new LocalVarDef($1.type, $1.id, $1.pos));
                 	}
                 ;
 
-FunctionDef    :	STATIC Type Id '(' Formals ')' StmtBlock
+// Types
+
+Type            :	INT
 					{
-						$$.field = new MethodDef(true, $3.id, $2.type, $5.varList, (Block) $7.stmt, $3.pos);
+						$$ = svType(new TInt($1.pos));
 					}
-				|	Type Id '(' Formals ')' StmtBlock
+                |	BOOL
+                	{
+                		$$ = svType(new TBool($1.pos));
+                	}
+                |	STRING
+                	{
+                		$$ = svType(new TString($1.pos));
+                	}
+				|	VOID
+                	{
+                		$$ = svType(new TVoid($1.pos));
+                	}
+                |	CLASS Id
+                	{
+                		$$ = svType(new TClass($2.id, $1.pos));
+                	}
+                |	Type '[' ']'
+                	{
+                		$$ = svType(new TArray($1.type, $1.type.pos));
+                	}
+                ;
+
+// Statements
+
+Stmt		    :	Var ';'
 					{
-						$$.field = new MethodDef(false, $2.id, $1.type, $4.varList, (Block) $6.stmt, $2.pos);
+						$$ = svStmt(new LocalVarDef($1.type, $1.id, $1.pos));
+					}
+				|	Block
+				    {
+				        $$ = svStmt($1.block);
+				    }
+                |	SimpleStmt ';'
+                	{
+                		if ($1.stmt == null) {
+                			$$ = svStmt(new Skip($2.pos));
+                		}
+                	}
+                |	IF '(' Expr ')' Stmt ElseClause
+					{
+						$$ = svStmt(new If($3.expr, $5.stmt, Optional.ofNullable($6.stmt), $1.pos));
+					}
+                |	WHILE '(' Expr ')' Stmt
+					{
+						$$ = svStmt(new While($3.expr, $5.stmt, $1.pos));
+					}
+                |	FOR '(' SimpleStmt ';' Expr ';'	SimpleStmt ')' Stmt
+					{
+						$$ = svStmt(new For($3.stmt, $5.expr, $7.stmt, $9.stmt, $1.pos));
+					}
+				|	BREAK ';'
+					{
+						$$ = svStmt(new Break($1.pos));
+					}
+                |	RETURN ExprOpt ';'
+					{
+						$$ = svStmt(new Return(Optional.ofNullable($2.expr), $1.pos));
+					}
+                |	PRINT '(' ExprList ')' ';'
+					{
+						$$ = svStmt(new Print($3.exprList, $1.pos));
 					}
                 ;
 
-StmtBlock       :	'{' StmtList '}'
+Block       	:	'{' StmtList '}'
 					{
-						$$.stmt = new Block($2.stmtList, $1.pos);
+						$$ = svBlock(new Block($2.stmtList, $1.pos));
 					}
                 ;
 
@@ -174,161 +219,113 @@ StmtList        :	StmtList Stmt
 					}
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
-                		$$.stmtList = new ArrayList<>();
+                		$$ = svStmts();
                 	}
-                ;
-
-Stmt		    :	VariableDef
-					{
-						$$.stmt = new LocalVarDef($1.var);
-					}
-
-                |	SimpleStmt ';'
-                	{
-                		if ($$.stmt == null) {
-                			$$.stmt = new Tree.Skip($2.pos);
-                		}
-                	}
-                |	IfStmt
-                    {
-                        $$ = $1;
-                    }
-                |	WhileStmt
-                    {
-                        $$ = $1;
-                    }
-                |	ForStmt
-                    {
-                        $$ = $1;
-                    }
-                |	ReturnStmt ';'
-                    {
-                        $$ = $1;
-                    }
-                |	PrintStmt ';'
-                    {
-                        $$ = $1;
-                    }
-                |	BreakStmt ';'
-                    {
-                        $$ = $1;
-                    }
-                |	StmtBlock
-                    {
-                        $$ = $1;
-                    }
                 ;
 
 SimpleStmt      :	LValue '=' Expr
 					{
-						$$.stmt = new Tree.Assign($1.lValue, $3.expr, $2.pos);
+						$$ = svStmt(new Assign($1.lValue, $3.expr, $2.pos));
 					}
                 |	Call
                 	{
-                		$$.stmt = new Tree.ExprEval($1.expr, $1.pos);
+                		$$ = svStmt(new ExprEval($1.expr, $1.expr.pos));
                 	}
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
+						$$ = svStmt(null);
                 	}
                 ;
 
-Receiver     	:	Expr '.'
+ElseClause      :	ELSE Stmt
+					{
+						$$ = $2;
+					}
+				|	/* empty */				%prec EMPTY
+					{
+						$$ = svStmt(null);
+					}
+                ;
+
+ExprOpt			:	Expr
                     {
                         $$ = $1;
                     }
-                |	/* empty */
-                	{
-                		$$ = new SemValue();
-                	}
-                ;
-
-LValue          :	Receiver Id
+				|	/* empty */
 					{
-						$$.lValue = new VarSel(Optional.ofNullable($1.expr), $2.id, $2.pos);
-						if ($1.pos == null) {
-							$$.pos = $2.pos;
-						}
+						$$ = svExpr(null);
 					}
-                |	Expr '[' Expr ']'
+				;
+
+// Expressions
+
+Expr            :	Literal
+                    {
+                        $$ = $1;
+                    }
+				|	THIS
                 	{
-                		$$.lValue = new Tree.IndexSel($1.expr, $3.expr, $1.pos);
+                		$$ = svExpr(new This($1.pos));
                 	}
-                ;
-
-Call            :	Receiver Id '(' Actuals ')'
+				|	LValue
 					{
-						$$.expr = new Tree.Call(Optional.ofNullable($1.expr), $2.id, $4.exprList, $2.pos);
-						if ($1.pos == null) {
-							$$.pos = $2.pos;
-						}
-					}
-                ;
-
-Expr            :	LValue
-					{
-						$$.expr = $1.lValue;
+						$$ = svExpr($1.lValue);
 					}
                 |	Call
-                    {
-                        $$ = $1;
-                    }
-                |	Constant
                     {
                         $$ = $1;
                     }
                 |	Expr '+' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.ADD, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.ADD, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '-' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.SUB, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.SUB, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '*' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.MUL, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.MUL, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '/' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.DIV, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.DIV, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '%' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.MOD, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.MOD, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.EQ, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.EQ, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr NOT_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.NE, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.NE, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '<' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.LT, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.LT, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr '>' Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.GT, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.GT, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr LESS_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.LE, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.LE, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr GREATER_EQUAL Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.GE, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.GE, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr AND Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.AND, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.AND, $1.expr, $3.expr, $2.pos));
                 	}
                 |	Expr OR Expr
                 	{
-                		$$.expr = new Tree.Binary(BinaryOp.OR, $1.expr, $3.expr, $2.pos);
+                		$$ = svExpr(new Binary(BinaryOp.OR, $1.expr, $3.expr, $2.pos));
                 	}
                 |	'(' Expr ')'
                 	{
@@ -336,137 +333,113 @@ Expr            :	LValue
                 	}
                 |	'-' Expr  				%prec UMINUS
                 	{
-                		$$.expr = new Tree.Unary(UnaryOp.NEG, $2.expr, $1.pos);
+                		$$ = svExpr(new Unary(UnaryOp.NEG, $2.expr, $1.pos));
                 	}
                 |	'!' Expr
                 	{
-                		$$.expr = new Tree.Unary(UnaryOp.NOT, $2.expr, $1.pos);
+                		$$ = svExpr(new Unary(UnaryOp.NOT, $2.expr, $1.pos));
                 	}
                 |	READ_INTEGER '(' ')'
                 	{
-                		$$.expr = new Tree.ReadInt($1.pos);
+                		$$ = svExpr(new ReadInt($1.pos));
                 	}
                 |	READ_LINE '(' ')'
                 	{
-                		$$.expr = new Tree.ReadLine($1.pos);
-                	}
-                |	THIS
-                	{
-                		$$.expr = new Tree.This($1.pos);
+                		$$ = svExpr(new ReadLine($1.pos));
                 	}
                 |	NEW Id '(' ')'
                 	{
-                		$$.expr = new Tree.NewClass($2.id, $1.pos);
+                		$$ = svExpr(new NewClass($2.id, $1.pos));
                 	}
                 |	NEW Type '[' Expr ']'
                 	{
-                		$$.expr = new Tree.NewArray($2.type, $4.expr, $1.pos);
+                		$$ = svExpr(new NewArray($2.type, $4.expr, $1.pos));
                 	}
                 |	INSTANCE_OF '(' Expr ',' Id ')'
                 	{
-                		$$.expr = new Tree.ClassTest($3.expr, $5.id, $1.pos);
+                		$$ = svExpr(new ClassTest($3.expr, $5.id, $1.pos));
                 	}
                 |	'(' CLASS Id ')' Expr
                 	{
-                		$$.expr = new Tree.ClassCast($5.expr, $3.id, $5.pos);
+                		$$ = svExpr(new ClassCast($5.expr, $3.id, $5.expr.pos));
                 	}
                 ;
 
-Constant        :	INT_LIT
+Literal        	:	INT_LIT
 					{
-						$$.expr = new IntLit($1.intLit, $1.pos);
+						$$ = svExpr(new IntLit($1.intVal, $1.pos));
 					}
 			    |   BOOL_LIT
 			        {
-			            $$.expr = new BoolLit($1.boolLit, $1.pos);
+			            $$ = svExpr(new BoolLit($1.boolVal, $1.pos));
 			        }
 			    |   STRING_LIT
 			        {
-			            $$.expr = new StringLit($1.stringLit, $1.pos);
+			            $$ = svExpr(new StringLit($1.strVal, $1.pos));
 			        }
                 |	NULL
                 	{
-						$$.expr = new NullLit($1.pos);
+						$$ = svExpr(new NullLit($1.pos));
 					}
                 ;
 
-Actuals         :	ExprList
+LValue          :	Receiver Id
+					{
+						$$ = svLValue(new VarSel(Optional.ofNullable($1.expr), $2.id, $2.pos));
+						// TODO check pos
+					}
+                |	Expr '[' Expr ']'
+                	{
+                		$$ = svLValue(new IndexSel($1.expr, $3.expr, $2.pos));
+                	}
+                ;
+
+Call            :	Receiver Id '(' ExprList ')'
+					{
+						$$ = svExpr(new Call(Optional.ofNullable($1.expr), $2.id, $4.exprList, $3.pos));
+						if ($1.expr == null) {
+							$$.pos = $2.pos;
+						}
+					}
+                ;
+
+Receiver     	:	Expr '.'
+					{
+						$$ = $1;
+					}
+                |	/* empty */
+                	{
+                		$$ = svExpr(null);
+                	}
+                ;
+
+ExprList        :	ExprList1
                     {
                         $$ = $1;
                     }
                 |	/* empty */
                 	{
-                		$$ = new SemValue();
-                		$$.exprList = new ArrayList<>();
+                		$$ = svExprs();
                 	}
                 ;
 
-ExprList        :	ExprList ',' Expr
+ExprList1       :	ExprList1 ',' Expr
 					{
-					    $$ = $1;
+						$$ = $1;
 						$$.exprList.add($3.expr);
 					}
                 |	Expr
                 	{
-                		$$.exprList = new ArrayList<>();
-						$$.exprList.add($1.expr);
+                		$$ = svExprs($1.expr);
                 	}
                 ;
 
-WhileStmt       :	WHILE '(' Expr ')' Stmt
-					{
-						$$.stmt = new Tree.While($3.expr, $5.stmt, $1.pos);
-					}
-                ;
-
-ForStmt         :	FOR '(' SimpleStmt ';' Expr ';'	SimpleStmt ')' Stmt
-					{
-						$$.stmt = new Tree.For($3.stmt, $5.expr, $7.stmt, $9.stmt, $1.pos);
-					}
-                ;
-
-BreakStmt       :	BREAK
-					{
-						$$.stmt = new Tree.Break($1.pos);
-					}
-                ;
-
-IfStmt          :	IF '(' Expr ')' Stmt ElseClause
-					{
-						$$.stmt = new Tree.If($3.expr, $5.stmt, Optional.ofNullable($6.stmt), $1.pos);
-					}
-                ;
-
-ElseClause      :	ELSE Stmt
-					{
-						$$.stmt = $2.stmt;
-					}
-				|	/* empty */				%prec EMPTY
-					{
-						$$ = new SemValue();
-					}
-                ;
-
-ReturnStmt      :	RETURN Expr
-					{
-						$$.stmt = new Tree.Return(Optional.ofNullable($2.expr), $1.pos);
-					}
-                |	RETURN
-                	{
-                		$$.stmt = new Tree.Return(Optional.ofNullable(null), $1.pos);
-                	}
-                ;
-
-PrintStmt       :	PRINT '(' ExprList ')'
-					{
-						$$.stmt = new Print($3.exprList, $1.pos);
-					}
-                ;
+// identifier
 
 Id              :   IDENTIFIER
                     {
-                        $$ = $1;
-                        $$.id = new Id($1.identifier, $1.pos);
+                        $$ = svId(new Id($1.strVal, $1.pos));
                     }
                 ;
+
 %%

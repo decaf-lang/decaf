@@ -13,16 +13,35 @@ import java.util.List;
  * This class should be visible only in this package.
  */
 class SemValue {
+    enum Kind {
+        TOKEN, CLASS, CLASS_LIST, FIELD, FIELD_LIST, VAR, VAR_LIST, TYPE, STMT, STMT_LIST, BLOCK, EXPR, EXPR_LIST,
+        LVALUE, ID
+    }
+
+    // Kind
+    final Kind kind;
 
     // Position
     Pos pos;
 
+    // Make sure every semantic value has a position.
+    SemValue(Kind kind, Pos pos) {
+        this.kind = kind;
+        this.pos = pos;
+    }
+
     // For lexer
     int code;
-    int intLit;
-    boolean boolLit;
-    String stringLit;
-    String identifier;
+    int intVal;
+    boolean boolVal;
+    String strVal;
+
+    // Create a lexer semantic value. This is called by the helper methods in AbstractLexer.java.
+    SemValue(int code, Pos pos) {
+        this.kind = Kind.TOKEN;
+        this.pos = pos;
+        this.code = code;
+    }
 
     // For parser
     Tree.ClassDef clazz;
@@ -31,7 +50,7 @@ class SemValue {
     Tree.Field field;
     List<Tree.Field> fieldList;
 
-    Tree.Var var; // member var or local var
+    // a raw var (local/member) is stored using two variables: type, id
     List<Tree.LocalVarDef> varList; // a list can only contain local vars
 
     Tree.TypeLit type;
@@ -46,90 +65,61 @@ class SemValue {
 
     Tree.Id id;
 
-    static SemValue createKeyword(int code) {
-        SemValue v = new SemValue();
-        v.code = code;
-        return v;
-    }
-
-    static SemValue createOperator(int code) {
-        SemValue v = new SemValue();
-        v.code = code;
-        return v;
-    }
-
-    static SemValue createIntLit(int value) {
-        SemValue v = new SemValue();
-        v.code = Tokens.INT_LIT;
-        v.intLit = value;
-        return v;
-    }
-
-    static SemValue createBoolLit(boolean value) {
-        SemValue v = new SemValue();
-        v.code = Tokens.BOOL_LIT;
-        v.boolLit = value;
-        return v;
-    }
-
-    static SemValue createStringLit(String value) {
-        SemValue v = new SemValue();
-        v.code = Tokens.STRING_LIT;
-        v.stringLit = value;
-        return v;
-    }
-
     /**
-     * 创建一个标识符的语义值
-     *
-     * @param name 标识符的名字
-     * @return 对应的语义值（标识符名字存放在sval域）
+     * Pretty print sem value. For debug.
      */
-    static SemValue createIdentifier(String name) {
-        SemValue v = new SemValue();
-        v.code = Tokens.IDENTIFIER;
-        v.identifier = name;
-        return v;
-    }
-
-    /**
-     * For debug
-     */
+    @Override
     public String toString() {
-        String msg = switch (code) {
-            case Tokens.BOOL -> "keyword  : bool";
-            case Tokens.BREAK -> "keyword  : break";
-            case Tokens.CLASS -> "keyword  : class";
-            case Tokens.ELSE -> "keyword  : else";
-            case Tokens.EXTENDS -> "keyword  : extends";
-            case Tokens.FOR -> "keyword  : for";
-            case Tokens.IF -> "keyword  : if";
-            case Tokens.INT -> "keyword  : int";
-            case Tokens.INSTANCE_OF -> "keyword : instanceof";
-            case Tokens.NEW -> "keyword  : new";
-            case Tokens.NULL -> "keyword  : null";
-            case Tokens.PRINT -> "keyword  : Print";
-            case Tokens.READ_INTEGER -> "keyword  : ReadInteger";
-            case Tokens.READ_LINE -> "keyword  : ReadLine";
-            case Tokens.RETURN -> "keyword  : return";
-            case Tokens.STRING -> "keyword  : string";
-            case Tokens.THIS -> "keyword  : this";
-            case Tokens.VOID -> "keyword  : void";
-            case Tokens.WHILE -> "keyword  : while";
-            case Tokens.STATIC -> "keyword : static";
-            case Tokens.INT_LIT -> "int literal : " + intLit;
-            case Tokens.BOOL_LIT -> "bool literal : " + boolLit;
-            case Tokens.STRING_LIT -> "string literal : " + MiscUtils.quote(stringLit);
-            case Tokens.IDENTIFIER -> "identifier: " + identifier;
-            case Tokens.AND -> "operator : &&";
-            case Tokens.EQUAL -> "operator : ==";
-            case Tokens.GREATER_EQUAL -> "operator : >=";
-            case Tokens.LESS_EQUAL -> "operator : <=";
-            case Tokens.NOT_EQUAL -> "operator : !=";
-            case Tokens.OR -> "operator : ||";
-            default -> "operator : " + (char) code;
+        String msg = switch (kind) {
+            case TOKEN -> switch (code) {
+                case Tokens.BOOL -> "keyword  : bool";
+                case Tokens.BREAK -> "keyword  : break";
+                case Tokens.CLASS -> "keyword  : class";
+                case Tokens.ELSE -> "keyword  : else";
+                case Tokens.EXTENDS -> "keyword  : extends";
+                case Tokens.FOR -> "keyword  : for";
+                case Tokens.IF -> "keyword  : if";
+                case Tokens.INT -> "keyword  : int";
+                case Tokens.INSTANCE_OF -> "keyword : instanceof";
+                case Tokens.NEW -> "keyword  : new";
+                case Tokens.NULL -> "keyword  : null";
+                case Tokens.PRINT -> "keyword  : Print";
+                case Tokens.READ_INTEGER -> "keyword  : ReadInteger";
+                case Tokens.READ_LINE -> "keyword  : ReadLine";
+                case Tokens.RETURN -> "keyword  : return";
+                case Tokens.STRING -> "keyword  : string";
+                case Tokens.THIS -> "keyword  : this";
+                case Tokens.VOID -> "keyword  : void";
+                case Tokens.WHILE -> "keyword  : while";
+                case Tokens.STATIC -> "keyword : static";
+                case Tokens.INT_LIT -> "int literal : " + intVal;
+                case Tokens.BOOL_LIT -> "bool literal : " + boolVal;
+                case Tokens.STRING_LIT -> "string literal : " + MiscUtils.quote(strVal);
+                case Tokens.IDENTIFIER -> "identifier: " + strVal;
+                case Tokens.AND -> "operator : &&";
+                case Tokens.EQUAL -> "operator : ==";
+                case Tokens.GREATER_EQUAL -> "operator : >=";
+                case Tokens.LESS_EQUAL -> "operator : <=";
+                case Tokens.NOT_EQUAL -> "operator : !=";
+                case Tokens.OR -> "operator : ||";
+                default -> "operator : " + (char) code;
+            };
+            case CLASS -> "CLASS: " + clazz;
+            case CLASS_LIST -> "CLASS_LIST: " + classList;
+            case FIELD -> "FIELD: " + field;
+            case FIELD_LIST -> "FIELD_LIST: " + fieldList;
+            case VAR -> "VAR: " + type + " " + id;
+            case VAR_LIST -> "VAR_LIST: " + varList;
+            case TYPE -> "TYPE: " + type;
+            case STMT -> "STMT: " + stmt;
+            case STMT_LIST -> "STMT_LIST: " + stmtList;
+            case BLOCK -> "BLOCK: " + block;
+            case EXPR -> "EXPR: " + expr;
+            case EXPR_LIST -> "EXPR_LIST: " + exprList;
+            case LVALUE -> "LVALUE: " + lValue;
+            case ID -> "ID: " + id;
         };
-        return (String.format("%-15s%s", pos, msg));
+        return String.format("%-9s%s", pos, msg);
     }
 
     /**

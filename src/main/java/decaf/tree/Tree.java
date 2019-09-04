@@ -109,21 +109,6 @@ public abstract class Tree {
     }
 
     /**
-     * A helper class for the parser to create both VarDef and LocalVarDef, at the same time.
-     */
-    public static class Var {
-        public final TypeLit typeLit;
-        public final Id id;
-        public final Pos pos;
-
-        public Var(TypeLit typeLit, Id id, Pos pos) {
-            this.typeLit = typeLit;
-            this.id = id;
-            this.pos = pos;
-        }
-    }
-
-    /**
      * Member variable declaration:
      * {{{
      * <typ> <id>;
@@ -141,10 +126,6 @@ public abstract class Tree {
             super(Kind.VAR_DEF, "VarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
-        }
-
-        public VarDef(Var var) {
-            this(var.typeLit, var.id, var.pos);
         }
 
         @Override
@@ -426,10 +407,6 @@ public abstract class Tree {
             super(Kind.LOCAL_VAR_DEF, "LocalVarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
-        }
-
-        public LocalVarDef(Var var) {
-            this(var.typeLit, var.id, var.pos);
         }
 
         @Override

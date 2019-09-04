@@ -33,21 +33,13 @@ public abstract class AbstractLexer {
     ErrorIssuer issuer;
 
     /**
-     * A helper method for setting the parser's semantic value.
-     */
-    protected void setSemantic(Pos where, SemValue v) {
-        v.pos = where;
-        parser.semValue = v;
-    }
-
-    /**
      * Helper method used by the concrete lexer: record a keyword.
      *
      * @param code the token's code
      * @return just `code`
      */
     protected int keyword(int code) {
-        setSemantic(getPos(), SemValue.createKeyword(code));
+        parser.semValue = new SemValue(code, getPos());
         return code;
     }
 
@@ -58,7 +50,7 @@ public abstract class AbstractLexer {
      * @return just `code`
      */
     protected int operator(int code) {
-        setSemantic(getPos(), SemValue.createOperator(code));
+        parser.semValue = new SemValue(code, getPos());
         return code;
     }
 
@@ -69,8 +61,9 @@ public abstract class AbstractLexer {
      * @return a token INT_LIT
      */
     protected int intConst(String value) {
+        parser.semValue = new SemValue(Tokens.INT_LIT, getPos());
         try {
-            setSemantic(getPos(), SemValue.createIntLit(Integer.decode(value)));
+            parser.semValue.intVal = Integer.decode(value);
         } catch (NumberFormatException e) {
             issueError(new IntTooLargeError(getPos(), value));
         }
@@ -84,7 +77,8 @@ public abstract class AbstractLexer {
      * @return a token BOOL_LIT
      */
     protected int boolConst(boolean value) {
-        setSemantic(getPos(), SemValue.createBoolLit(value));
+        parser.semValue = new SemValue(Tokens.BOOL_LIT, getPos());
+        parser.semValue.boolVal = value;
         return Tokens.BOOL_LIT;
     }
 
@@ -94,8 +88,9 @@ public abstract class AbstractLexer {
      * @param value the unquoted string
      * @return a token STRING_LIT
      */
-    protected int StringConst(String value, Pos loc) {
-        setSemantic(loc, SemValue.createStringLit(value));
+    protected int StringConst(String value, Pos pos) {
+        parser.semValue = new SemValue(Tokens.STRING_LIT, pos);
+        parser.semValue.strVal = value;
         return Tokens.STRING_LIT;
     }
 
@@ -106,7 +101,8 @@ public abstract class AbstractLexer {
      * @return a token IDENTIFIER
      */
     protected int identifier(String name) {
-        setSemantic(getPos(), SemValue.createIdentifier(name));
+        parser.semValue = new SemValue(Tokens.IDENTIFIER, getPos());
+        parser.semValue.strVal = name;
         return Tokens.IDENTIFIER;
     }
 
