@@ -126,7 +126,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements Visito
     @Override
     public void visitMethodDef(Tree.MethodDef funcDef) {
         funcDef.returnType.accept(this);
-        Function f = new Function(funcDef.isStatic, funcDef.id.name,
+        Function f = new Function(funcDef.isStatic(), funcDef.id.name,
                 funcDef.returnType.type, funcDef.body, funcDef.getLocation());
         funcDef.symbol = f;
         Symbol sym = table.lookup(funcDef.id.name, false);

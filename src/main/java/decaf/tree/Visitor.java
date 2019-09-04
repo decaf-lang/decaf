@@ -118,4 +118,7 @@ public interface Visitor {
 
     default void visitId(Tree.Id that) {
     }
+
+    default void visitModifiers(Tree.Modifiers that) {
+    }
 }

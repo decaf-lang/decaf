@@ -19,7 +19,7 @@ public abstract class Tree {
         T_INT, T_BOOL, T_STRING, T_VOID, T_CLASS, T_ARRAY,
         LOCAL_VAR_DEF, BLOCK, ASSIGN, EXPR_EVAL, SKIP, IF, WHILE, FOR, BREAK, RETURN, PRINT,
         INT_LIT, BOOL_LIT, STRING_LIT, NULL_LIT, VAR_SEL, INDEX_SEL, CALL,
-        THIS, UNARY_EXPR, BINARY_EXPR, READ_INT, READ_LINE, NEW_CLASS, NEW_ARRAY, CLASS_TEST, CLASS_CAST, ID
+        THIS, UNARY_EXPR, BINARY_EXPR, READ_INT, READ_LINE, NEW_CLASS, NEW_ARRAY, CLASS_TEST, CLASS_CAST, ID, MODIFIERS
     }
 
     /**
@@ -157,7 +157,7 @@ public abstract class Tree {
      */
     public static class MethodDef extends Field {
         // Tree elements
-        public boolean isStatic; // TODO modifier
+        public Modifiers modifiers;
         public Id id;
         public TypeLit returnType;
         public List<LocalVarDef> params;
@@ -167,17 +167,21 @@ public abstract class Tree {
 
         public MethodDef(boolean isStatic, Id id, TypeLit returnType, List<LocalVarDef> params, Block body, Pos pos) {
             super(Kind.METHOD_DEF, "MethodDef", pos);
-            this.isStatic = isStatic;
+            this.modifiers = isStatic ? new Modifiers(1, pos) : new Modifiers();
             this.id = id;
             this.returnType = returnType;
             this.params = params;
             this.body = body;
         }
 
+        public boolean isStatic() {
+            return modifiers.isStatic();
+        }
+
         @Override
         public Object treeElementAt(int index) {
             return switch (index) {
-                case 0 -> isStatic;
+                case 0 -> modifiers;
                 case 1 -> id;
                 case 2 -> returnType;
                 case 3 -> params;
@@ -1442,6 +1446,7 @@ public abstract class Tree {
      * An identifier.
      */
     public static class Id extends TreeNode {
+        // Tree element
         public final String name;
 
         public Id(String name, Pos pos) {
@@ -1473,4 +1478,52 @@ public abstract class Tree {
             return name;
         }
     }
+
+    /**
+     * Modifiers.
+     * <p>
+     * Modifiers are encoded as an integer, whose binary representation reveals which modifiers are enabled. In this
+     * way, you can use `+` or `|` to enable multiple modifiers, like we do in system programming. However, the
+     * original decaf language only has one modifier -- static. If a method is static, then the lowest bit is set.
+     */
+    public static class Modifiers extends TreeNode {
+        public final int code;
+
+        private List<String> _ms;
+
+        // Available modifiers:
+        public static final int STATIC = 1;
+
+        public Modifiers(int code, Pos pos) {
+            super(Kind.MODIFIERS, "Modifiers", pos);
+            this.code = code;
+            this._ms = new ArrayList<>();
+            if (code == 1) _ms.add("STATIC");
+        }
+
+        public Modifiers() {
+            this(0, Pos.NoPos);
+        }
+
+        public boolean isStatic() {
+            return (code & 1) == 1;
+        }
+
+        @Override
+        public Object treeElementAt(int index) {
+            return _ms.get(index);
+        }
+
+        @Override
+        public int treeArity() {
+            return _ms.size();
+        }
+
+        @Override
+        public void accept(Visitor v) {
+            v.visitModifiers(this);
+        }
+    }
+
+
 }

@@ -33,7 +33,7 @@ public class TransPass2 implements Visitor {
 
     @Override
     public void visitMethodDef(Tree.MethodDef funcDefn) {
-        if (!funcDefn.isStatic) {
+        if (!funcDefn.isStatic()) {
             currentThis = ((Variable) funcDefn.symbol.getAssociatedScope()
                     .lookup("this")).getTemp();
         }
