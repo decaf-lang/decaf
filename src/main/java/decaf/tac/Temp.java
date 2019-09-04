@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import decaf.machdesc.Register;
-import decaf.symbol.Variable;
+import decaf.symbol.VarSymbol;
 
 public class Temp {
 	public int id;
@@ -16,7 +16,7 @@ public class Temp {
 
 	public int size;
 
-	public Variable sym;
+	public VarSymbol sym;
 
 	public boolean isConst;
 

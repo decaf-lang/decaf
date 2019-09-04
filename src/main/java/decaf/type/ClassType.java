@@ -1,61 +1,51 @@
 package decaf.type;
 
-import decaf.scope.ClassScope;
-import decaf.symbol.Class;
+import java.util.Optional;
 
 public class ClassType extends Type {
 
-	private Class symbol;
+    public final String name;
 
-	private ClassType parent;
+    public final Optional<ClassType> superType;
 
-	public ClassType(Class symbol, ClassType parent) {
-		this.symbol = symbol;
-		this.parent = parent;
-	}
+    public ClassType(String name, ClassType superType) {
+        this.name = name;
+        this.superType = Optional.of(superType);
+    }
 
-	@Override
-	public boolean compatible(Type type) {
-		if (type.equal(BaseType.ERROR)) {
-			return true;
-		}
-		if (!type.isClassType()) {
-			return false;
-		}
-		for (ClassType t = this; t != null; t = t.parent) {
-			if (t.equal(type)) {
-				return true;
-			}
-		}
-		return false;
+    public ClassType(String name) {
+        this.name = name;
+        this.superType = Optional.empty();
+    }
 
-	}
+    @Override
+    public boolean subtypeOf(Type type) {
+        if (type.eq(BuiltInType.ERROR)) {
+            return true;
+        }
+        if (!type.isClassType()) {
+            return false;
+        }
+        for (ClassType t = this; t.superType.isPresent(); t = t.superType.get()) {
+            if (t.eq(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	@Override
-	public boolean equal(Type type) {
-		return type.isClassType() && symbol == ((ClassType) type).symbol;
-	}
+    @Override
+    public boolean eq(Type type) {
+        return type.isClassType() && name.equals(((ClassType) type).name);
+    }
 
-	@Override
-	public boolean isClassType() {
-		return true;
-	}
+    @Override
+    public boolean isClassType() {
+        return true;
+    }
 
-	@Override
-	public String toString() {
-		return "class : " + symbol.getName();
-	}
-
-	public Class getSymbol() {
-		return symbol;
-	}
-
-	public ClassType getParentType() {
-		return parent;
-	}
-
-	public ClassScope getClassScope() {
-		return symbol.getAssociatedScope();
-	}
-
+    @Override
+    public String toString() {
+        return "class : " + name;
+    }
 }

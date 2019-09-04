@@ -13,7 +13,7 @@ public abstract class TreeNode implements Iterable<Object> {
 
     public abstract int treeArity();
 
-    public abstract void accept(Visitor v);
+    public abstract <C> void accept(Visitor<C> v, C ctx);
 
     public TreeNode(Tree.Kind kind, String displayName, Pos pos) {
         this.kind = kind;

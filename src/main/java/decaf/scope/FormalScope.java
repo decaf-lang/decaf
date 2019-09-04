@@ -1,43 +1,41 @@
 package decaf.scope;
 
 import decaf.tree.Tree.Block;
-import decaf.symbol.Function;
+import decaf.symbol.MethodSymbol;
 import decaf.symbol.Symbol;
 import decaf.printing.IndentPrinter;
 
 public class FormalScope extends Scope {
 
-	private Function owner;
+    public FormalScope() {
+        super(Kind.FORMAL);
+    }
 
-	private Block astNode;
+    public MethodSymbol getOwner() {
+        return _owner;
+    }
 
-	public FormalScope(Function owner, Block astNode) {
-		this.owner = owner;
-		this.astNode = astNode;
-	}
+    public void setOwner(MethodSymbol owner) {
+        _owner = owner;
+    }
 
-	@Override
-	public Kind getKind() {
-		return Kind.FORMAL;
-	}
+    @Override
+    public boolean isFormalScope() {
+        return true;
+    }
 
-	public Function getOwner() {
-		return owner;
-	}
+    @Override
+    public void printTo(IndentPrinter pw) {
+        pw.println("FORMAL SCOPE OF '" + _owner.name + "':");
+        pw.incIndent();
+        for (Symbol symbol : symbols.values()) {
+            pw.println(symbol);
+        }
+        _tree.scope.printTo(pw);
+        pw.decIndent();
+    }
 
-	@Override
-	public boolean isFormalScope() {
-		return true;
-	}
+    private MethodSymbol _owner;
 
-	@Override
-	public void printTo(IndentPrinter pw) {
-		pw.println("FORMAL SCOPE OF '" + owner.getName() + "':");
-		pw.incIndent();
-		for (Symbol symbol : symbols.values()) {
-			pw.println(symbol);
-		}
-		astNode.associatedScope.printTo(pw);
-		pw.decIndent();
-	}
+    private Block _tree;
 }

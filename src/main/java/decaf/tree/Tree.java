@@ -3,9 +3,9 @@ package decaf.tree;
 import decaf.scope.GlobalScope;
 import decaf.scope.LocalScope;
 import decaf.scope.ScopeStack;
-import decaf.symbol.Class;
-import decaf.symbol.Function;
-import decaf.symbol.Variable;
+import decaf.symbol.ClassSymbol;
+import decaf.symbol.MethodSymbol;
+import decaf.symbol.VarSymbol;
 import decaf.tac.Temp;
 import decaf.type.Type;
 
@@ -29,7 +29,7 @@ public abstract class Tree {
         // Tree elements
         public List<ClassDef> classes;
         // For type check
-        public Class main;
+        public ClassSymbol main;
         public GlobalScope globalScope;
         public ScopeStack table;
 
@@ -52,8 +52,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTopLevel(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTopLevel(this, ctx);
         }
     }
 
@@ -66,16 +66,25 @@ public abstract class Tree {
     public static class ClassDef extends TreeNode {
         // Tree elements
         public final Id id;
-        public final Optional<Id> parent;
+        public Optional<Id> parent;
         public final List<Field> fields;
+        // For convenience
+        public final String name;
         // For type check
-        public Class symbol;
+        public ClassDef superClass;
+        public ClassSymbol symbol;
+        public boolean resolved = false;
 
         public ClassDef(Id id, Optional<Id> parent, List<Field> fields, Pos pos) {
             super(Kind.CLASS_DEF, "ClassDef", pos);
             this.id = id;
             this.parent = parent;
             this.fields = fields;
+            this.name = id.name;
+        }
+
+        public boolean hasParent() {
+            return parent.isPresent();
         }
 
         @Override
@@ -94,8 +103,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitClassDef(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitClassDef(this, ctx);
         }
     }
 
@@ -119,13 +128,16 @@ public abstract class Tree {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
+        //
+        public String name;
         // For type check
-        public Variable symbol;
+        public VarSymbol symbol;
 
         public VarDef(TypeLit typeLit, Id id, Pos pos) {
             super(Kind.VAR_DEF, "VarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
+            this.name = id.name;
         }
 
         @Override
@@ -143,8 +155,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitVarDef(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitVarDef(this, ctx);
         }
     }
 
@@ -162,8 +174,11 @@ public abstract class Tree {
         public TypeLit returnType;
         public List<LocalVarDef> params;
         public Block body;
+        //
+        public String name;
         // For type check
-        public Function symbol;
+        public Type type;
+        public MethodSymbol symbol;
 
         public MethodDef(boolean isStatic, Id id, TypeLit returnType, List<LocalVarDef> params, Block body, Pos pos) {
             super(Kind.METHOD_DEF, "MethodDef", pos);
@@ -172,6 +187,7 @@ public abstract class Tree {
             this.returnType = returnType;
             this.params = params;
             this.body = body;
+            this.name = id.name;
         }
 
         public boolean isStatic() {
@@ -195,8 +211,8 @@ public abstract class Tree {
             return 5;
         }
 
-        public void accept(Visitor v) {
-            v.visitMethodDef(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitMethodDef(this, ctx);
         }
     }
 
@@ -233,8 +249,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTInt(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTInt(this, ctx);
         }
     }
 
@@ -257,8 +273,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTBool(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTBool(this, ctx);
         }
     }
 
@@ -281,8 +297,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTString(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTString(this, ctx);
         }
     }
 
@@ -306,8 +322,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTVoid(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTVoid(this, ctx);
         }
     }
 
@@ -340,8 +356,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTClass(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTClass(this, ctx);
         }
     }
 
@@ -374,8 +390,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitTArray(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitTArray(this, ctx);
         }
     }
 
@@ -387,6 +403,9 @@ public abstract class Tree {
         public Stmt(Kind kind, String displayName, Pos pos) {
             super(kind, displayName, pos);
         }
+
+        // For type check
+        public boolean returns = false;
 
         public boolean isBlock() {
             return false;
@@ -404,13 +423,16 @@ public abstract class Tree {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
+        //
+        public String name;
         // For type check
-        public Variable symbol;
+        public VarSymbol symbol;
 
         public LocalVarDef(TypeLit typeLit, Id id, Pos pos) {
             super(Kind.LOCAL_VAR_DEF, "LocalVarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
+            this.name = id.name;
         }
 
         @Override
@@ -428,8 +450,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitLocalVarDef(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitLocalVarDef(this, ctx);
         }
     }
 
@@ -441,13 +463,13 @@ public abstract class Tree {
      */
     public static class Block extends Stmt {
         // Tree element
-        public List<Stmt> block;
+        public List<Stmt> stmts;
         // For type check
-        public LocalScope associatedScope;
+        public LocalScope scope;
 
-        public Block(List<Stmt> block, Pos pos) {
+        public Block(List<Stmt> stmts, Pos pos) {
             super(Kind.BLOCK, "Block", pos);
-            this.block = block;
+            this.stmts = stmts;
         }
 
         @Override
@@ -458,7 +480,7 @@ public abstract class Tree {
         @Override
         public Object treeElementAt(int index) {
             return switch (index) {
-                case 0 -> block;
+                case 0 -> stmts;
                 default -> throw new IndexOutOfBoundsException(index);
             };
         }
@@ -469,8 +491,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitBlock(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitBlock(this, ctx);
         }
     }
 
@@ -506,8 +528,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitAssign(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitAssign(this, ctx);
         }
     }
 
@@ -537,8 +559,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitExprEval(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitExprEval(this, ctx);
         }
     }
 
@@ -562,8 +584,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitSkip(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitSkip(this, ctx);
         }
     }
 
@@ -624,8 +646,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitIf(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitIf(this, ctx);
         }
     }
 
@@ -662,8 +684,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitWhile(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitWhile(this, ctx);
         }
     }
 
@@ -705,8 +727,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitFor(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitFor(this, ctx);
         }
     }
 
@@ -735,8 +757,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitBreak(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitBreak(this, ctx);
         }
     }
 
@@ -770,8 +792,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitReturn(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitReturn(this, ctx);
         }
     }
 
@@ -801,8 +823,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitPrint(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitPrint(this, ctx);
         }
     }
 
@@ -847,8 +869,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitIntLit(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitIntLit(this, ctx);
         }
     }
 
@@ -878,8 +900,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitBoolLit(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitBoolLit(this, ctx);
         }
     }
 
@@ -909,8 +931,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitStringLit(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitStringLit(this, ctx);
         }
     }
 
@@ -936,8 +958,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitNullLit(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitNullLit(this, ctx);
         }
     }
 
@@ -964,14 +986,25 @@ public abstract class Tree {
         // Tree element
         public Optional<Expr> receiver;
         public Id variable;
+        //
+        public String name;
         // For type check
-        public Variable symbol;
+        public VarSymbol symbol;
+        public boolean isClassName = false;
         public boolean isDefined;
 
         public VarSel(Optional<Expr> receiver, Id variable, Pos pos) {
             super(Kind.VAR_SEL, "VarSel", pos);
             this.receiver = receiver;
             this.variable = variable;
+            this.name = variable.name;
+        }
+
+        // For type check
+        public void setThis() {
+            if (receiver.isEmpty()) {
+                receiver = Optional.of(new Tree.This(pos));
+            }
         }
 
         @Override
@@ -989,8 +1022,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitVarSel(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitVarSel(this, ctx);
         }
     }
 
@@ -1027,8 +1060,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitIndexSel(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitIndexSel(this, ctx);
         }
     }
 
@@ -1057,8 +1090,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor visitor) {
-            visitor.visitThis(this);
+        public <C> void accept(Visitor<C> visitor, C ctx) {
+            visitor.visitThis(this, ctx);
         }
     }
 
@@ -1108,13 +1141,15 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitUnary(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitUnary(this, ctx);
         }
     }
 
     public enum BinaryOp {
-        ADD, SUB, MUL, DIV, MOD, EQ, NE, GE, GT, LE, LT, AND, OR
+        ADD, SUB, MUL, DIV, MOD,
+        EQ, NE, GE, GT, LE, LT,
+        AND, OR
     }
 
     // TODO: rewrite using case expression
@@ -1183,8 +1218,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor visitor) {
-            visitor.visitBinary(this);
+        public <C> void accept(Visitor<C> visitor, C ctx) {
+            visitor.visitBinary(this, ctx);
         }
     }
 
@@ -1211,8 +1246,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor visitor) {
-            visitor.visitReadInt(this);
+        public <C> void accept(Visitor<C> visitor, C ctx) {
+            visitor.visitReadInt(this, ctx);
         }
     }
 
@@ -1239,8 +1274,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor visitor) {
-            visitor.visitReadLine(this);
+        public <C> void accept(Visitor<C> visitor, C ctx) {
+            visitor.visitReadLine(this, ctx);
         }
     }
 
@@ -1255,7 +1290,7 @@ public abstract class Tree {
         // Tree elements
         public Id clazz;
         // For type check
-        public Class symbol;
+        public ClassSymbol symbol;
 
         public NewClass(Id clazz, Pos pos) {
             super(Kind.NEW_CLASS, "NewClass", pos);
@@ -1276,8 +1311,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitNewClass(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitNewClass(this, ctx);
         }
     }
 
@@ -1313,8 +1348,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitNewArray(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitNewArray(this, ctx);
         }
     }
 
@@ -1330,7 +1365,7 @@ public abstract class Tree {
         public Expr obj;
         public Id is;
         // For type check
-        public Class symbol;
+        public ClassSymbol symbol;
 
         public ClassTest(Expr obj, Id is, Pos pos) {
             super(Kind.CLASS_TEST, "ClassTest", pos);
@@ -1353,8 +1388,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitClassTest(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitClassTest(this, ctx);
         }
     }
 
@@ -1370,7 +1405,7 @@ public abstract class Tree {
         public Expr obj;
         public Id to;
         // For type check
-        public Class symbol;
+        public ClassSymbol symbol;
 
         public ClassCast(Expr obj, Id to, Pos pos) {
             super(Kind.CLASS_CAST, "ClassCast", pos);
@@ -1393,8 +1428,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitClassCast(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitClassCast(this, ctx);
         }
     }
 
@@ -1410,15 +1445,22 @@ public abstract class Tree {
         public Optional<Expr> receiver;
         public Id method;
         public List<Expr> args;
+        //
+        public String methodName;
         // For type check
-        public Function symbol;
-        public boolean isArrayLength;
+        public MethodSymbol symbol;
+        public boolean isArrayLength = false;
 
         public Call(Optional<Expr> receiver, Id method, List<Expr> args, Pos pos) {
             super(Kind.CALL, "Call", pos);
             this.receiver = receiver;
             this.method = method;
             this.args = args;
+            this.methodName = method.name;
+        }
+
+        public void setThis() {
+            this.receiver = Optional.of(new This(pos));
         }
 
         @Override
@@ -1437,8 +1479,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitCall(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitCall(this, ctx);
         }
     }
 
@@ -1468,8 +1510,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitId(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitId(this, ctx);
         }
 
 
@@ -1520,8 +1562,8 @@ public abstract class Tree {
         }
 
         @Override
-        public void accept(Visitor v) {
-            v.visitModifiers(this);
+        public <C> void accept(Visitor<C> v, C ctx) {
+            v.visitModifiers(this, ctx);
         }
     }
 

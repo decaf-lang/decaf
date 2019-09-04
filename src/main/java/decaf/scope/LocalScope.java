@@ -1,20 +1,19 @@
 package decaf.scope;
 
-import decaf.tree.Tree.Block;
-import decaf.symbol.Symbol;
 import decaf.printing.IndentPrinter;
+import decaf.symbol.Symbol;
+import decaf.tree.Tree.Block;
 
 public class LocalScope extends Scope {
 
-	private Block node;
-
-	public LocalScope(Block node) {
-		this.node = node;
+	public LocalScope(Block tree) {
+		super(Kind.LOCAL);
+		this._tree = tree;
 	}
 
 	@Override
-	public Kind getKind() {
-		return Kind.LOCAL;
+	public boolean isLocalScope() {
+		return true;
 	}
 
 	@Override
@@ -25,16 +24,13 @@ public class LocalScope extends Scope {
 			pw.println(symbol);
 		}
 
-		for (var s : node.block) {
+		for (var s : _tree.stmts) {
 			if (s instanceof Block) {
-				((Block) s).associatedScope.printTo(pw);
+				((Block) s).scope.printTo(pw);
 			}
 		}
 		pw.decIndent();
 	}
 
-	@Override
-	public boolean isLocalScope() {
-		return true;
-	}
+	private Block _tree;
 }

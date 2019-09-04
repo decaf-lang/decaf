@@ -12,10 +12,10 @@ public class IncompatUnOpError extends DecafError {
 
 	private String expr;
 
-	public IncompatUnOpError(Pos pos, String op, String expr) {
+	public IncompatUnOpError(Pos pos, String op, String type) {
 		super(pos);
 		this.op = op;
-		this.expr = expr;
+		this.expr = type;
 	}
 
 	@Override

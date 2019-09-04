@@ -2,30 +2,26 @@ package decaf.type;
 
 public class ArrayType extends Type {
 
-	private Type elementType;
-
-	public Type getElementType() {
-		return elementType;
-	}
+	public final Type elementType;
 
 	public ArrayType(Type elementType) {
 		this.elementType = elementType;
 	}
 
 	@Override
-	public boolean compatible(Type type) {
-		if (type.equal(BaseType.ERROR)) {
+	public boolean subtypeOf(Type type) {
+		if (type.eq(BuiltInType.ERROR)) {
 			return true;
 		}
-		return equal(type);
+		return eq(type);
 	}
 
 	@Override
-	public boolean equal(Type type) {
+	public boolean eq(Type type) {
 		if (!type.isArrayType()) {
 			return false;
 		}
-		return elementType.equal(((ArrayType) type).elementType);
+		return elementType.eq(((ArrayType) type).elementType);
 	}
 
 	@Override

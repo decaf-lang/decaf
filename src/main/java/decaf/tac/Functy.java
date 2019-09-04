@@ -1,6 +1,6 @@
 package decaf.tac;
 
-import decaf.symbol.Function;
+import decaf.symbol.MethodSymbol;
 
 public class Functy {
 	public Label label;
@@ -11,5 +11,5 @@ public class Functy {
 
 	public Tac tail;
 
-	public Function sym;
+	public MethodSymbol sym;
 }

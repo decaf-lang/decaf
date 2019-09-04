@@ -2,16 +2,16 @@ package decaf.translate;
 
 import decaf.backend.OffsetCounter;
 import decaf.machdesc.Intrinsic;
-import decaf.symbol.Variable;
+import decaf.symbol.VarSymbol;
 import decaf.tac.Label;
 import decaf.tac.Temp;
 import decaf.tree.Tree;
 import decaf.tree.Visitor;
-import decaf.type.BaseType;
+import decaf.type.BuiltInType;
 
 import java.util.Stack;
 
-public class TransPass2 implements Visitor {
+public class TransPass2 implements Visitor<Context> {
 
     private Translater tr;
 
@@ -25,33 +25,32 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitClassDef(Tree.ClassDef classDef) {
+    public void visitClassDef(Tree.ClassDef classDef, Context ctx) {
         for (var f : classDef.fields) {
-            f.accept(this);
+            f.accept(this, ctx);
         }
     }
 
     @Override
-    public void visitMethodDef(Tree.MethodDef funcDefn) {
+    public void visitMethodDef(Tree.MethodDef funcDefn, Context ctx) {
         if (!funcDefn.isStatic()) {
-            currentThis = ((Variable) funcDefn.symbol.getAssociatedScope()
-                    .lookup("this")).getTemp();
+            currentThis = ((VarSymbol) funcDefn.symbol.scope.get("this")).getTemp();
         }
         tr.beginFunc(funcDefn.symbol);
-        funcDefn.body.accept(this);
+        funcDefn.body.accept(this, ctx);
         tr.endFunc();
         currentThis = null;
     }
 
     @Override
-    public void visitTopLevel(Tree.TopLevel program) {
+    public void visitTopLevel(Tree.TopLevel program, Context ctx) {
         for (Tree.ClassDef cd : program.classes) {
-            cd.accept(this);
+            cd.accept(this, ctx);
         }
     }
 
     @Override
-    public void visitVarDef(Tree.VarDef varDef) {
+    public void visitVarDef(Tree.VarDef varDef, Context ctx) {
         if (varDef.symbol.isLocalVar()) {
             Temp t = Temp.createTempI4();
             t.sym = varDef.symbol;
@@ -60,9 +59,9 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitBinary(Tree.Binary expr) {
-        expr.lhs.accept(this);
-        expr.rhs.accept(this);
+    public void visitBinary(Tree.Binary expr, Context ctx) {
+        expr.lhs.accept(this, ctx);
+        expr.rhs.accept(this, ctx);
         switch (expr.op) {
             case ADD:
                 expr.val = tr.genAdd(expr.lhs.val, expr.rhs.val);
@@ -99,18 +98,18 @@ public class TransPass2 implements Visitor {
                 break;
             case EQ:
             case NE:
-                genEquNeq(expr);
+                genEquNeq(expr, ctx);
                 break;
         }
     }
 
-    private void genEquNeq(Tree.Binary expr) {
-        if (expr.lhs.type.equal(BaseType.STRING)
-                || expr.rhs.type.equal(BaseType.STRING)) {
+    private void genEquNeq(Tree.Binary expr, Context ctx) {
+        if (expr.lhs.type.eq(BuiltInType.STRING)
+                || expr.rhs.type.eq(BuiltInType.STRING)) {
             tr.genParm(expr.lhs.val);
             tr.genParm(expr.rhs.val);
             expr.val = tr.genDirectCall(Intrinsic.STRING_EQUAL.label,
-                    BaseType.BOOL);
+                    BuiltInType.BOOL);
             if (expr.op == Tree.BinaryOp.NE) {
                 expr.val = tr.genLNot(expr.val);
             }
@@ -123,9 +122,9 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitAssign(Tree.Assign assign) {
-        assign.lhs.accept(this);
-        assign.rhs.accept(this);
+    public void visitAssign(Tree.Assign assign, Context ctx) {
+        assign.lhs.accept(this, ctx);
+        assign.rhs.accept(this, ctx);
         switch (assign.lhs.lvKind) {
             case ARRAY_ELEMENT:
                 Tree.IndexSel arrayRef = (Tree.IndexSel) assign.lhs;
@@ -148,33 +147,33 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitIntLit(Tree.IntLit that) {
+    public void visitIntLit(Tree.IntLit that, Context ctx) {
         that.val = tr.genLoadImm4(that.value);
     }
 
     @Override
-    public void visitBoolLit(Tree.BoolLit that) {
+    public void visitBoolLit(Tree.BoolLit that, Context ctx) {
         that.val = tr.genLoadImm4(that.value ? 1 : 0);
     }
 
     @Override
-    public void visitStringLit(Tree.StringLit that) {
+    public void visitStringLit(Tree.StringLit that, Context ctx) {
         that.val = tr.genLoadStrConst(that.value);
     }
 
     @Override
-    public void visitNullLit(Tree.NullLit that) {
+    public void visitNullLit(Tree.NullLit that, Context ctx) {
         that.val = tr.genLoadImm4(0);
     }
 
     @Override
-    public void visitExprEval(Tree.ExprEval exec) {
-        exec.expr.accept(this);
+    public void visitExprEval(Tree.ExprEval exec, Context ctx) {
+        exec.expr.accept(this, ctx);
     }
 
     @Override
-    public void visitUnary(Tree.Unary expr) {
-        expr.operand.accept(this);
+    public void visitUnary(Tree.Unary expr, Context ctx) {
+        expr.operand.accept(this, ctx);
         switch (expr.op) {
             case NEG:
                 expr.val = tr.genNeg(expr.operand.val);
@@ -185,31 +184,31 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitBlock(Tree.Block block) {
-        for (var s : block.block) {
-            s.accept(this);
+    public void visitBlock(Tree.Block block, Context ctx) {
+        for (var s : block.stmts) {
+            s.accept(this, ctx);
         }
     }
 
     @Override
-    public void visitThis(Tree.This thisExpr) {
+    public void visitThis(Tree.This thisExpr, Context ctx) {
         thisExpr.val = currentThis;
     }
 
     @Override
-    public void visitReadInt(Tree.ReadInt readInt) {
+    public void visitReadInt(Tree.ReadInt readInt, Context ctx) {
         readInt.val = tr.genIntrinsicCall(Intrinsic.READ_INT);
     }
 
     @Override
-    public void visitReadLine(Tree.ReadLine readStringExpr) {
+    public void visitReadLine(Tree.ReadLine readStringExpr, Context ctx) {
         readStringExpr.val = tr.genIntrinsicCall(Intrinsic.READ_LINE);
     }
 
     @Override
-    public void visitReturn(Tree.Return returnStmt) {
+    public void visitReturn(Tree.Return returnStmt, Context ctx) {
         if (returnStmt.expr.isPresent()) {
-            returnStmt.expr.get().accept(this);
+            returnStmt.expr.get().accept(this, ctx);
             tr.genReturn(returnStmt.expr.get().val);
         } else {
             tr.genReturn(null);
@@ -218,24 +217,24 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitPrint(Tree.Print printStmt) {
+    public void visitPrint(Tree.Print printStmt, Context ctx) {
         for (Tree.Expr r : printStmt.exprs) {
-            r.accept(this);
+            r.accept(this, ctx);
             tr.genParm(r.val);
-            if (r.type.equal(BaseType.BOOL)) {
+            if (r.type.eq(BuiltInType.BOOL)) {
                 tr.genIntrinsicCall(Intrinsic.PRINT_BOOL);
-            } else if (r.type.equal(BaseType.INT)) {
+            } else if (r.type.eq(BuiltInType.INT)) {
                 tr.genIntrinsicCall(Intrinsic.PRINT_INT);
-            } else if (r.type.equal(BaseType.STRING)) {
+            } else if (r.type.eq(BuiltInType.STRING)) {
                 tr.genIntrinsicCall(Intrinsic.PRINT_STRING);
             }
         }
     }
 
     @Override
-    public void visitIndexSel(Tree.IndexSel indexed) {
-        indexed.array.accept(this);
-        indexed.index.accept(this);
+    public void visitIndexSel(Tree.IndexSel indexed, Context ctx) {
+        indexed.array.accept(this, ctx);
+        indexed.index.accept(this, ctx);
         tr.genCheckArrayIndex(indexed.array.val, indexed.index.val);
 
         Temp esz = tr.genLoadImm4(OffsetCounter.WORD_SIZE);
@@ -245,9 +244,9 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitVarSel(Tree.VarSel varSel) {
+    public void visitVarSel(Tree.VarSel varSel, Context ctx) {
         if (varSel.lvKind == Tree.LValue.LVKind.MEMBER_VAR) {
-            varSel.receiver.get().accept(this);
+            varSel.receiver.get().accept(this, ctx);
         }
 
         switch (varSel.lvKind) {
@@ -261,20 +260,20 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitBreak(Tree.Break breakStmt) {
+    public void visitBreak(Tree.Break breakStmt, Context ctx) {
         tr.genBranch(loopExits.peek());
     }
 
     @Override
-    public void visitCall(Tree.Call callExpr) {
+    public void visitCall(Tree.Call callExpr, Context ctx) {
         if (callExpr.isArrayLength) {
-            callExpr.receiver.get().accept(this);
+            callExpr.receiver.get().accept(this, ctx);
             callExpr.val = tr.genLoad(callExpr.receiver.get().val,
                     -OffsetCounter.WORD_SIZE);
         } else {
-            callExpr.receiver.ifPresent(expr -> expr.accept(this));
+            callExpr.receiver.ifPresent(expr -> expr.accept(this, ctx));
             for (Tree.Expr expr : callExpr.args) {
-                expr.accept(this);
+                expr.accept(this, ctx);
             }
             callExpr.receiver.ifPresent(expr -> tr.genParm(expr.val));
             for (Tree.Expr expr : callExpr.args) {
@@ -295,68 +294,68 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitFor(Tree.For forLoop) {
-        forLoop.init.accept(this);
+    public void visitFor(Tree.For forLoop, Context ctx) {
+        forLoop.init.accept(this, ctx);
         Label cond = Label.createLabel();
         Label loop = Label.createLabel();
         tr.genBranch(cond);
         tr.genMark(loop);
-        forLoop.update.accept(this);
+        forLoop.update.accept(this, ctx);
         tr.genMark(cond);
-        forLoop.cond.accept(this);
+        forLoop.cond.accept(this, ctx);
         Label exit = Label.createLabel();
         tr.genBeqz(forLoop.cond.val, exit);
         loopExits.push(exit);
-        forLoop.body.accept(this);
+        forLoop.body.accept(this, ctx);
         tr.genBranch(loop);
         loopExits.pop();
         tr.genMark(exit);
     }
 
     @Override
-    public void visitIf(Tree.If ifStmt) {
-        ifStmt.cond.accept(this);
+    public void visitIf(Tree.If ifStmt, Context ctx) {
+        ifStmt.cond.accept(this, ctx);
         if (ifStmt.falseBranch.isPresent()) {
             Label falseLabel = Label.createLabel();
             tr.genBeqz(ifStmt.cond.val, falseLabel);
-            ifStmt.trueBranch.accept(this);
+            ifStmt.trueBranch.accept(this, ctx);
             Label exit = Label.createLabel();
             tr.genBranch(exit);
             tr.genMark(falseLabel);
-            ifStmt.falseBranch.get().accept(this);
+            ifStmt.falseBranch.get().accept(this, ctx);
             tr.genMark(exit);
         } else if (ifStmt.trueBranch != null) {
             Label exit = Label.createLabel();
             tr.genBeqz(ifStmt.cond.val, exit);
             if (ifStmt.trueBranch != null) {
-                ifStmt.trueBranch.accept(this);
+                ifStmt.trueBranch.accept(this, ctx);
             }
             tr.genMark(exit);
         }
     }
 
     @Override
-    public void visitNewArray(Tree.NewArray newArray) {
-        newArray.length.accept(this);
+    public void visitNewArray(Tree.NewArray newArray, Context ctx) {
+        newArray.length.accept(this, ctx);
         newArray.val = tr.genNewArray(newArray.length.val);
     }
 
     @Override
-    public void visitNewClass(Tree.NewClass newClass) {
+    public void visitNewClass(Tree.NewClass newClass, Context ctx) {
         newClass.val = tr.genDirectCall(newClass.symbol.getNewFuncLabel(),
-                BaseType.INT);
+                BuiltInType.INT);
     }
 
     @Override
-    public void visitWhile(Tree.While aWhile) {
+    public void visitWhile(Tree.While aWhile, Context ctx) {
         Label loop = Label.createLabel();
         tr.genMark(loop);
-        aWhile.cond.accept(this);
+        aWhile.cond.accept(this, ctx);
         Label exit = Label.createLabel();
         tr.genBeqz(aWhile.cond.val, exit);
         loopExits.push(exit);
         if (aWhile.body != null) {
-            aWhile.body.accept(this);
+            aWhile.body.accept(this, ctx);
         }
         tr.genBranch(loop);
         loopExits.pop();
@@ -364,16 +363,16 @@ public class TransPass2 implements Visitor {
     }
 
     @Override
-    public void visitClassTest(Tree.ClassTest classTest) {
-        classTest.obj.accept(this);
+    public void visitClassTest(Tree.ClassTest classTest, Context ctx) {
+        classTest.obj.accept(this, ctx);
         classTest.val = tr.genInstanceof(classTest.obj.val,
                 classTest.symbol);
     }
 
     @Override
-    public void visitClassCast(Tree.ClassCast classCast) {
-        classCast.obj.accept(this);
-        if (!classCast.obj.type.compatible(classCast.symbol.getType())) {
+    public void visitClassCast(Tree.ClassCast classCast, Context ctx) {
+        classCast.obj.accept(this, ctx);
+        if (!classCast.obj.type.subtypeOf(classCast.symbol.type)) {
             tr.genClassCast(classCast.obj.val, classCast.symbol);
         }
         classCast.val = classCast.obj.val;

@@ -1,79 +1,68 @@
 package decaf.scope;
 
+import java.util.Optional;
 import java.util.TreeSet;
 
-import decaf.symbol.Class;
-import decaf.symbol.Function;
+import decaf.symbol.ClassSymbol;
+import decaf.symbol.MethodSymbol;
 import decaf.symbol.Symbol;
 import decaf.printing.IndentPrinter;
 
 public class ClassScope extends Scope {
 
-	private Class owner;
+    public final Optional<ClassScope> parentScope;
 
-	public ClassScope(Class owner) {
-		super();
-		this.owner = owner;
-	}
+    public ClassScope() {
+        super(Kind.CLASS);
+        this.parentScope = Optional.empty();
+    }
 
-	@Override
-	public boolean isClassScope() {
-		return true;
-	}
+    public ClassScope(ClassScope superScope) {
+        super(Kind.CLASS);
+        this.parentScope = Optional.of(superScope);
+    }
 
-	public ClassScope getParentScope() {
-		Class p = owner.getParent();
-		return p == null ? null : p.getAssociatedScope();
-	}
+    public ClassSymbol getOwner() {
+        return _owner;
+    }
 
-	@Override
-	public Kind getKind() {
-		return Kind.CLASS;
-	}
+    public void setOwner(ClassSymbol owner) {
+        _owner = owner;
+    }
 
-	public Class getOwner() {
-		return owner;
-	}
+    @Override
+    public boolean isClassScope() {
+        return true;
+    }
 
-	@Override
-	public void printTo(IndentPrinter pw) {
-		TreeSet<Symbol> ss = new TreeSet<Symbol>(Symbol.LOCATION_COMPARATOR);
-		for (Symbol symbol : symbols.values()) {
-			ss.add(symbol);
-		}
-		pw.println("CLASS SCOPE OF '" + owner.getName() + "':");
-		pw.incIndent();
-		for (Symbol symbol : ss) {
-			pw.println(symbol);
-		}
-		for (Symbol symbol : ss) {
-			if (symbol.isFunction()) {
-				((Function) symbol).getAssociatedScope().printTo(pw);
-			}
-		}
-		pw.decIndent();
-	}
+    @Override
+    public void printTo(IndentPrinter pw) {
+        TreeSet<Symbol> ss = new TreeSet<Symbol>(Symbol.LOCATION_COMPARATOR);
+        for (Symbol symbol : symbols.values()) {
+            ss.add(symbol);
+        }
+        pw.println("CLASS SCOPE OF '" + _owner.name + "':");
+        pw.incIndent();
+        for (Symbol symbol : ss) {
+            pw.println(symbol);
+        }
+        for (Symbol symbol : ss) {
+            if (symbol.isMethodSymbol()) {
+                ((MethodSymbol) symbol).scope.printTo(pw);
+            }
+        }
+        pw.decIndent();
+    }
 
-	public boolean isInherited(Symbol symbol) {
-		Scope scope = symbol.getScope();
-		if (scope == null || scope == this || !scope.isClassScope()) {
-			return false;
-		}
-		for (ClassScope p = getParentScope(); p != null; p = p.getParentScope()) {
-			if (scope == p) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public Optional<Symbol> lookupVisible(String name) {
+        for (ClassScope cs = this; cs.parentScope.isPresent(); cs = cs.parentScope.get()) {
+            var symbol = cs.find(name);
+            if (symbol.isPresent()) {
+                return symbol;
+            }
+        }
+        return Optional.empty();
+    }
 
-	public Symbol lookupVisible(String name) {
-		for (ClassScope cs = this; cs != null; cs = cs.getParentScope()) {
-			Symbol symbol = cs.lookup(name);
-			if (symbol != null) {
-				return symbol;
-			}
-		}
-		return null;
-	}
+    private ClassSymbol _owner;
 }
