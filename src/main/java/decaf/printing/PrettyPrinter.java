@@ -8,4 +8,8 @@ public abstract class PrettyPrinter<T> {
     }
 
     public abstract void pretty(T t);
+
+    public void close() {
+        printer.close();
+    }
 }

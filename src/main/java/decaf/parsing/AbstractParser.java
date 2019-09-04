@@ -18,8 +18,9 @@ public abstract class AbstractParser {
      * @return the parsed tree (if any)
      */
     public Optional<Tree.TopLevel> tree() {
-        if (parse()) return Optional.of(tree);
-        return Optional.empty();
+        nextToken();
+        parse();
+        return Optional.ofNullable(tree);
     }
 
     /**
@@ -27,7 +28,7 @@ public abstract class AbstractParser {
      *
      * @return if parse succeeds?
      */
-    abstract protected boolean parse();
+    abstract boolean parse();
 
     /**
      * When parsing, we need to interact with the lexer.
@@ -66,6 +67,7 @@ public abstract class AbstractParser {
         token = -1;
         try {
             token = lexer.yylex();
+            System.out.println(token + "and " + semValue);
         } catch (Exception e) {
             yyerror("lexer error: " + e.getMessage());
         }

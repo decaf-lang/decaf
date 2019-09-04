@@ -7,6 +7,7 @@ import decaf.printing.PrettyTree;
 import decaf.tree.Pos;
 import decaf.tree.Tree;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -30,7 +31,10 @@ public class Parser extends Phase<InputStream, Tree.TopLevel> {
 
     @Override
     public void onSucceed(Tree.TopLevel tree) {
-        var printer = new PrettyTree(new IndentPrinter(config.outputStream));
-        printer.pretty(tree);
+        if (config.target.equals(Config.Target.PA1)) {
+            var printer = new PrettyTree(new IndentPrinter(config.outputStream));
+            printer.pretty(tree);
+            printer.close();
+        }
     }
 }

@@ -36,7 +36,7 @@ public abstract class AbstractLexer {
      * A helper method for setting the parser's semantic value.
      */
     protected void setSemantic(Pos where, SemValue v) {
-        v.loc = where;
+        v.pos = where;
         parser.semValue = v;
     }
 
@@ -114,6 +114,11 @@ public abstract class AbstractLexer {
         issuer.issue(error);
     }
 
+    /**
+     * For debug: print out all tokens.
+     *
+     * @throws IOException
+     */
     public void diagnose() throws IOException {
         while (yylex() != 0) {
             System.out.println(parser.semValue);
