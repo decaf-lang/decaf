@@ -48,11 +48,10 @@ public interface TypeLitVisited extends Visitor<ScopeStack>, ErrorIssuer {
         if (typeArray.elemType.type.eq(BuiltInType.ERROR)) {
             typeArray.type = BuiltInType.ERROR;
         } else if (typeArray.elemType.type.eq(BuiltInType.VOID)) {
-            issue(new BadArrElementError(typeArray.getLocation()));
+            issue(new BadArrElementError(typeArray.pos));
             typeArray.type = BuiltInType.ERROR;
         } else {
-            typeArray.type = new decaf.type.ArrayType(
-                    typeArray.elemType.type);
+            typeArray.type = new decaf.type.ArrayType(typeArray.elemType.type);
         }
     }
 

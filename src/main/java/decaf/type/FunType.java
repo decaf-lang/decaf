@@ -1,6 +1,5 @@
 package decaf.type;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class FunType extends Type {
@@ -26,16 +25,14 @@ public class FunType extends Type {
         if (!type.isFuncType()) {
             return false;
         }
-        FunType ft = (FunType) type;
-        if (!returnType.subtypeOf(ft.returnType) || argTypes.size() != ft.argTypes.size()) {
-            return false;
-        }
-        Iterator<Type> iter1 = argTypes.iterator();
-        iter1.next();
-        Iterator<Type> iter2 = ft.argTypes.iterator();
-        iter2.next();
-        while (iter1.hasNext()) {
-            if (!iter2.next().subtypeOf(iter1.next())) {
+
+        // Recall: (t1, t2, ..., tn) => t <: (s1, s2, ..., sn) => s if t <: s and si <: ti for every i
+        FunType that = (FunType) type;
+        if (!this.returnType.subtypeOf(that.returnType) || this.arity() != that.arity()) return false;
+        var thisArg = this.argTypes.iterator();
+        var thatArg = that.argTypes.iterator();
+        while (thisArg.hasNext()) {
+            if (!thatArg.next().subtypeOf(thisArg.next())) {
                 return false;
             }
         }
@@ -46,13 +43,11 @@ public class FunType extends Type {
     public boolean eq(Type type) {
         if (!type.isFuncType()) return false;
         var that = (FunType) type;
-        if (!returnType.eq(that.returnType) || arity() != that.arity()) return false;
-        Iterator<Type> iter1 = argTypes.iterator();
-        iter1.next();
-        Iterator<Type> iter2 = that.argTypes.iterator();
-        iter2.next();
-        while (iter1.hasNext()) {
-            if (!iter2.next().eq(iter1.next())) {
+        if (!this.returnType.eq(that.returnType) || this.arity() != that.arity()) return false;
+        var thisArg = this.argTypes.iterator();
+        var thatArg = that.argTypes.iterator();
+        while (thisArg.hasNext()) {
+            if (!thatArg.next().eq(thisArg.next())) {
                 return false;
             }
         }
@@ -61,10 +56,20 @@ public class FunType extends Type {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (Type type : argTypes) {
-            sb.append(type + "->");
+        var sb = new StringBuilder();
+        if (argTypes.isEmpty()) {
+            sb.append("()");
+        } else if (argTypes.size() == 1) {
+            sb.append(argTypes.get(0));
+        } else {
+            sb.append('(');
+            for (int i = 0; i < argTypes.size(); i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(argTypes.get(i));
+            }
+            sb.append(')');
         }
+        sb.append(" -> ");
         sb.append(returnType);
         return sb.toString();
     }

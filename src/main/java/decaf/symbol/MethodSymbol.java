@@ -26,7 +26,7 @@ public class MethodSymbol extends Symbol {
     }
 
     @Override
-    public ClassScope getScope() {
+    public ClassScope domain() {
         return (ClassScope) _definedIn;
     }
 
@@ -36,8 +36,10 @@ public class MethodSymbol extends Symbol {
     }
 
     @Override
-    protected String nameStr() {
-        return isStatic() ? "static " : "" + "function " + name;
+    protected String str() {
+        var modStr = modifiers.toString();
+        if (!modStr.isEmpty()) modStr += " ";
+        return modStr + String.format("function %s : %s", name, type);
     }
 
     public FunType getFunType() {

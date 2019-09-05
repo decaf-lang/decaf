@@ -2,6 +2,7 @@ package decaf.driver;
 
 import decaf.error.ErrorIssuer;
 
+import java.io.PrintStream;
 import java.util.Optional;
 
 public abstract class Phase<In, Out> implements Task<In, Out>, ErrorIssuer {
@@ -22,8 +23,14 @@ public abstract class Phase<In, Out> implements Task<In, Out>, ErrorIssuer {
     @Override
     public Optional<Out> apply(In in) {
         var out = transform(in);
-        printErrors(System.err);
-        if (hasError()) return Optional.empty();
+        if (hasError()) {
+            printErrors(System.err);
+            if (!config.outputStream.equals(Config.STDOUT) && config.target.compareTo(Config.Target.PA3) <= 0) {
+                printErrors(new PrintStream(config.outputStream));
+            }
+            return Optional.empty();
+        }
+
         onSucceed(out);
         return Optional.of(out);
     }

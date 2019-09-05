@@ -388,7 +388,6 @@ Literal        	:	INT_LIT
 LValue          :	Receiver Id
                     {
                         $$ = svLValue(new VarSel(Optional.ofNullable($1.expr), $2.id, $2.pos));
-                        // TODO check pos
                     }
                 |	Expr '[' Expr ']'
                     {
@@ -399,9 +398,6 @@ LValue          :	Receiver Id
 Call            :	Receiver Id '(' ExprList ')'
                     {
                         $$ = svExpr(new Call(Optional.ofNullable($1.expr), $2.id, $4.exprList, $3.pos));
-                        if ($1.expr == null) {
-                            $$.pos = $2.pos;
-                        }
                     }
                 ;
 

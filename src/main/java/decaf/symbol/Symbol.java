@@ -19,12 +19,12 @@ public abstract class Symbol {
         this.pos = pos;
     }
 
-    public Scope getScope() {
+    public Scope domain() {
         return _definedIn;
     }
 
-    public void setScope(Scope definedIn) {
-        this._definedIn = definedIn;
+    public void setDomain(Scope scope) {
+        this._definedIn = scope;
     }
 
     public boolean isClassSymbol() {
@@ -39,27 +39,20 @@ public abstract class Symbol {
         return false;
     }
 
-    protected abstract String nameStr();
+    protected abstract String str();
 
     @Override
     public String toString() {
-        return pos + " -> " + nameStr() + " : " + type;
+        return pos + " -> " + str();
     }
 
     protected Scope _definedIn;
 
+    public static final Comparator<Symbol> POS_COMPARATOR = (o1, o2) -> o1.pos.compareTo(o2.pos);
+
     // TODO: remove
 
     protected int order;
-
-    public static final Comparator<Symbol> LOCATION_COMPARATOR = new Comparator<Symbol>() {
-
-        @Override
-        public int compare(Symbol o1, Symbol o2) {
-            return o1.pos.compareTo(o2.pos);
-        }
-
-    };
 
     public static final Comparator<Symbol> ORDER_COMPARATOR = new Comparator<Symbol>() {
 

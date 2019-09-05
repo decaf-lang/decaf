@@ -8,13 +8,13 @@ import decaf.tree.Pos;
  */
 public class BadArrElementError extends DecafError {
 
-	public BadArrElementError(Pos pos) {
-		super(pos);
-	}
+    public BadArrElementError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "array element type must be non-void type";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "array element type must be non-void known type";
+    }
 
 }

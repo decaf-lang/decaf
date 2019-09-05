@@ -16,18 +16,8 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
     private void prettyElement(Object element) {
         if (element == null) {
             printer.println("<null: here is a bug>");
-        } else if (element instanceof Tree.Id) {
-            printer.println(((Tree.Id) element).name);
-        } else if (element instanceof Tree.Modifiers) {
-            var sb = new StringBuilder();
-            for (var e : (Tree.Modifiers) element) {
-                sb.append(e);
-                sb.append(" + ");
-            }
-            var str = sb.toString();
-            if (!str.isEmpty()) {
-                printer.println(str.substring(0, str.length() - 3));
-            }
+        } else if (element instanceof Tree.Id || element instanceof Tree.Modifiers) {
+            printer.println(element.toString());
         } else if (element instanceof TreeNode) {
             pretty((TreeNode) element);
         } else if (element instanceof Optional) {

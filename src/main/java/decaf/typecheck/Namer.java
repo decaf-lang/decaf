@@ -26,8 +26,8 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     @Override
     public Tree.TopLevel transform(Tree.TopLevel tree) {
         tree.globalScope = new GlobalScope();
-        tree.table = new ScopeStack(tree.globalScope);
-        tree.accept(this, tree.table);
+        var ctx = new ScopeStack(tree.globalScope);
+        tree.accept(this, ctx);
         return tree;
     }
 
@@ -88,7 +88,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     var method = (MethodSymbol) symbol.get();
                     if (method.isStatic() && method.getReturnType().isVoidType() && method.getFunType().arity() == 0) {
                         method.setMain();
-                        program.main = clazz.symbol;
+                        program.mainClass = clazz.symbol;
                         found = true;
                     }
                 }
@@ -215,9 +215,9 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     } else {
                         issue(new BadOverrideError(method.pos, method.name, suspect.owner.name));
                     }
-                }
 
-                return;
+                    return;
+                }
             }
 
             issue(new DeclConflictError(method.pos, method.name, earlier.get().pos));
@@ -254,7 +254,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitBlock(Tree.Block block, ScopeStack ctx) {
-        block.scope = new LocalScope(block);
+        block.scope = new LocalScope(ctx.currentScope());
         ctx.open(block.scope);
         for (var stmt : block.stmts) {
             stmt.accept(this, ctx);
@@ -263,27 +263,24 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     }
 
     @Override
-    public void visitLocalVarDef(Tree.LocalVarDef varDef, ScopeStack ctx) { // TODO merge with VarDef
-        var earlier = ctx.findConflict(varDef.name);
+    public void visitLocalVarDef(Tree.LocalVarDef def, ScopeStack ctx) {
+        // TODO merge with VarDef, but local should cannot report OverridingVarError!
+        var earlier = ctx.findConflict(def.name);
         if (earlier.isPresent()) {
-            if (earlier.get().isVarSymbol()) {
-                issue(new OverridingVarError(varDef.pos, varDef.name));
-            } else {
-                issue(new DeclConflictError(varDef.pos, varDef.name, earlier.get().pos));
-            }
+            issue(new DeclConflictError(def.pos, def.name, earlier.get().pos));
             return;
         }
 
-        varDef.typeLit.accept(this, ctx);
-        if (varDef.typeLit.type.eq(BuiltInType.VOID)) {
-            issue(new BadVarTypeError(varDef.pos, varDef.name));
+        def.typeLit.accept(this, ctx);
+        if (def.typeLit.type.eq(BuiltInType.VOID)) {
+            issue(new BadVarTypeError(def.pos, def.name));
             return;
         }
 
-        if (varDef.typeLit.type.noError()) {
-            var symbol = new VarSymbol(varDef.name, varDef.typeLit.type, varDef.pos);
+        if (def.typeLit.type.noError()) {
+            var symbol = new VarSymbol(def.name, def.typeLit.type, def.pos);
             ctx.declare(symbol);
-            varDef.symbol = symbol;
+            def.symbol = symbol;
         }
     }
 

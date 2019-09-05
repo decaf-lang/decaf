@@ -19,24 +19,41 @@ public class ScopeStack {
         this.global = global;
     }
 
+    /**
+     * Open a scope.
+     * <p>
+     * If the current scope is a class scope, then we must first push all its super classes and then push this.
+     * Otherwise, only push the `scope`.
+     * <p>
+     * REQUIRES: you don't open multiple class scopes, and never open a class scope when the current scope is
+     * a formal/local scope.
+     */
     public void open(Scope scope) {
+        assert !scope.isGlobalScope();
         if (scope.isClassScope()) {
+            assert !currentScope().isFormalOrLocalScope();
             var classScope = (ClassScope) scope;
             classScope.parentScope.ifPresent(this::open);
             _current_class = classScope.getOwner();
-        }
-
-        if (scope.isFormalScope()) {
+        } else if (scope.isFormalScope()) {
             var formalScope = (FormalScope) scope;
             _current_method = formalScope.getOwner();
         }
         scopeStack.push(scope);
     }
 
+    /**
+     * Close the current scope.
+     * <p>
+     * If the current scope is a class scope, then we must close this class and all super classes.
+     * Since the global scope is never pushed to `scopeStack`, we need to pop all scopes!
+     * Otherwise, only pop the current scope.
+     */
     public void close() {
+        assert !scopeStack.isEmpty();
         Scope scope = scopeStack.pop();
         if (scope.isClassScope()) {
-            for (int n = scopeStack.size() - 1; n > 0; n--) {
+            while (!scopeStack.isEmpty()) {
                 scopeStack.pop();
             }
         }
@@ -69,7 +86,7 @@ public class ScopeStack {
     }
 
     public Optional<Symbol> lookupBefore(String key, Pos pos) {
-        return findWhile(key, whatever -> true, s -> !(s.getScope().isLocalScope() && s.pos.compareTo(pos) > 0));
+        return findWhile(key, whatever -> true, s -> !(s.domain().isLocalScope() && s.pos.compareTo(pos) > 0));
     }
 
     /**

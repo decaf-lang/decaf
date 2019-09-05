@@ -21,13 +21,9 @@ public abstract class TreeNode implements Iterable<Object> {
         this.pos = pos;
     }
 
-    public Pos getLocation() {
-        return pos;
-    }
-
     @Override
     public Iterator<Object> iterator() {
-        return new Iterator<Object>() {
+        return new Iterator<>() {
             private int index = 0;
 
             @Override
@@ -42,5 +38,21 @@ public abstract class TreeNode implements Iterable<Object> {
                 return obj;
             }
         };
+    }
+
+    @Override
+    public String toString() {
+        var sb = new StringBuilder();
+        sb.append(displayName);
+        sb.append('(');
+        var iter = iterator();
+        while (iter.hasNext()) {
+            sb.append(iter.next());
+            if (iter.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+        return sb.toString();
     }
 }

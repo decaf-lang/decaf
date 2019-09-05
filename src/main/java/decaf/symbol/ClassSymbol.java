@@ -34,7 +34,7 @@ public class ClassSymbol extends Symbol {
     }
 
 	@Override
-	public GlobalScope getScope() {
+	public GlobalScope domain() {
 		return (GlobalScope) _definedIn;
 	}
 
@@ -44,7 +44,7 @@ public class ClassSymbol extends Symbol {
     }
 
     @Override
-    protected String nameStr() {
+    protected String str() {
         return "class " + name + baseSymbol.map(classSymbol -> " : " + classSymbol.name).orElse("");
     }
 

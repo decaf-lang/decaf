@@ -1,16 +1,12 @@
 package decaf.scope;
 
-import decaf.printing.IndentPrinter;
 import decaf.symbol.Symbol;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public abstract class Scope implements Iterable<Symbol> {
 
-	public enum Kind {
+    public enum Kind {
         GLOBAL, CLASS, FORMAL, LOCAL
     }
 
@@ -21,28 +17,32 @@ public abstract class Scope implements Iterable<Symbol> {
     }
 
     public boolean containsKey(String key) {
-        return symbols.containsKey(key);
+        return _symbols.containsKey(key);
     }
 
     public Symbol get(String key) {
-        return symbols.get(key);
+        return _symbols.get(key);
     }
 
     public Optional<Symbol> find(String key) {
-        return Optional.ofNullable(symbols.get(key));
+        return Optional.ofNullable(_symbols.get(key));
     }
 
     public void declare(Symbol symbol) {
-        symbols.put(symbol.name, symbol);
-        symbol.setScope(this);
+        _symbols.put(symbol.name, symbol);
+        symbol.setDomain(this);
     }
 
-	@Override
-	public Iterator<Symbol> iterator() {
-		return symbols.values().iterator();
-	}
+    @Override
+    public Iterator<Symbol> iterator() {
+        var list = new ArrayList<>(_symbols.values());
+        Collections.sort(list, Symbol.POS_COMPARATOR);
+        return list.iterator();
+    }
 
-	public abstract void printTo(IndentPrinter pw); // TODO move to pretty print
+    public boolean isEmpty() {
+        return _symbols.isEmpty();
+    }
 
     public boolean isGlobalScope() {
         return false;
@@ -64,5 +64,5 @@ public abstract class Scope implements Iterable<Symbol> {
         return isFormalScope() || isLocalScope();
     }
 
-    protected Map<String, Symbol> symbols = new LinkedHashMap<String, Symbol>();
+    protected Map<String, Symbol> _symbols = new LinkedHashMap<String, Symbol>();
 }

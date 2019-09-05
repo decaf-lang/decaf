@@ -89,7 +89,7 @@ public class Translater {
             functy.label = Label.createLabel("main", true);
         } else {
             functy.label = Label.createLabel("_"
-                    + ((ClassScope) func.getScope()).getOwner().name + "."
+                    + ((ClassScope) func.domain()).getOwner().name + "."
                     + func.name, true);
         }
         functy.sym = func;

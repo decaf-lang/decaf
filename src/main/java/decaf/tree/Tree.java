@@ -2,7 +2,6 @@ package decaf.tree;
 
 import decaf.scope.GlobalScope;
 import decaf.scope.LocalScope;
-import decaf.scope.ScopeStack;
 import decaf.symbol.ClassSymbol;
 import decaf.symbol.MethodSymbol;
 import decaf.symbol.VarSymbol;
@@ -30,9 +29,8 @@ public abstract class Tree {
         // Tree elements
         public List<ClassDef> classes;
         // For type check
-        public ClassSymbol main;
         public GlobalScope globalScope;
-        public ScopeStack table;
+        public ClassSymbol mainClass;
 
         public TopLevel(List<ClassDef> classes, Pos pos) {
             super(Kind.TOP_LEVEL, "TopLevel", pos);
@@ -1489,6 +1487,8 @@ public abstract class Tree {
 
     /**
      * An identifier.
+     * <p>
+     * TODO it seems not necessary to have Id <: TreeNode?
      */
     public static class Id extends TreeNode {
         // Tree element
@@ -1530,11 +1530,13 @@ public abstract class Tree {
      * Modifiers are encoded as an integer, whose binary representation reveals which modifiers are enabled. In this
      * way, you can use `+` or `|` to enable multiple modifiers, like we do in system programming. However, the
      * original decaf language only has one modifier -- static. If a method is static, then the lowest bit is set.
+     * <p>
+     * TODO it seems not necessary to have Modifiers <: TreeNode?
      */
     public static class Modifiers extends TreeNode {
         public final int code;
 
-        private List<String> _ms;
+        private StringBuilder _sb = new StringBuilder();
 
         // Available modifiers:
         public static final int STATIC = 1;
@@ -1542,8 +1544,7 @@ public abstract class Tree {
         public Modifiers(int code, Pos pos) {
             super(Kind.MODIFIERS, "Modifiers", pos);
             this.code = code;
-            this._ms = new ArrayList<>();
-            if (code == 1) _ms.add("STATIC");
+            if (code == 1) _sb.append("static"); // TODO
         }
 
         public Modifiers() {
@@ -1556,19 +1557,22 @@ public abstract class Tree {
 
         @Override
         public Object treeElementAt(int index) {
-            return _ms.get(index);
+            return toString();
         }
 
         @Override
         public int treeArity() {
-            return _ms.size();
+            return 1;
         }
 
         @Override
         public <C> void accept(Visitor<C> v, C ctx) {
             v.visitModifiers(this, ctx);
         }
+
+        @Override
+        public String toString() {
+            return _sb.toString();
+        }
     }
-
-
 }

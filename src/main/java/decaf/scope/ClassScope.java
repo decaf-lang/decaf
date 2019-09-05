@@ -1,12 +1,12 @@
 package decaf.scope;
 
-import java.util.Optional;
-import java.util.TreeSet;
-
 import decaf.symbol.ClassSymbol;
 import decaf.symbol.MethodSymbol;
 import decaf.symbol.Symbol;
-import decaf.printing.IndentPrinter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class ClassScope extends Scope {
 
@@ -35,25 +35,6 @@ public class ClassScope extends Scope {
         return true;
     }
 
-    @Override
-    public void printTo(IndentPrinter pw) {
-        TreeSet<Symbol> ss = new TreeSet<Symbol>(Symbol.LOCATION_COMPARATOR);
-        for (Symbol symbol : symbols.values()) {
-            ss.add(symbol);
-        }
-        pw.println("CLASS SCOPE OF '" + _owner.name + "':");
-        pw.incIndent();
-        for (Symbol symbol : ss) {
-            pw.println(symbol);
-        }
-        for (Symbol symbol : ss) {
-            if (symbol.isMethodSymbol()) {
-                ((MethodSymbol) symbol).scope.printTo(pw);
-            }
-        }
-        pw.decIndent();
-    }
-
     public Optional<Symbol> lookup(String key) {
         var scope = this;
         while (true) {
@@ -70,6 +51,16 @@ public class ClassScope extends Scope {
         }
 
         return Optional.empty();
+    }
+
+    public List<FormalScope> nestedFormalScopes() {
+        var scopes = new ArrayList<FormalScope>();
+        for (var symbol : this) {
+            if (symbol.isMethodSymbol()) {
+                scopes.add(((MethodSymbol) symbol).scope);
+            }
+        }
+        return scopes;
     }
 
     private ClassSymbol _owner;

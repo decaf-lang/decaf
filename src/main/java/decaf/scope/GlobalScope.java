@@ -1,8 +1,9 @@
 package decaf.scope;
 
-import decaf.printing.IndentPrinter;
 import decaf.symbol.ClassSymbol;
-import decaf.symbol.Symbol;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GlobalScope extends Scope {
 
@@ -19,17 +20,13 @@ public class GlobalScope extends Scope {
         return (ClassSymbol) get(symbol);
     }
 
-    @Override
-    public void printTo(IndentPrinter pw) {
-        pw.println("GLOBAL SCOPE:");
-        pw.incIndent();
-        for (Symbol symbol : symbols.values()) {
-            pw.println(symbol);
+    public List<ClassScope> nestedClassScopes() {
+        var scopes = new ArrayList<ClassScope>();
+        for (var symbol : this) {
+            if (symbol.isClassSymbol()) {
+                scopes.add(((ClassSymbol) symbol).scope);
+            }
         }
-        for (Symbol symbol : symbols.values()) {
-            ((ClassSymbol) symbol).scope.printTo(pw);
-        }
-        pw.decIndent();
+        return scopes;
     }
-
 }
