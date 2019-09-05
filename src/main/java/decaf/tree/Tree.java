@@ -1052,7 +1052,7 @@ public abstract class Tree {
         public Object treeElementAt(int index) {
             return switch (index) {
                 case 0 -> array;
-                case 1 -> index;
+                case 1 -> this.index;
                 default -> throw new IndexOutOfBoundsException(index);
             };
         }
