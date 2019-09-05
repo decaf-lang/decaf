@@ -103,7 +103,7 @@ public class ScopeStack {
     }
 
     public void declare(Symbol symbol) {
-        scopeStack.peek().declare(symbol);
+        currentScope().declare(symbol);
     }
 
     private Stack<Scope> scopeStack = new Stack<Scope>();

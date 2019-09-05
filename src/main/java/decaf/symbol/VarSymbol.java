@@ -1,5 +1,6 @@
 package decaf.symbol;
 
+import decaf.scope.ClassScope;
 import decaf.tac.Temp;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
@@ -35,6 +36,11 @@ public class VarSymbol extends Symbol {
 
     public boolean isMemberVar() {
         return _definedIn.isClassScope();
+    }
+
+    public ClassSymbol getOwner() {
+        assert isMemberVar();
+        return ((ClassScope) _definedIn).getOwner();
     }
 
     // TODO

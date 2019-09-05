@@ -3,7 +3,7 @@ package decaf.error;
 import decaf.tree.Pos;
 
 /**
- * example：illegal class inheritance (should be a cyclic)<br>
+ * example：illegal class inheritance (should be acyclic)<br>
  * PA2
  */
 public class BadInheritanceError extends DecafError {
@@ -14,7 +14,7 @@ public class BadInheritanceError extends DecafError {
 
 	@Override
 	protected String getErrMsg() {
-		return "illegal class inheritance (should be a cyclic)";
+		return "illegal class inheritance (should be acyclic)";
 	}
 
 }

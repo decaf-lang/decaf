@@ -54,13 +54,21 @@ public class ClassScope extends Scope {
         pw.decIndent();
     }
 
-    public Optional<Symbol> lookupVisible(String name) {
-        for (ClassScope cs = this; cs.parentScope.isPresent(); cs = cs.parentScope.get()) {
-            var symbol = cs.find(name);
+    public Optional<Symbol> lookup(String key) {
+        var scope = this;
+        while (true) {
+            var symbol = scope.find(key);
             if (symbol.isPresent()) {
                 return symbol;
             }
+
+            if (scope.parentScope.isPresent()) {
+                scope = scope.parentScope.get();
+            } else {
+                break;
+            }
         }
+
         return Optional.empty();
     }
 

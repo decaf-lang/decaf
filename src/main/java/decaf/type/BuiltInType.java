@@ -21,16 +21,6 @@ public class BuiltInType extends Type {
     public static final BuiltInType VOID = new BuiltInType("void");
 
     @Override
-    public boolean isBaseType() {
-        return eq(INT) || eq(BOOL) || eq(STRING);
-    }
-
-    @Override
-    public boolean noError() {
-        return !eq(ERROR);
-    }
-
-    @Override
     public boolean subtypeOf(Type type) {
         if (eq(ERROR) || type.eq(ERROR)) {
             return true;
@@ -44,6 +34,22 @@ public class BuiltInType extends Type {
     @Override
     public boolean eq(Type type) {
         return this == type;
+    }
+
+
+    @Override
+    public boolean isBaseType() {
+        return eq(INT) || eq(BOOL) || eq(STRING);
+    }
+
+    @Override
+    public boolean isVoidType() {
+        return eq(VOID);
+    }
+
+    @Override
+    public boolean noError() {
+        return !eq(ERROR);
     }
 
     @Override

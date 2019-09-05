@@ -44,9 +44,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     }
 
     @Override
-    public void visitMethodDef(Tree.MethodDef func, ScopeStack ctx) {
-        ctx.open(func.symbol.scope);
-        func.body.accept(this, ctx);
+    public void visitMethodDef(Tree.MethodDef method, ScopeStack ctx) {
+        ctx.open(method.symbol.scope);
+        method.body.accept(this, ctx);
         ctx.close();
     }
 
@@ -223,7 +223,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     }
 
     public boolean compatible(Tree.BinaryOp op, Type lhs, Type rhs) {
-        if (op.compareTo(Tree.BinaryOp.ADD) > 0 && op.compareTo(Tree.BinaryOp.MOD) < 0) { // arith
+        if (op.compareTo(Tree.BinaryOp.ADD) >= 0 && op.compareTo(Tree.BinaryOp.MOD) <= 0) { // arith
             // if e1, e2 : int, then e1 + e2 : int
             return lhs.eq(BuiltInType.INT) && rhs.eq(BuiltInType.INT);
         }
@@ -244,7 +244,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     }
 
     public Type resultTypeOf(Tree.BinaryOp op) {
-        if (op.compareTo(Tree.BinaryOp.ADD) > 0 && op.compareTo(Tree.BinaryOp.MOD) < 0) { // arith
+        if (op.compareTo(Tree.BinaryOp.ADD) >= 0 && op.compareTo(Tree.BinaryOp.MOD) <= 0) { // arith
             return BuiltInType.INT;
         }
         return BuiltInType.BOOL;
@@ -342,13 +342,14 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         }
 
         var ct = (ClassType) rt;
-        var field = ctx.getClass(ct.name).scope.lookupVisible(v.name);
+        var field = ctx.getClass(ct.name).scope.lookup(v.name);
         if (field.isPresent() && field.get().isVarSymbol()) {
             var var = (VarSymbol) field.get();
             if (var.isMemberVar()) {
                 v.symbol = var;
                 v.type = var.type;
-                if (!ctx.currentClass().type.subtypeOf(var.type)) { // member vars are protected
+                if (!ctx.currentClass().type.subtypeOf(var.getOwner().type)) {
+                    // member vars are protected
                     issue(new FieldNotAccessError(v.pos, v.name, ct.toString()));
                 }
             }
@@ -422,7 +423,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     private void typeCall(Tree.Call call, boolean thisClass, String className, ScopeStack ctx, boolean requireStatic) {
         var clazz = thisClass ? ctx.currentClass() : ctx.getClass(className);
-        var symbol = clazz.scope.lookupVisible(call.methodName);
+        var symbol = clazz.scope.lookup(call.methodName);
         if (symbol.isPresent()) {
             if (symbol.get().isMethodSymbol()) {
                 var method = (MethodSymbol) symbol.get();
@@ -437,18 +438,19 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     issue(new RefNonStaticError(call.pos, method.name, ctx.currentMethod().name));
                 }
 
-                // check signature
+                // typing args
                 var args = call.args;
+                for (var arg : args) {
+                    arg.accept(this, ctx);
+                }
+
+                // check signature compatibility
                 if (method.getFunType().arity() != args.size()) {
                     issue(new BadArgCountError(call.pos, method.name, method.getFunType().arity(), args.size()));
                 }
-
                 var iter1 = method.getFunType().argTypes.iterator();
-                if (!method.isStatic()) {
-                    iter1.next();
-                }
                 var iter2 = call.args.iterator();
-                for (int i = 1; iter1.hasNext(); i++) {
+                for (int i = 1; iter1.hasNext() && iter2.hasNext(); i++) {
                     Type t1 = iter1.next();
                     Tree.Expr e = iter2.next();
                     Type t2 = e.type;

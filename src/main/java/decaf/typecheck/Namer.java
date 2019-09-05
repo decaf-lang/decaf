@@ -33,8 +33,6 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitTopLevel(Tree.TopLevel program, ScopeStack ctx) {
-        ctx.open(program.globalScope);
-
         var classes = new HashMap<String, Tree.ClassDef>();
 
         // Check conflicting definitions. If any, ignore the redefined ones.
@@ -99,10 +97,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         if (!found) {
             issue(new NoMainClassError());
         }
-
-        ctx.close();
     }
-
 
     private void checkCycles(HashMap<String, Tree.ClassDef> classes) {
         var visitedTime = new HashMap<String, Integer>();

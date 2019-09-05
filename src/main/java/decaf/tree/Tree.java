@@ -182,7 +182,7 @@ public abstract class Tree {
 
         public MethodDef(boolean isStatic, Id id, TypeLit returnType, List<LocalVarDef> params, Block body, Pos pos) {
             super(Kind.METHOD_DEF, "MethodDef", pos);
-            this.modifiers = isStatic ? new Modifiers(1, pos) : new Modifiers();
+            this.modifiers = isStatic ? new Modifiers(Modifiers.STATIC, pos) : new Modifiers();
             this.id = id;
             this.returnType = returnType;
             this.params = params;

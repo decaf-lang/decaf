@@ -23,14 +23,18 @@ public class ClassType extends Type {
         if (type.eq(BuiltInType.ERROR)) {
             return true;
         }
+
         if (!type.isClassType()) {
             return false;
         }
-        for (ClassType t = this; t.superType.isPresent(); t = t.superType.get()) {
-            if (t.eq(type)) {
-                return true;
-            }
+
+        var t = this;
+        while (true) {
+            if (t.eq(type)) return true;
+            if (t.superType.isPresent()) t = t.superType.get();
+            else break;
         }
+
         return false;
     }
 
