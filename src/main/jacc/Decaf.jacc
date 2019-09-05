@@ -190,6 +190,8 @@ Stmt		    :	Var ';'
                     }
                 |	FOR '(' SimpleStmt ';' Expr ';'	SimpleStmt ')' Stmt
                     {
+                        if ($3.stmt == null) $3.stmt = new Skip($4.pos);
+                        if ($7.stmt == null) $7.stmt = new Skip($8.pos);
                         $$ = svStmt(new For($3.stmt, $5.expr, $7.stmt, $9.stmt, $1.pos));
                     }
                 |	BREAK ';'

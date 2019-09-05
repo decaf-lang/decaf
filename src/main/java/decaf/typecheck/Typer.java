@@ -13,6 +13,8 @@ import decaf.type.BuiltInType;
 import decaf.type.ClassType;
 import decaf.type.Type;
 
+import java.util.Objects;
+
 public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLitVisited {
 
     public Typer(Config config) {

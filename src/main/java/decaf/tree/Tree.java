@@ -11,6 +11,7 @@ import decaf.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public abstract class Tree {
@@ -704,6 +705,8 @@ public abstract class Tree {
 
         public For(Stmt init, Expr cond, Stmt update, Stmt body, Pos pos) {
             super(Kind.FOR, "For", pos);
+            Objects.requireNonNull(init);
+            Objects.requireNonNull(update);
             this.init = init;
             this.cond = cond;
             this.update = update;

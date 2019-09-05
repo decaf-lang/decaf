@@ -129,6 +129,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     break;
                 }
             }
+            time++;
         }
     }
 
