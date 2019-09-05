@@ -1544,7 +1544,7 @@ public abstract class Tree {
         public Modifiers(int code, Pos pos) {
             super(Kind.MODIFIERS, "Modifiers", pos);
             this.code = code;
-            if (code == 1) _sb.append("static"); // TODO
+            if (code == 1) _sb.append("STATIC");
         }
 
         public Modifiers() {

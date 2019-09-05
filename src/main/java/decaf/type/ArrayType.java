@@ -13,6 +13,9 @@ public class ArrayType extends Type {
         if (type.eq(BuiltInType.ERROR)) {
             return true;
         }
+        // NOTE: arrays in decaf are _invariant_, but not _covariant_ as Java arrays do.
+        // In Java, if t <: s, then t[] <: s[].
+        // But in decaf, NO! t[] <: s[] if and only if t == s.
         return eq(type);
     }
 
