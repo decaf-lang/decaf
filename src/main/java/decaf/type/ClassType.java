@@ -50,6 +50,6 @@ public class ClassType extends Type {
 
     @Override
     public String toString() {
-        return "class : " + name;
+        return "class " + name;
     }
 }

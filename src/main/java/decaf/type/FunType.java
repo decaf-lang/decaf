@@ -69,7 +69,7 @@ public class FunType extends Type {
             }
             sb.append(')');
         }
-        sb.append(" -> ");
+        sb.append(" => ");
         sb.append(returnType);
         return sb.toString();
     }
