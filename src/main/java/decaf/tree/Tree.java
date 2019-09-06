@@ -911,7 +911,7 @@ public abstract class Tree {
      */
     public static class StringLit extends Expr {
         // Tree element
-        public String value;
+        public String value; // the quoted string
 
         public StringLit(String value, Pos pos) {
             super(Kind.STRING_LIT, "StringLit", pos);

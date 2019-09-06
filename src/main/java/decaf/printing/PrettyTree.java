@@ -2,7 +2,6 @@ package decaf.printing;
 
 import decaf.tree.Tree;
 import decaf.tree.TreeNode;
-import decaf.utils.MiscUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +16,8 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
         if (element == null) {
             printer.println("<null: here is a bug>");
         } else if (element instanceof Tree.Id || element instanceof Tree.Modifiers) {
-            printer.println(element.toString());
+            var str = element.toString();
+            if (!str.isEmpty()) printer.println(str);
         } else if (element instanceof TreeNode) {
             pretty((TreeNode) element);
         } else if (element instanceof Optional) {
@@ -34,8 +34,6 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
             if (list.isEmpty()) printer.println("<empty>");
             else list.forEach(this::prettyElement);
             printer.decIndent();
-        } else if (element instanceof String) {
-            printer.println(MiscUtils.quote((String) element));
         } else {
             printer.println(element.toString());
         }

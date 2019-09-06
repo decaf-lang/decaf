@@ -89,7 +89,7 @@ public abstract class AbstractLexer {
     /**
      * Helper method used by the concrete lexer: record a constant string.
      *
-     * @param value the unquoted string
+     * @param value the quoted string, i.e. the exact user input.
      * @return a token STRING_LIT
      */
     protected int StringConst(String value, Pos pos) {

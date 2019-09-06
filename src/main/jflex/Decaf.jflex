@@ -34,6 +34,8 @@ IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
 SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
 S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
 WHITESPACE			= ([ \t]+)
+ESC                 = "\\"[nrt\"\\]
+BAD_ESC             = "\\"[^nrt\"\\]
 
     // start token: string
 %x S
@@ -81,16 +83,18 @@ WHITESPACE			= ([ \t]+)
 {INTEGER}			{ return intConst(yytext()); }
 <YYINITIAL>\"		{ startPos = getPos();
                       yybegin(S);
-                      buffer = new StringBuilder(); }
-<S>{NEWLINE}		{ issueError(new NewlineInStrError(startPos, MiscUtils.quote(buffer.toString()))); }
-<S><<EOF>>			{ issueError(new UntermStrError(startPos, MiscUtils.quote(buffer.toString())));
+                      buffer = new StringBuilder();
+                      buffer.append('"'); }
+<S>{NEWLINE}		{ buffer.append(yytext());
+                      issueError(new NewlineInStrError(getPos(), buffer.toString())); }
+<S><<EOF>>			{ issueError(new UntermStrError(startPos, buffer.toString()));
                       yybegin(YYINITIAL); }
-<S>\"				{ yybegin(YYINITIAL);
+<S>\"				{ buffer.append('"');
+                      yybegin(YYINITIAL);
                       return StringConst(buffer.toString(), startPos); }
-<S>"\\n"			{ buffer.append('\n');	   }
-<S>"\\t"			{ buffer.append('\t'); 	   }
-<S>"\\\""			{ buffer.append('"');	   }
-<S>"\\\\"			{ buffer.append('\\');	   }
+<S>{ESC}			{ buffer.append(yytext()); }
+<S>{BAD_ESC}        { buffer.append(yytext());
+                      issueError(new BadEscCharError(getPos())); }
 <S>.				{ buffer.append(yytext()); }
 
     // identifiers
