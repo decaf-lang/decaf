@@ -4,14 +4,18 @@ import decaf.scope.ClassScope;
 import decaf.scope.GlobalScope;
 import decaf.tac.Label;
 import decaf.tac.VTable;
+import decaf.tools.tac.ClassInfo;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 
 public class ClassSymbol extends Symbol {
 
-    public final Optional<ClassSymbol> baseSymbol;
+    public final Optional<ClassSymbol> parentSymbol;
 
     public final ClassType type;
 
@@ -19,36 +23,69 @@ public class ClassSymbol extends Symbol {
 
     public ClassSymbol(String name, ClassType type, ClassScope scope, Pos pos) {
         super(name, type, pos);
-        this.baseSymbol = Optional.empty();
+        this.parentSymbol = Optional.empty();
         this.scope = scope;
         this.type = type;
         scope.setOwner(this);
     }
 
-    public ClassSymbol(String name, ClassSymbol baseSymbol, ClassType type, ClassScope scope, Pos pos) {
+    public ClassSymbol(String name, ClassSymbol parentSymbol, ClassType type, ClassScope scope, Pos pos) {
         super(name, type, pos);
-        this.baseSymbol = Optional.of(baseSymbol);
+        this.parentSymbol = Optional.of(parentSymbol);
         this.scope = scope;
         this.type = type;
         scope.setOwner(this);
     }
 
-	@Override
-	public GlobalScope domain() {
-		return (GlobalScope) _definedIn;
-	}
+    @Override
+    public GlobalScope domain() {
+        return (GlobalScope) _definedIn;
+    }
 
     @Override
     public boolean isClassSymbol() {
         return true;
     }
 
-    @Override
-    protected String str() {
-        return "class " + name + baseSymbol.map(classSymbol -> " : " + classSymbol.name).orElse("");
+    public void setMainClass() {
+        _main = true;
     }
 
-	// TODO: remove
+    public boolean isMainClass() {
+        return _main;
+    }
+
+    @Override
+    protected String str() {
+        return "class " + name + parentSymbol.map(classSymbol -> " : " + classSymbol.name).orElse("");
+    }
+
+    // For tac generation.
+    public ClassInfo getInfo() {
+        var memberVariables = new HashSet<String>();
+        var memberMethods = new HashSet<String>();
+        var staticMethods = new HashSet<String>();
+
+        for (var symbol : scope) {
+            if (symbol.isVarSymbol()) {
+                memberVariables.add(symbol.name);
+            } else if (symbol.isMethodSymbol()) {
+                var methodSymbol = (MethodSymbol) symbol;
+                if (methodSymbol.isStatic()) {
+                    staticMethods.add(methodSymbol.name);
+                } else {
+                    memberMethods.add(methodSymbol.name);
+                }
+            }
+        }
+
+        return new ClassInfo(name, parentSymbol.map(symbol -> symbol.name), memberVariables, memberMethods,
+                staticMethods, isMainClass());
+    }
+
+    private boolean _main;
+
+    // TODO: remove
 
     private int order;
 

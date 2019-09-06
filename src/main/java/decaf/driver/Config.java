@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 public class Config {
     public enum Target {
-        PA1, PA2, PA3, JVM
+        PA1, PA2, PA3
     }
 
     public final InputStream source;
@@ -33,7 +33,6 @@ public class Config {
             case "PA1" -> Target.PA1;
             case "PA2" -> Target.PA2;
             case "PA3" -> Target.PA3;
-            case "jvm" -> Target.JVM;
             default -> throw new IllegalStateException("Unexpected value: " + target);
         };
     }

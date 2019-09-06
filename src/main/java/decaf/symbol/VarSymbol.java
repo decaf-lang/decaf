@@ -1,7 +1,7 @@
 package decaf.symbol;
 
 import decaf.scope.ClassScope;
-import decaf.tac.Temp;
+import decaf.tools.tac.Temp;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
 import decaf.type.Type;
@@ -43,11 +43,13 @@ public class VarSymbol extends Symbol {
         return ((ClassScope) _definedIn).getOwner();
     }
 
+    // For tac gen
+    public Temp temp;
+
+
     // TODO
 
     private int offset;
-
-    private Temp temp;
 
     public Temp getTemp() {
         return temp;

@@ -89,6 +89,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     if (method.isStatic() && method.getReturnType().isVoidType() && method.getFunType().arity() == 0) {
                         method.setMain();
                         program.mainClass = clazz.symbol;
+                        clazz.symbol.setMainClass();
                         found = true;
                     }
                 }

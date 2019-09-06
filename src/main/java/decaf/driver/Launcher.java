@@ -12,8 +12,7 @@ public class Launcher {
         var task = switch (config.target) {
             case PA1 -> tasks.parse();
             case PA2 -> tasks.typeCheck();
-            case PA3 -> null;
-            case JVM -> null;
+            case PA3 -> tasks.tacGen();
         };
         assert task != null;
         task.apply(config.source);

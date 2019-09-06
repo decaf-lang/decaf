@@ -449,6 +449,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         if (symbol.isPresent()) {
             if (symbol.get().isMethodSymbol()) {
                 var method = (MethodSymbol) symbol.get();
+                call.symbol = method;
                 call.type = method.getReturnType();
                 if (requireStatic && !method.isStatic()) {
                     issue(new NotClassFieldError(call.pos, call.methodName, clazz.type.toString()));

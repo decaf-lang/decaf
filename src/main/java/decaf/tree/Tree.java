@@ -5,7 +5,7 @@ import decaf.scope.LocalScope;
 import decaf.symbol.ClassSymbol;
 import decaf.symbol.MethodSymbol;
 import decaf.symbol.VarSymbol;
-import decaf.tac.Temp;
+import decaf.tools.tac.Temp;
 import decaf.type.Type;
 
 import java.util.ArrayList;
@@ -84,6 +84,16 @@ public abstract class Tree {
 
         public boolean hasParent() {
             return parent.isPresent();
+        }
+
+        public List<MethodDef> methods() {
+            var methods = new ArrayList<MethodDef>();
+            for (var field : fields) {
+                if (field instanceof MethodDef) {
+                    methods.add((MethodDef) field);
+                }
+            }
+            return methods;
         }
 
         @Override

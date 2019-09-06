@@ -72,7 +72,7 @@ public class OptParser {
             }
 
             var source = new FileInputStream(cli.getArgList().get(0));
-            var target = cli.hasOption('t') ? Config.parseTarget(cli.getOptionValue('t')) : Config.Target.JVM;
+            var target = cli.hasOption('t') ? Config.parseTarget(cli.getOptionValue('t')) : Config.Target.PA3;
             var outputStream = cli.hasOption('o') ? new PrintStream(new File(cli.getOptionValue('o'))) : Config.STDOUT;
             var outputDir = cli.hasOption('d') ? new File(cli.getOptionValue('d')).toPath() : Config.PWD;
             return new Config(source, outputStream, outputDir, target);
