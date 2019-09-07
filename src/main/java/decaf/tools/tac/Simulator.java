@@ -43,18 +43,14 @@ public final class Simulator {
             _label_to_function.put(func.entry.name, func);
             _addr_to_function.put(addr, func);
 
-//            System.out.println("FUNCTION " + func.entry);
-
             // Add every non-pseudo instruction, and record labels if necessary
             for (var instr : func.getInstrSeq()) {
                 if (instr.isMark()) { // meet a label
                     var mark = (Instr.Mark) instr;
                     _label_to_addr.put(mark.lbl.name, addr);
-//                    System.out.println(addr + "\t" + instr + ":");
                 } else if (!instr.isPseudo()) {
                     _instrs.add(instr);
                     addr++;
-//                    System.out.println(addr + "\t" + "    " + instr);
                 } // else: memo, ignore
             }
 
@@ -62,7 +58,6 @@ public final class Simulator {
             if (!_instrs.lastElement().isReturn()) {
                 _instrs.add(new Instr.Return());
                 addr++;
-//                System.out.println(addr + "\t" + "    return");
             }
         }
 
@@ -71,8 +66,8 @@ public final class Simulator {
             addr = _vtable_to_addr.get(vtbl.name);
             var offset = 0;
 
-            var parent = vtbl.parent.map(x -> _vtable_to_addr.get(x)).orElse(0);
-            _memory.store(parent, addr, offset);
+            var parentAddr = vtbl.parent.map(pv -> _vtable_to_addr.get(pv.name)).orElse(0);
+            _memory.store(parentAddr, addr, offset);
             offset += 4;
 
             var className = _string_pool.add(vtbl.className);
@@ -98,7 +93,6 @@ public final class Simulator {
         // Execute
         var executor = new InstrExecutor();
         while (!_call_stack.isEmpty()) {
-//            System.out.println("pc=" + _pc);
             _instrs.get(_pc).accept(executor);
         }
     }
@@ -400,7 +394,10 @@ public final class Simulator {
      * Memory.
      */
     private class Memory {
-        private int currentSize = 0;
+        /**
+         * Don't start from address 0, because 0 is reserved as the null pointer.
+         */
+        private int currentSize = 4;
 
         private class Block implements Comparable<Block> {
 

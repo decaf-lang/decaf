@@ -321,6 +321,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         var toClass = mv.visitLoadFrom(vtbl2, 4);
         mv.visitIntrinsicCall(Intrinsic.PRINT_STRING, toClass);
         mv.visitPrint(RuntimeError.CLASS_CAST_ERROR3);
+        mv.visitIntrinsicCall(Intrinsic.HALT);
         mv.visitLabel(exit);
     }
 
