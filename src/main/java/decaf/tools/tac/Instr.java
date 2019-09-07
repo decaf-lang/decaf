@@ -61,7 +61,7 @@ public abstract class Instr {
 
         @Override
         public String toString() {
-            return String.format("%s = VTBL <%s>", dst, vtbl.name);
+            return String.format("%s = %s", dst, vtbl.name);
         }
     }
 

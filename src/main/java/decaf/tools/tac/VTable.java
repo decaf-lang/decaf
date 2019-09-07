@@ -65,8 +65,8 @@ public class VTable {
 
     List<String> memberVariables = new ArrayList<>();
 
-    VTable(String name, String className, Optional<VTable> parent) {
-        this.name = name;
+    VTable(String className, Optional<VTable> parent) {
+        this.name = ".V<" + className + ">";
         this.className = className;
         this.parent = parent;
     }

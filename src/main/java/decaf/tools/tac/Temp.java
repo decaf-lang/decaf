@@ -9,6 +9,6 @@ public class Temp {
 
     @Override
     public String toString() {
-        return "_T" + index;
+        return ".T" + index;
     }
 }

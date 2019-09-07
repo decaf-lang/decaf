@@ -81,14 +81,14 @@ public final class Simulator {
         }
 
         // Initialize call stack and push the frame of main function
-        if (!_label_to_function.containsKey("main")) {
-            System.err.println("No function labeled 'main' is found.");
+        if (!_label_to_function.containsKey(Label.MAIN_LABEL.name)) {
+            System.err.println("Main function not found.");
             return;
         }
 
-        var frame = new Frame(_label_to_function.get("main"));
+        var frame = new Frame(_label_to_function.get(Label.MAIN_LABEL.name));
         _call_stack.push(frame);
-        _pc = _label_to_addr.get("main");
+        _pc = _label_to_addr.get(Label.MAIN_LABEL.name);
 
         // Execute
         var executor = new InstrExecutor();

@@ -19,7 +19,7 @@ public class Label {
         this.target = false;
     }
 
-    public static Label MAIN_LABEL = new Label("main");
+    public static Label MAIN_LABEL = new Label(".main");
 
     @Override
     public String toString() {

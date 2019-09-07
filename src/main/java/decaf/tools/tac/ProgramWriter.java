@@ -12,9 +12,9 @@ public class ProgramWriter {
     }
 
     public void visitVTables() {
-        // Allocate labels for every method, including the internal _NEW method, which allocates memory for an object.
+        // Allocate labels for every method, including the constructor <init>, which initializes an object.
         for (var clazz : _classes.values()) {
-            _ctx.putNewClassLabel(clazz.name); // _NEW
+            _ctx.putConstructorLabel(clazz.name);
             for (var method : clazz.methods) {
                 _ctx.putMethodLabel(clazz.name, method);
             }
@@ -58,7 +58,7 @@ public class ProgramWriter {
      * @param clazz
      */
     private void createConstructorFor(String clazz) {
-        var entry = _ctx.getNewClassLabel(clazz);
+        var entry = _ctx.getConstructorLabel(clazz);
         var mv = new MethodVisitor(entry, 0, _ctx);
 
         var vtbl = _ctx.getVTable(clazz);
@@ -77,7 +77,7 @@ public class ProgramWriter {
             buildVTableFor(_classes.get(c));
             return _ctx.getVTable(c);
         });
-        var vtbl = new VTable("_" + clazz.name, clazz.name, parent);
+        var vtbl = new VTable(clazz.name, parent);
 
         // Member methods consist of ones that are:
         // 1. inherited from super class
@@ -120,24 +120,24 @@ public class ProgramWriter {
 
     class Context {
 
-        void putNewClassLabel(String clazz) {
-            putLabel(clazz + "$" + "$new");
+        void putConstructorLabel(String clazz) {
+            putLabel(clazz + ".<init>");
         }
 
-        Label getNewClassLabel(String clazz) {
-            return getLabel(clazz + "$" + "$new");
+        Label getConstructorLabel(String clazz) {
+            return getLabel(clazz + ".<init>");
         }
 
         void putMethodLabel(String clazz, String method) {
-            putLabel(clazz + "$" + method);
+            putLabel(clazz + "." + method);
         }
 
         Label getMethodLabel(String clazz, String method) {
-            return getLabel(clazz + "$" + method);
+            return getLabel(clazz + "." + method);
         }
 
         String getMethodName(Label method) {
-            var index = method.name.indexOf("$");
+            var index = method.name.indexOf(".");
             assert index >= 0;
             return method.name.substring(index + 1);
         }
@@ -151,7 +151,7 @@ public class ProgramWriter {
         }
 
         Label freshLabel() {
-            var name = "$_" + _next_unnamed_label_id;
+            var name = ".L" + _next_unnamed_label_id;
             _next_unnamed_label_id++;
             var lbl = new Label(name);
             _labels.put(name, lbl);
@@ -175,7 +175,7 @@ public class ProgramWriter {
         }
 
         int getOffset(String clazz, String member) {
-            return _offsets.get(clazz + "$" + member);
+            return _offsets.get(clazz + "." + member);
         }
 
         void putOffsets(VTable vtbl) {
@@ -185,7 +185,7 @@ public class ProgramWriter {
                 offset += 4;
             }
 
-            var prefix = vtbl.className + "$";
+            var prefix = vtbl.className + ".";
             offset = 4;
             for (var variable : vtbl.memberVariables) {
                 _offsets.put(prefix + variable, offset);

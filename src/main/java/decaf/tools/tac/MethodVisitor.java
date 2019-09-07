@@ -70,7 +70,7 @@ public class MethodVisitor {
 
     public Temp visitNewClass(String clazz) {
         var temp = freshTemp();
-        var entry = _ctx.getNewClassLabel(clazz);
+        var entry = _ctx.getConstructorLabel(clazz);
         _func.add(new Instr.DirectCall(temp, entry));
         return temp;
     }
