@@ -3,8 +3,7 @@ package decaf.driver;
 public class Launcher {
     public static void withArgs(String[] args) {
         var parser = new OptParser();
-        var config = parser.parse(args);
-        withConfig(config);
+        parser.parse(args).ifPresent(Launcher::withConfig);
     }
 
     public static void withConfig(Config config) {
@@ -14,7 +13,6 @@ public class Launcher {
             case PA2 -> tasks.typeCheck();
             case PA3 -> tasks.tacGen();
         };
-        assert task != null;
         task.apply(config.source);
     }
 }

@@ -1,11 +1,19 @@
 package decaf.tools.tac;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.*;
 
 /**
  * TAC program simulator.
  */
 public final class Simulator {
+
+    public Simulator(InputStream in, OutputStream out) {
+        _in = in;
+        _out = new PrintWriter(out);
+    }
 
     public void execute(TacProgram program) {
         // Initialize
@@ -94,6 +102,12 @@ public final class Simulator {
             _instrs.get(_pc).accept(executor);
         }
     }
+
+    /**
+     * IO.
+     */
+    private final InputStream _in;
+    private final PrintWriter _out;
 
     /**
      * Memory.
@@ -339,21 +353,30 @@ public final class Simulator {
             switch (func.kind) {
                 case ALLOCATE -> retVal = Optional.of(_memory.alloc(frame.array[0]));
                 case READ_LINE -> {
-                    var scanner = new Scanner(System.in);
+                    var scanner = new Scanner(_in);
                     var str = scanner.nextLine();
                     assert str.length() <= 63;
                     retVal = Optional.of(_string_pool.add(str));
                 }
                 case READ_INT -> {
-                    var scanner = new Scanner(System.in);
+                    var scanner = new Scanner(_in);
                     var value = scanner.nextInt();
                     retVal = Optional.of(value);
                 }
                 case STRING_EQUAL -> retVal = Optional.of(frame.array[0] == frame.array[1] ? 1 : 0);
-                case PRINT_INT -> System.out.print(frame.array[0]);
-                case PRINT_STRING -> System.out.print(_string_pool.get(frame.array[0]));
-                case PRINT_BOOL -> System.out.print(frame.array[0] == 0 ? "false" : "true");
-                case HALT -> System.exit(0);
+                case PRINT_INT -> {
+                    _out.print(frame.array[0]);
+                    _out.flush();
+                }
+                case PRINT_STRING -> {
+                    _out.write(_string_pool.get(frame.array[0]));
+                    _out.flush();
+                }
+                case PRINT_BOOL -> {
+                    _out.write(frame.array[0] == 0 ? "false" : "true");
+                    _out.flush();
+                }
+                case HALT -> System.exit(0); // TODO: just stop the execution of the simulator
             }
 
             returnWith(retVal);

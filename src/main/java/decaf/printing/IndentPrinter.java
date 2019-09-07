@@ -6,8 +6,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * 用于缩进输出的类<br>
- * 使用时注意不要自行输出"\r\n"或"\n"进行换行，而要使用该类的println系列函数进行换行<br>
+ * A printer which handles indentation.
  */
 public class IndentPrinter extends PrintWriter {
     private int step;

@@ -5,6 +5,7 @@ import decaf.driver.Phase;
 import decaf.tools.tac.*;
 import decaf.tree.Tree;
 
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -58,13 +59,18 @@ public class TacGen extends Phase<Tree.TopLevel, TacProgram> implements TacEmitt
     @Override
     public void onSucceed(TacProgram program) {
         if (config.target.equals(Config.Target.PA3)) {
-            // First dump the tac program,
-            var printer = new PrintWriter(config.outputStream);
-            program.printTo(printer);
-            printer.flush();
+            // First dump the tac program to file,
+            var path = config.dstPath.resolve(config.getSourceBaseName() + ".tac");
+            try {
+                var printer = new PrintWriter(path.toFile());
+                program.printTo(printer);
+                printer.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
 
             // and then execute it using our simulator.
-            var simulator = new Simulator();
+            var simulator = new Simulator(System.in, config.output);
             simulator.execute(program);
         }
     }

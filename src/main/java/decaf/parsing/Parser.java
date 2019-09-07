@@ -28,9 +28,9 @@ public class Parser extends Phase<InputStream, Tree.TopLevel> {
     @Override
     public void onSucceed(Tree.TopLevel tree) {
         if (config.target.equals(Config.Target.PA1)) {
-            var printer = new PrettyTree(new IndentPrinter(config.outputStream));
+            var printer = new PrettyTree(new IndentPrinter(config.output));
             printer.pretty(tree);
-            printer.close();
+            printer.flush();
         }
     }
 }

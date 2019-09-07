@@ -25,8 +25,8 @@ public abstract class Phase<In, Out> implements Task<In, Out>, ErrorIssuer {
         var out = transform(in);
         if (hasError()) {
             printErrors(System.err);
-            if (!config.outputStream.equals(Config.STDOUT) && config.target.compareTo(Config.Target.PA3) <= 0) {
-                printErrors(new PrintStream(config.outputStream));
+            if (!config.output.equals(Config.STDOUT) && config.target.compareTo(Config.Target.PA3) <= 0) {
+                printErrors(new PrintStream(config.output));
             }
             return Optional.empty();
         }

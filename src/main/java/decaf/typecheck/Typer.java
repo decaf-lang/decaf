@@ -31,9 +31,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     @Override
     public void onSucceed(Tree.TopLevel tree) {
         if (config.target.equals(Config.Target.PA2)) {
-            var printer = new PrettyScope(new IndentPrinter(config.outputStream));
+            var printer = new PrettyScope(new IndentPrinter(config.output));
             printer.pretty(tree.globalScope);
-            printer.close();
+            printer.flush();
         }
     }
 
