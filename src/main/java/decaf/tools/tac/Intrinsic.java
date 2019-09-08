@@ -3,7 +3,7 @@ package decaf.tools.tac;
 /**
  * Intrinsic procedure, a built-in function behave like "system calls".
  */
-public final class Intrinsic extends Function {
+public final class Intrinsic extends Tac.Func {
     public enum Opcode {
         ALLOCATE, READ_LINE, READ_INT, STRING_EQUAL, PRINT_INT, PRINT_STRING, PRINT_BOOL, HALT
     }
@@ -92,7 +92,7 @@ public final class Intrinsic extends Function {
     }
 
     private Intrinsic(Opcode kind, String name, int numArgs) {
-        super(new Label(name));
+        super(new Tac.Label(name));
         this.kind = kind;
         this.name = name;
         this.numArgs = numArgs;

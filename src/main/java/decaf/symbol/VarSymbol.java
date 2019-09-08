@@ -1,7 +1,7 @@
 package decaf.symbol;
 
 import decaf.scope.ClassScope;
-import decaf.tools.tac.Temp;
+import decaf.tools.tac.Tac;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
 import decaf.type.Type;
@@ -44,26 +44,5 @@ public class VarSymbol extends Symbol {
     }
 
     // For tac gen
-    public Temp temp;
-
-
-    // TODO
-
-    private int offset;
-
-    public Temp getTemp() {
-        return temp;
-    }
-
-    public void setTemp(Temp temp) {
-        this.temp = temp;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
+    public Tac.Temp temp;
 }

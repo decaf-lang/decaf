@@ -15,7 +15,7 @@ public final class Simulator {
         _out = new PrintWriter(out);
     }
 
-    public void execute(TacProgram program) {
+    public void execute(Tac.Prog program) {
         // Initialize
         _memory = new Memory();
         _string_pool = new StringPool();
@@ -31,14 +31,14 @@ public final class Simulator {
         }
 
         // Allocate vtables
-        for (VTable vtbl : program.vtables) {
+        for (Tac.VTable vtbl : program.vtables) {
             var addr = _memory.alloc(vtbl.getSize());
             _vtable_to_addr.put(vtbl.name, addr);
         }
 
         // Load instructions
         var addr = 0;
-        for (var func : program.functions) {
+        for (var func : program.funcs) {
             // Meet a function: label -> func, label -> addr, addr -> func
             _label_to_function.put(func.entry.name, func);
             _addr_to_function.put(addr, func);
@@ -46,7 +46,7 @@ public final class Simulator {
             // Add every non-pseudo instruction, and record labels if necessary
             for (var instr : func.getInstrSeq()) {
                 if (instr.isMark()) { // meet a label
-                    var mark = (Instr.Mark) instr;
+                    var mark = (Tac.Mark) instr;
                     _label_to_addr.put(mark.lbl.name, addr);
                 } else if (!instr.isPseudo()) {
                     _instrs.add(instr);
@@ -56,13 +56,13 @@ public final class Simulator {
 
             // Force this function to return if the last instruction is not RETURN
             if (!_instrs.lastElement().isReturn()) {
-                _instrs.add(new Instr.Return());
+                _instrs.add(new Tac.Return());
                 addr++;
             }
         }
 
         // Fill in vtables
-        for (VTable vtbl : program.vtables) {
+        for (Tac.VTable vtbl : program.vtables) {
             addr = _vtable_to_addr.get(vtbl.name);
             var offset = 0;
 
@@ -81,14 +81,14 @@ public final class Simulator {
         }
 
         // Initialize call stack and push the frame of main function
-        if (!_label_to_function.containsKey(Label.MAIN_LABEL.name)) {
+        if (!_label_to_function.containsKey(Tac.Label.MAIN_LABEL.name)) {
             System.err.println("Main function not found.");
             return;
         }
 
-        var frame = new Frame(_label_to_function.get(Label.MAIN_LABEL.name));
+        var frame = new Frame(_label_to_function.get(Tac.Label.MAIN_LABEL.name));
         _call_stack.push(frame);
-        _pc = _label_to_addr.get(Label.MAIN_LABEL.name);
+        _pc = _label_to_addr.get(Tac.Label.MAIN_LABEL.name);
 
         // Execute
         var executor = new InstrExecutor();
@@ -121,7 +121,7 @@ public final class Simulator {
     /**
      * Simulate instruction memory. The "address" is simply the index of this vector.
      */
-    private Vector<Instr> _instrs;
+    private Vector<Tac.Instr> _instrs;
 
     /**
      * Look up a label's address in instruction memory by its name.
@@ -131,12 +131,12 @@ public final class Simulator {
     /**
      * Look up a function by its entry label.
      */
-    private HashMap<String, Function> _label_to_function;
+    private HashMap<String, Tac.Func> _label_to_function;
 
     /**
      * Look up a function by the address of its entry instruction.
      */
-    private HashMap<Integer, Function> _addr_to_function;
+    private HashMap<Integer, Tac.Func> _addr_to_function;
 
     /**
      * Call stack, consists of frames.
@@ -161,7 +161,7 @@ public final class Simulator {
         /**
          * The function we call.
          */
-        final Function func;
+        final Tac.Func func;
 
         /**
          * An array to store values of local temps.
@@ -171,14 +171,14 @@ public final class Simulator {
         /**
          * Save: which temp to write the return value.
          */
-        Temp retValDst;
+        Tac.Temp retValDst;
 
         /**
          * Save: the address of the next instruction to be executed once the function call returns.
          */
         int pcNext;
 
-        Frame(Function func) {
+        Frame(Tac.Func func) {
             this.func = func;
             this.array = new int[func.getUsedTempCount()];
             var i = 0;
@@ -193,9 +193,9 @@ public final class Simulator {
     /**
      * Instruction executor.
      */
-    private class InstrExecutor implements Instr.Visitor {
+    private class InstrExecutor implements Tac.InstrVisitor {
         @Override
-        public void visitAssign(Instr.Assign instr) {
+        public void visitAssign(Tac.Assign instr) {
             var frame = _call_stack.peek();
             frame.array[instr.dst.index] = frame.array[instr.src.index];
 
@@ -203,7 +203,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitLoadVTbl(Instr.LoadVTbl instr) {
+        public void visitLoadVTbl(Tac.LoadVTbl instr) {
             var frame = _call_stack.peek();
             frame.array[instr.dst.index] = _vtable_to_addr.get(instr.vtbl.name);
 
@@ -211,7 +211,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitLoadImm4(Instr.LoadImm4 instr) {
+        public void visitLoadImm4(Tac.LoadImm4 instr) {
             var frame = _call_stack.peek();
             frame.array[instr.dst.index] = instr.value;
 
@@ -219,7 +219,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitLoadStrConst(Instr.LoadStrConst instr) {
+        public void visitLoadStrConst(Tac.LoadStrConst instr) {
             var frame = _call_stack.peek();
             var index = _string_pool.add(instr.value);
             frame.array[instr.dst.index] = index;
@@ -228,7 +228,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitUnary(Instr.Unary instr) {
+        public void visitUnary(Tac.Unary instr) {
             var frame = _call_stack.peek();
             int operand = frame.array[instr.operand.index];
             frame.array[instr.dst.index] = switch (instr.kind) {
@@ -240,7 +240,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitBinary(Instr.Binary instr) {
+        public void visitBinary(Tac.Binary instr) {
             var frame = _call_stack.peek();
             var lhs = frame.array[instr.lhs.index];
             var rhs = frame.array[instr.rhs.index];
@@ -264,12 +264,12 @@ public final class Simulator {
         }
 
         @Override
-        public void visitBranch(Instr.Branch instr) {
+        public void visitBranch(Tac.Branch instr) {
             _pc = _label_to_addr.get(instr.target.name);
         }
 
         @Override
-        public void visitConditionalBranch(Instr.ConditionalBranch instr) {
+        public void visitConditionalBranch(Tac.ConditionalBranch instr) {
             var frame = _call_stack.peek();
             var jump = switch (instr.kind) {
                 case BEQZ -> frame.array[instr.cond.index] == 0;
@@ -284,7 +284,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitReturn(Instr.Return instr) {
+        public void visitReturn(Tac.Return instr) {
             var value = instr.value.map(temp -> _call_stack.peek().array[temp.index]);
             returnWith(value);
         }
@@ -302,7 +302,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitParm(Instr.Parm instr) {
+        public void visitParm(Tac.Parm instr) {
             var frame = _call_stack.peek();
             _actual_args.add(frame.array[instr.value.index]);
 
@@ -310,7 +310,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitIndirectCall(Instr.IndirectCall instr) {
+        public void visitIndirectCall(Tac.IndirectCall instr) {
             // Save caller's state
             var frame = _call_stack.peek();
             frame.pcNext = _pc + 1;
@@ -324,7 +324,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitDirectCall(Instr.DirectCall instr) {
+        public void visitDirectCall(Tac.DirectCall instr) {
             // Save caller's state
             var frame = _call_stack.peek();
             frame.pcNext = _pc + 1;
@@ -377,7 +377,7 @@ public final class Simulator {
         }
 
         @Override
-        public void visitMemory(Instr.Memory instr) {
+        public void visitMemory(Tac.Memory instr) {
             var frame = _call_stack.peek();
             int base = frame.array[instr.base.index];
             int offset = instr.offset;

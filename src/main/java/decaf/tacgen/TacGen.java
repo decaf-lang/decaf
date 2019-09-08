@@ -9,14 +9,14 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-public class TacGen extends Phase<Tree.TopLevel, TacProgram> implements TacEmitter {
+public class TacGen extends Phase<Tree.TopLevel, Tac.Prog> implements TacEmitter {
 
     public TacGen(Config config) {
         super("tacgen", config);
     }
 
     @Override
-    public TacProgram transform(Tree.TopLevel tree) {
+    public Tac.Prog transform(Tree.TopLevel tree) {
         // Create class info.
         var info = new ArrayList<ClassInfo>();
         for (var clazz : tree.classes) {
@@ -58,7 +58,7 @@ public class TacGen extends Phase<Tree.TopLevel, TacProgram> implements TacEmitt
     }
 
     @Override
-    public void onSucceed(TacProgram program) {
+    public void onSucceed(Tac.Prog program) {
         if (config.target.equals(Config.Target.PA3)) {
             // First dump the tac program to file,
             var path = config.dstPath.resolve(config.getSourceBaseName() + ".tac");

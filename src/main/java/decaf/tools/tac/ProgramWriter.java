@@ -32,7 +32,7 @@ public class ProgramWriter {
     }
 
     public MethodVisitor visitMainMethod() {
-        var entry = Label.MAIN_LABEL;
+        var entry = Tac.Label.MAIN_LABEL;
         return new MethodVisitor(entry, 0, _ctx);
     }
 
@@ -41,8 +41,8 @@ public class ProgramWriter {
         return new MethodVisitor(entry, numArgs, _ctx);
     }
 
-    public TacProgram visitEnd() {
-        return new TacProgram(_ctx.getVTables(), _ctx.functions);
+    public Tac.Prog visitEnd() {
+        return new Tac.Prog(_ctx.getVTables(), _ctx.funcs);
     }
 
     private HashMap<String, ClassInfo> _classes = new HashMap<>();
@@ -77,7 +77,7 @@ public class ProgramWriter {
             buildVTableFor(_classes.get(c));
             return _ctx.getVTable(c);
         });
-        var vtbl = new VTable(clazz.name, parent);
+        var vtbl = new Tac.VTable(clazz.name, parent);
 
         // Member methods consist of ones that are:
         // 1. inherited from super class
@@ -124,7 +124,7 @@ public class ProgramWriter {
             putLabel(clazz + ".<init>");
         }
 
-        Label getConstructorLabel(String clazz) {
+        Tac.Label getConstructorLabel(String clazz) {
             return getLabel(clazz + ".<init>");
         }
 
@@ -132,33 +132,33 @@ public class ProgramWriter {
             putLabel(clazz + "." + method);
         }
 
-        Label getMethodLabel(String clazz, String method) {
+        Tac.Label getMethodLabel(String clazz, String method) {
             return getLabel(clazz + "." + method);
         }
 
-        String getMethodName(Label method) {
+        String getMethodName(Tac.Label method) {
             var index = method.name.indexOf(".");
             assert index >= 0;
             return method.name.substring(index + 1);
         }
 
         void putLabel(String name) {
-            _labels.put(name, new Label(name));
+            _labels.put(name, new Tac.Label(name));
         }
 
-        Label getLabel(String name) {
+        Tac.Label getLabel(String name) {
             return _labels.get(name);
         }
 
-        Label freshLabel() {
+        Tac.Label freshLabel() {
             var name = ".L" + _next_unnamed_label_id;
             _next_unnamed_label_id++;
-            var lbl = new Label(name);
+            var lbl = new Tac.Label(name);
             _labels.put(name, lbl);
             return lbl;
         }
 
-        VTable getVTable(String clazz) {
+        Tac.VTable getVTable(String clazz) {
             return _vtables.get(clazz);
         }
 
@@ -166,11 +166,11 @@ public class ProgramWriter {
             return _vtables.containsKey(clazz);
         }
 
-        void putVTable(VTable vtbl) {
+        void putVTable(Tac.VTable vtbl) {
             _vtables.put(vtbl.className, vtbl);
         }
 
-        List<VTable> getVTables() {
+        List<Tac.VTable> getVTables() {
             return new ArrayList<>(_vtables.values());
         }
 
@@ -178,7 +178,7 @@ public class ProgramWriter {
             return _offsets.get(clazz + "." + member);
         }
 
-        void putOffsets(VTable vtbl) {
+        void putOffsets(Tac.VTable vtbl) {
             var offset = 8;
             for (var method : vtbl.memberMethods) {
                 _offsets.put(method.name, offset);
@@ -193,13 +193,13 @@ public class ProgramWriter {
             }
         }
 
-        private HashMap<String, Label> _labels = new HashMap<>();
+        private HashMap<String, Tac.Label> _labels = new HashMap<>();
 
-        private HashMap<String, VTable> _vtables = new HashMap<>();
+        private HashMap<String, Tac.VTable> _vtables = new HashMap<>();
 
         private HashMap<String, Integer> _offsets = new HashMap<>();
 
-        List<Function> functions = new ArrayList<>();
+        List<Tac.Func> funcs = new ArrayList<>();
 
         private int _next_unnamed_label_id = 1;
     }

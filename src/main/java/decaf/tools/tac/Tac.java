@@ -1,29 +1,188 @@
 package decaf.tools.tac;
 
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import static decaf.utils.MiscUtils.quote;
 
-public abstract class Instr {
+public abstract class Tac {
 
-    int opcode;
+    public static class Prog {
+        public final List<VTable> vtables;
 
-    public Boolean isPseudo() {
-        return false;
+        public final List<Func> funcs;
+
+        public Prog(List<VTable> vtables, List<Func> funcs) {
+            this.vtables = vtables;
+            this.funcs = funcs;
+        }
+
+        public void printTo(PrintWriter pw) {
+            for (var vtbl : vtables) {
+                vtbl.printTo(pw);
+            }
+            for (var func : funcs) {
+                func.printTo(pw);
+            }
+        }
     }
 
-    public Boolean isMark() {
-        return false;
+
+    /**
+     * Virtual table. In TAC, a named virtual table consists the following items (in order):
+     * - the pointer to the virtual table of its parent class (if any), or null (if none)
+     * - the class name (a string literal)
+     * - labels of all member methods (static methods are EXCLUDED), which include those inherited from
+     * super classes. For these inherited/overriden items, the offsets in this virtual table MUST be consistent with
+     * those ones (virtual table of the parent class), for example:
+     * {{{
+     * VTABLE(_Animal) {
+     * <empty>
+     * Animal
+     * _Animal.GetMom;       <-- offset 8 (byte)
+     * _Animal.GetHeight;    <-- offset 12
+     * _Animal.InitAnimal;   <-- offset 16
+     * }
+     * <p>
+     * VTABLE(_Cow) {
+     * _Animal
+     * Cow
+     * _Animal.GetMom;       <-- inherited from _Animal, offset 8
+     * _Cow.GetHeight;       <-- override _Animal's GetHeight, offset 12
+     * _Animal.InitAnimal;   <-- inherited from _Animal, offset 16
+     * _Cow.InitCow;         <-- newly defined
+     * _Cow.IsSpottedCow;    <-- newly defined
+     * }
+     * }}}
+     * Note that each item takes 4 bytes, and the offsets 8, 12, and 16 are consistent.
+     */
+    public static class VTable {
+        /**
+         * Name. NOTE: may differs from `className`.
+         */
+        public final String name;
+
+        /**
+         * The name of the class.
+         */
+        public final String className;
+
+        /**
+         * Virtual table of its parent class (if any).
+         */
+        public final Optional<VTable> parent;
+
+        public int getSize() {
+            return 8 + 4 * memberMethods.size();
+        }
+
+        public List<Label> getItems() {
+            return memberMethods;
+        }
+
+
+        /**
+         * Labels of all member methods.
+         */
+        List<Label> memberMethods = new ArrayList<>();
+
+        List<String> memberVariables = new ArrayList<>();
+
+        VTable(String className, Optional<VTable> parent) {
+            this.name = ".V<" + className + ">";
+            this.className = className;
+            this.parent = parent;
+        }
+
+        int getObjectSize() {
+            return 4 + 4 * memberVariables.size();
+        }
+
+        public void printTo(PrintWriter pw) {
+            pw.println("VTABLE(" + name + ") {");
+            if (parent.isPresent()) {
+                pw.println("    " + parent.get().name);
+            } else {
+                pw.println("    <empty>");
+            }
+            pw.println("    " + className);
+            for (var l : memberMethods) {
+                pw.println("    " + l.name + ";");
+            }
+            pw.println("}");
+            pw.println();
+        }
     }
 
-    public Boolean isReturn() {
-        return false;
+
+    /**
+     * Function. In TAC, a function consists of:
+     * - a label of the entry point, so that our call instruction can jump into it and execute from the first instruction
+     * - a sequence of instructions to be executed
+     */
+    public static class Func {
+        public final Label entry;
+
+        public List<Instr> getInstrSeq() {
+            return instrSeq;
+        }
+
+        public int getUsedTempCount() {
+            return tempUsed;
+        }
+
+        List<Instr> instrSeq = new ArrayList<>();
+
+        int tempUsed;
+
+        Func(Label entry) {
+            this.entry = entry;
+        }
+
+        void add(Instr instr) {
+            instrSeq.add(instr);
+        }
+
+        public boolean isIntrinsic() {
+            return false;
+        }
+
+        public void printTo(PrintWriter pw) {
+            pw.println("FUNCTION(" + entry.name + ") {");
+            for (var instr : instrSeq) {
+                if (instr.isMark()) {
+                    pw.println(instr);
+                } else {
+                    pw.println("    " + instr);
+                }
+            }
+            pw.println("}");
+            pw.println();
+        }
     }
 
-    public abstract void accept(Visitor v);
+    public static abstract class Instr {
+        int opcode;
 
-    public abstract String toString();
+        public Boolean isPseudo() {
+            return false;
+        }
+
+        public Boolean isMark() {
+            return false;
+        }
+
+        public Boolean isReturn() {
+            return false;
+        }
+
+        public abstract void accept(InstrVisitor v);
+
+        public abstract String toString();
+    }
 
     public static class Assign extends Instr {
         public final Temp dst;
@@ -35,7 +194,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitAssign(this);
         }
 
@@ -55,7 +214,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitLoadVTbl(this);
         }
 
@@ -75,7 +234,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitLoadImm4(this);
         }
 
@@ -95,7 +254,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitLoadStrConst(this);
         }
 
@@ -121,7 +280,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitUnary(this);
         }
 
@@ -153,7 +312,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitBinary(this);
         }
 
@@ -186,7 +345,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitBranch(this);
         }
 
@@ -212,7 +371,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitConditionalBranch(this);
         }
 
@@ -243,7 +402,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitReturn(this);
         }
 
@@ -261,7 +420,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitParm(this);
         }
 
@@ -281,7 +440,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitIndirectCall(this);
         }
 
@@ -301,7 +460,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitDirectCall(this);
         }
 
@@ -329,7 +488,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitMemory(this);
         }
 
@@ -361,7 +520,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitMark(this);
         }
 
@@ -384,7 +543,7 @@ public abstract class Instr {
         }
 
         @Override
-        public void accept(Visitor v) {
+        public void accept(InstrVisitor v) {
             v.visitMemo(this);
         }
 
@@ -394,7 +553,7 @@ public abstract class Instr {
         }
     }
 
-    public interface Visitor {
+    public interface InstrVisitor {
         default public void visitAssign(Assign instr) {
         }
 
@@ -438,6 +597,48 @@ public abstract class Instr {
         }
 
         default public void visitMemo(Memo instr) {
+        }
+    }
+
+
+    public static class Temp {
+        public final int index;
+
+        Temp(int index) {
+            this.index = index;
+        }
+
+        @Override
+        public String toString() {
+            return ".T" + index;
+        }
+    }
+
+
+    /**
+     * Label.
+     * Specific program locations and all procedures/functions have labels.
+     */
+    public static class Label {
+        public final String name;
+
+        public final boolean target;
+
+        Label(String name, boolean target) {
+            this.name = name;
+            this.target = target;
+        }
+
+        Label(String name) {
+            this.name = name;
+            this.target = false;
+        }
+
+        public static Label MAIN_LABEL = new Label(".main");
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }

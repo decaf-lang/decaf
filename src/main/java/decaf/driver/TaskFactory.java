@@ -2,7 +2,7 @@ package decaf.driver;
 
 import decaf.parsing.Parser;
 import decaf.tacgen.TacGen;
-import decaf.tools.tac.TacProgram;
+import decaf.tools.tac.Tac;
 import decaf.tree.Tree;
 import decaf.typecheck.Namer;
 import decaf.typecheck.Typer;
@@ -24,7 +24,7 @@ public class TaskFactory {
         return parse().then(new Namer(config)).then(new Typer(config));
     }
 
-    public Task<InputStream, TacProgram> tacGen() {
+    public Task<InputStream, Tac.Prog> tacGen() {
         return typeCheck().then(new TacGen(config));
     }
 }

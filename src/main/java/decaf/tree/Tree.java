@@ -5,7 +5,7 @@ import decaf.scope.LocalScope;
 import decaf.symbol.ClassSymbol;
 import decaf.symbol.MethodSymbol;
 import decaf.symbol.VarSymbol;
-import decaf.tools.tac.Temp;
+import decaf.tools.tac.Tac;
 import decaf.type.Type;
 
 import java.util.ArrayList;
@@ -843,11 +843,10 @@ public abstract class Tree {
      * Expression.
      */
     public abstract static class Expr extends TreeNode {
-
+        // For type check
         public Type type;
-        public Temp val;
-        public boolean isClass;
-        public boolean usedForRef;
+        // For tac gen
+        public Tac.Temp val;
 
         public Expr(Kind kind, String displayName, Pos pos) {
             super(kind, displayName, pos);

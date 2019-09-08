@@ -4,116 +4,116 @@ import java.util.List;
 
 public class MethodVisitor {
 
-    public void visitAssign(Temp dst, Temp src) {
-        _func.add(new Instr.Assign(dst, src));
+    public void visitAssign(Tac.Temp dst, Tac.Temp src) {
+        _func.add(new Tac.Assign(dst, src));
     }
 
-    public Temp visitLoad(int value) {
+    public Tac.Temp visitLoad(int value) {
         var temp = freshTemp();
-        _func.add(new Instr.LoadImm4(temp, value));
+        _func.add(new Tac.LoadImm4(temp, value));
         return temp;
     }
 
-    public Temp visitLoad(boolean value) {
+    public Tac.Temp visitLoad(boolean value) {
         var temp = freshTemp();
-        _func.add(new Instr.LoadImm4(temp, value ? 1 : 0));
+        _func.add(new Tac.LoadImm4(temp, value ? 1 : 0));
         return temp;
     }
 
-    public Temp visitLoad(String value) {
+    public Tac.Temp visitLoad(String value) {
         var temp = freshTemp();
-        _func.add(new Instr.LoadStrConst(temp, value));
+        _func.add(new Tac.LoadStrConst(temp, value));
         return temp;
     }
 
-    public Temp visitLoadVTable(String clazz) {
+    public Tac.Temp visitLoadVTable(String clazz) {
         var temp = freshTemp();
-        _func.add(new Instr.LoadVTbl(temp, _ctx.getVTable(clazz)));
+        _func.add(new Tac.LoadVTbl(temp, _ctx.getVTable(clazz)));
         return temp;
     }
 
-    public Temp visitUnary(Instr.Unary.Op op, Temp operand) {
+    public Tac.Temp visitUnary(Tac.Unary.Op op, Tac.Temp operand) {
         var temp = freshTemp();
-        _func.add(new Instr.Unary(op, temp, operand));
+        _func.add(new Tac.Unary(op, temp, operand));
         return temp;
     }
 
-    public void visitUnarySelf(Instr.Unary.Op op, Temp self) {
-        _func.add(new Instr.Unary(op, self, self));
+    public void visitUnarySelf(Tac.Unary.Op op, Tac.Temp self) {
+        _func.add(new Tac.Unary(op, self, self));
     }
 
-    public Temp visitBinary(Instr.Binary.Op op, Temp lhs, Temp rhs) {
+    public Tac.Temp visitBinary(Tac.Binary.Op op, Tac.Temp lhs, Tac.Temp rhs) {
         var temp = freshTemp();
-        _func.add(new Instr.Binary(op, temp, lhs, rhs));
+        _func.add(new Tac.Binary(op, temp, lhs, rhs));
         return temp;
     }
 
-    public void visitBinarySelf(Instr.Binary.Op op, Temp self, Temp operand) {
-        _func.add(new Instr.Binary(op, self, self, operand));
+    public void visitBinarySelf(Tac.Binary.Op op, Tac.Temp self, Tac.Temp operand) {
+        _func.add(new Tac.Binary(op, self, self, operand));
     }
 
-    public void visitBranch(Label target) {
-        _func.add(new Instr.Branch(target));
+    public void visitBranch(Tac.Label target) {
+        _func.add(new Tac.Branch(target));
     }
 
-    public void visitBranch(Instr.ConditionalBranch.Op op, Temp cond, Label target) {
-        _func.add(new Instr.ConditionalBranch(op, cond, target));
+    public void visitBranch(Tac.ConditionalBranch.Op op, Tac.Temp cond, Tac.Label target) {
+        _func.add(new Tac.ConditionalBranch(op, cond, target));
     }
 
     public void visitReturn() {
-        _func.add(new Instr.Return());
+        _func.add(new Tac.Return());
     }
 
-    public void visitReturn(Temp value) {
-        _func.add(new Instr.Return(value));
+    public void visitReturn(Tac.Temp value) {
+        _func.add(new Tac.Return(value));
     }
 
-    public Temp visitNewClass(String clazz) {
+    public Tac.Temp visitNewClass(String clazz) {
         var temp = freshTemp();
         var entry = _ctx.getConstructorLabel(clazz);
-        _func.add(new Instr.DirectCall(temp, entry));
+        _func.add(new Tac.DirectCall(temp, entry));
         return temp;
     }
 
-    public Temp visitMemberAccess(Temp object, String clazz, String variable) {
+    public Tac.Temp visitMemberAccess(Tac.Temp object, String clazz, String variable) {
         return visitLoadFrom(object, _ctx.getOffset(clazz, variable));
     }
 
-    public void visitMemberWrite(Temp object, String clazz, String variable, Temp value) {
+    public void visitMemberWrite(Tac.Temp object, String clazz, String variable, Tac.Temp value) {
         visitStoreTo(object, _ctx.getOffset(clazz, variable), value);
     }
 
-    public Temp visitMemberCall(Temp object, String clazz, String method, List<Temp> args) {
+    public Tac.Temp visitMemberCall(Tac.Temp object, String clazz, String method, List<Tac.Temp> args) {
         var temp = freshTemp();
         var vtbl = visitLoadFrom(object);
         var entry = visitLoadFrom(vtbl, _ctx.getOffset(clazz, method));
 
-        _func.add(new Instr.Parm(object));
+        _func.add(new Tac.Parm(object));
         for (var arg : args) {
-            _func.add(new Instr.Parm(arg));
+            _func.add(new Tac.Parm(arg));
         }
-        _func.add(new Instr.IndirectCall(temp, entry));
+        _func.add(new Tac.IndirectCall(temp, entry));
         return temp;
     }
 
-    public Temp visitStaticCall(String clazz, String method, List<Temp> args) {
+    public Tac.Temp visitStaticCall(String clazz, String method, List<Tac.Temp> args) {
         var temp = freshTemp();
         var entry = _ctx.getMethodLabel(clazz, method);
 
         for (var arg : args) {
-            _func.add(new Instr.Parm(arg));
+            _func.add(new Tac.Parm(arg));
         }
-        _func.add(new Instr.DirectCall(temp, entry));
+        _func.add(new Tac.DirectCall(temp, entry));
         return temp;
     }
 
-    public Temp visitIntrinsicCall(Intrinsic func, Temp... args) {
+    public Tac.Temp visitIntrinsicCall(Intrinsic func, Tac.Temp... args) {
         var temp = freshTemp();
 
         for (var arg : args) {
-            _func.add(new Instr.Parm(arg));
+            _func.add(new Tac.Parm(arg));
         }
-        _func.add(new Instr.DirectCall(temp, func.entry));
+        _func.add(new Tac.DirectCall(temp, func.entry));
         return temp;
     }
 
@@ -121,74 +121,74 @@ public class MethodVisitor {
         visitIntrinsicCall(Intrinsic.PRINT_STRING, visitLoad(msg));
     }
 
-    public Temp visitLoadFrom(Temp base, int offset) {
+    public Tac.Temp visitLoadFrom(Tac.Temp base, int offset) {
         var temp = freshTemp();
-        _func.add(new Instr.Memory(Instr.Memory.Op.LOAD, temp, base, offset));
+        _func.add(new Tac.Memory(Tac.Memory.Op.LOAD, temp, base, offset));
         return temp;
     }
 
-    public Temp visitLoadFrom(Temp base) {
+    public Tac.Temp visitLoadFrom(Tac.Temp base) {
         return visitLoadFrom(base, 0);
     }
 
-    public void visitStoreTo(Temp base, int offset, Temp value) {
-        _func.add(new Instr.Memory(Instr.Memory.Op.STORE, value, base, offset));
+    public void visitStoreTo(Tac.Temp base, int offset, Tac.Temp value) {
+        _func.add(new Tac.Memory(Tac.Memory.Op.STORE, value, base, offset));
     }
 
-    public void visitStoreTo(Temp addr, Temp value) {
+    public void visitStoreTo(Tac.Temp addr, Tac.Temp value) {
         visitStoreTo(addr, 0, value);
     }
 
-    public void visitLabel(Label lbl) {
-        _func.add(new Instr.Mark(lbl));
+    public void visitLabel(Tac.Label lbl) {
+        _func.add(new Tac.Mark(lbl));
     }
 
     public void visitComment(String content) {
-        _func.add(new Instr.Memo(content));
+        _func.add(new Tac.Memo(content));
     }
 
-    public void visitRaw(Instr instr) {
+    public void visitRaw(Tac.Instr instr) {
         _func.add(instr);
     }
 
     public void visitEnd() {
-        _func.tempUsed = getUsedTempCount();
-        _ctx.functions.add(_func);
+        _func.tempUsed = getUsedTemp();
+        _ctx.funcs.add(_func);
     }
 
-    public Label freshLabel() {
+    public Tac.Label freshLabel() {
         return _ctx.freshLabel();
     }
 
-    public Temp freshTemp() {
-        var temp = new Temp(_next_temp_id);
+    public Tac.Temp freshTemp() {
+        var temp = new Tac.Temp(_next_temp_id);
         _next_temp_id++;
         return temp;
     }
 
-    public Temp getArgTemp(int index) {
+    public Tac.Temp getArgTemp(int index) {
         return _args_temps[index];
     }
 
-    public int getUsedTempCount() {
+    public int getUsedTemp() {
         return _next_temp_id;
     }
 
-    MethodVisitor(Label entry, int numArgs, ProgramWriter.Context ctx) {
+    MethodVisitor(Tac.Label entry, int numArgs, ProgramWriter.Context ctx) {
         _ctx = ctx;
-        _func = new Function(entry);
+        _func = new Tac.Func(entry);
         visitLabel(entry);
-        _args_temps = new Temp[numArgs];
+        _args_temps = new Tac.Temp[numArgs];
         for (int i = 0; i < numArgs; i++) {
             _args_temps[i] = freshTemp();
         }
     }
 
-    private Function _func;
+    private Tac.Func _func;
 
     private ProgramWriter.Context _ctx;
 
     private int _next_temp_id = 0;
 
-    private Temp[] _args_temps;
+    private Tac.Temp[] _args_temps;
 }
