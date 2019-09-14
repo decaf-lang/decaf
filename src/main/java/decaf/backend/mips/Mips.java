@@ -1,390 +1,396 @@
 package decaf.backend.mips;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import decaf.instr.*;
+import org.apache.commons.lang3.ArrayUtils;
 
-import decaf.dataflow.BasicBlock;
-import decaf.dataflow.FlowGraph;
-import decaf.dataflow.BasicBlock.EndKind;
-import decaf.machdesc.Asm;
-import decaf.machdesc.MachineDescription;
-import decaf.tac.Label;
-import decaf.tac.Tac;
-import decaf.tac.Temp;
-import decaf.tac.VTable;
-import decaf.utils.MiscUtils;
-import decaf.backend.OffsetCounter;
-import decaf.backend.RegisterAllocator;
-import decaf.backend.GraphColorRegisterAllocator;
-import decaf.backend.BruteRegisterAllocator;
+public class Mips {
 
-public class Mips implements MachineDescription {
+    // Registers
 
-	public static final MipsRegister[] REGS = new MipsRegister[] {
-			new MipsRegister(MipsRegister.RegId.ZERO, "$zero"),// zero
-			new MipsRegister(MipsRegister.RegId.AT, "$at"), // assembler
-			// temporary
-			new MipsRegister(MipsRegister.RegId.V0, "$v0"), // return value 0
-			new MipsRegister(MipsRegister.RegId.V1, "$v1"), // return value 1
-			new MipsRegister(MipsRegister.RegId.A0, "$a0"), // argument 0
-			new MipsRegister(MipsRegister.RegId.A1, "$a1"), // argument 1
-			new MipsRegister(MipsRegister.RegId.A2, "$a2"), // argument 2
-			new MipsRegister(MipsRegister.RegId.A3, "$a3"), // argument 3
-			new MipsRegister(MipsRegister.RegId.K0, "$k0"), // kernal 0
-			new MipsRegister(MipsRegister.RegId.K1, "$k1"), // kernal 1
-			new MipsRegister(MipsRegister.RegId.GP, "$gp"), // global pointer
-			new MipsRegister(MipsRegister.RegId.SP, "$sp"), // stack pointer
-			new MipsRegister(MipsRegister.RegId.FP, "$fp"), // frame pointer
-			new MipsRegister(MipsRegister.RegId.RA, "$ra"), // return address
-			new MipsRegister(MipsRegister.RegId.T0, "$t0"),
-			new MipsRegister(MipsRegister.RegId.T1, "$t1"),
-			new MipsRegister(MipsRegister.RegId.T2, "$t2"),
-			new MipsRegister(MipsRegister.RegId.T3, "$t3"),
-			new MipsRegister(MipsRegister.RegId.T4, "$t4"),
-			new MipsRegister(MipsRegister.RegId.T5, "$t5"),
-			new MipsRegister(MipsRegister.RegId.T6, "$t6"),
-			new MipsRegister(MipsRegister.RegId.T7, "$t7"),
-			new MipsRegister(MipsRegister.RegId.T8, "$t8"),
-			new MipsRegister(MipsRegister.RegId.T9, "$t9"),
-			new MipsRegister(MipsRegister.RegId.S0, "$s0"),
-			new MipsRegister(MipsRegister.RegId.S1, "$s1"),
-			new MipsRegister(MipsRegister.RegId.S2, "$s2"),
-			new MipsRegister(MipsRegister.RegId.S3, "$s3"),
-			new MipsRegister(MipsRegister.RegId.S4, "$s4"),
-			new MipsRegister(MipsRegister.RegId.S5, "$s5"),
-			new MipsRegister(MipsRegister.RegId.S6, "$s6"),
-			new MipsRegister(MipsRegister.RegId.S7, "$s7") };
+    public static final Reg ZERO = new Reg(0, "$zero"); // always zero (not allocatable)
+    public static final Reg AT = new Reg(1, "$at"); // assembler reserved (not used by decaf)
+    public static final Reg V0 = new Reg(2, "$v0"); // return value 0
+    public static final Reg V1 = new Reg(3, "$v1"); // return value 1, but used as an additional temporary register
+    public static final Reg A0 = new Reg(4, "$a0"); // arg 0
+    public static final Reg A1 = new Reg(5, "$a1"); // arg 1
+    public static final Reg A2 = new Reg(6, "$a2"); // arg 2
+    public static final Reg A3 = new Reg(7, "$a3"); // arg 3
+    public static final Reg T0 = new Reg(8, "$t0");
+    public static final Reg T1 = new Reg(9, "$t1");
+    public static final Reg T2 = new Reg(10, "$t2");
+    public static final Reg T3 = new Reg(11, "$t3");
+    public static final Reg T4 = new Reg(12, "$t4");
+    public static final Reg T5 = new Reg(13, "$t5");
+    public static final Reg T6 = new Reg(14, "$t6");
+    public static final Reg T7 = new Reg(15, "$t7");
+    public static final Reg S0 = new Reg(16, "$s0");
+    public static final Reg S1 = new Reg(17, "$s1");
+    public static final Reg S2 = new Reg(18, "$s2");
+    public static final Reg S3 = new Reg(19, "$s3");
+    public static final Reg S4 = new Reg(20, "$s4");
+    public static final Reg S5 = new Reg(21, "$s5");
+    public static final Reg S6 = new Reg(22, "$s6");
+    public static final Reg S7 = new Reg(23, "$s7");
+    public static final Reg T8 = new Reg(24, "$t8");
+    public static final Reg T9 = new Reg(25, "$t9");
+    public static final Reg K0 = new Reg(26, "$k0"); // kernel 0 (not used by decaf)
+    public static final Reg K1 = new Reg(27, "$k1"); // kernel 1 (not used by decaf)
+    public static final Reg GP = new Reg(28, "$gp"); // global pointer (not used by decaf)
+    public static final Reg SP = new Reg(29, "$sp"); // stack pointer (not allocatable)
+    public static final Reg S8 = new Reg(30, "$s8"); // also called $fp, but used as an additional saved register
+    public static final Reg RA = new Reg(31, "$ra"); // return address
 
-	public static final MipsRegister[] GENERAL_REGS;
-	static {
-		GENERAL_REGS = new MipsRegister[MipsRegister.RegId.S7.ordinal()
-				- MipsRegister.RegId.T0.ordinal()];
-		System.arraycopy(REGS, MipsRegister.RegId.T0.ordinal(), GENERAL_REGS,
-				0, GENERAL_REGS.length);
-	}
+    public static final Reg[] callerSaved = new Reg[]{
+            V1, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9
+    };
 
-	private RegisterAllocator regAllocator;
+    public static final Reg[] calleeSaved = new Reg[]{
+            S0, S1, S2, S3, S4, S5, S6, S7, S8
+    };
 
-	private MipsCallingConv callingConv;
+    public static final Reg[] allocatableRegs = ArrayUtils.addAll(callerSaved, calleeSaved);
 
-	private Map<String, String> stringConst;
+    public static final Reg[] argRegs = new Reg[]{
+            A0, A1, A2, A3
+    };
 
-	private String getStringConstLabel(String s) {
-		String label = stringConst.get(s);
-		if (label == null) {
-			label = "_STRING" + stringConst.size();
-			stringConst.put(s, label);
-		}
-		return label;
-	}
+    // Instructions
 
-	private PrintWriter output;
+    static final String FMT1 = "%s";
+    static final String FMT2 = "%s, %s";
+    static final String FMT3 = "%s, %s, %s";
+    static final String FMT_OFFSET = "%s, %d(%s)";
 
-	public Mips() {
-		callingConv = new MipsCallingConv();
-		Temp fpTemp = Temp.createTempI4();
-		fpTemp.reg = REGS[MipsRegister.RegId.FP.ordinal()];
-		regAllocator = new GraphColorRegisterAllocator(fpTemp, callingConv, GENERAL_REGS);
-		stringConst = new HashMap<String, String>();
-	}
+    public static class Move extends PseudoInstr {
 
-	@Override
-	public void emitAsm(List<FlowGraph> gs) {
-		emit(null, ".text", null);
-		for (FlowGraph g : gs) {
-			callingConv.resetFrame();
-			for (BasicBlock bb : g) {
-				bb.label = Label.createLabel();
-			}
-			for (BasicBlock bb : g) {
-				if (bb.cancelled) {
-					continue;
-				}
-				regAllocator.alloc(bb);
-				genAsmForBB(bb);
-				for (Temp t : bb.saves) {
-					bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "sw", t.reg,
-							t.offset, "$fp"));
-				}
-			}
-			emitProlog(g.getFuncty().label, callingConv.getStackFrameSize());
-			emitTrace(g.getBlock(0), g);
-			output.println();
-		}
-		for (int i = 0; i < 3; i++) {
-			output.println();
-		}
-		emitStringConst();
-	}
+        public Move(Temp dst, Temp src) {
+            super("MOVE", new Temp[]{dst}, new Temp[]{src});
+        }
 
-	private void emitStringConst() {
-		emit(null, ".data", null);
-		for (Entry<String, String> e : stringConst.entrySet()) {
-			emit(e.getValue(), ".asciiz " + MiscUtils.quote(e.getKey()), null);
-		}
-	}
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
 
-	private void genAsmForBB(BasicBlock bb) {
-		for (Tac tac = bb.tacList; tac != null; tac = tac.next) {
-			switch (tac.opc) {
-			case ADD:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "add", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case SUB:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "sub", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case MUL:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "mul", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case DIV:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "div", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case MOD:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "rem", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case LAND:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "and", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case LOR:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "or", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case GTR:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "sgt", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case GEQ:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "sge", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case EQU:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "seq", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case NEQ:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "sne", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case LEQ:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "sle", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case LES:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT3, "slt", tac.op0.reg,
-						tac.op1.reg, tac.op2.reg));
-				break;
-			case NEG:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "neg", tac.op0.reg,
-						tac.op1.reg));
-				break;
-			case LNOT:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "not", tac.op0.reg,
-						tac.op1.reg));
-				break;
-			case ASSIGN:
-				if (tac.op0.reg != tac.op1.reg) {
-					bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "move",
-							tac.op0.reg, tac.op1.reg));
-				}
-				break;
-			case LOAD_VTBL:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "la", tac.op0.reg,
-						tac.vt.name));
-				break;
-			case LOAD_IMM4:
-				if (!tac.op1.isConst) {
-					throw new IllegalArgumentException();
-				}
-				int high = tac.op1.value >> 16;
-				int low = tac.op1.value & 0x0000FFFF;
-				if (high == 0) {
-					bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "li",
-							tac.op0.reg, low));
-				} else {
-					bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "lui",
-							tac.op0.reg, high));
-					if (low != 0) {
-						bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "addiu",
-								tac.op0.reg, tac.op0.reg, low));
-					}
-				}
-				break;
-			case LOAD_STR_CONST:
-				String label = getStringConstLabel(tac.str);
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "la", tac.op0.reg,
-						label));
-				break;
-			case INDIRECT_CALL:
-			case DIRECT_CALL:
-				genAsmForCall(bb, tac);
-				break;
-			case PARM:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "sw", tac.op0.reg,
-						tac.op1.value, "$sp"));
-				break;
-			case LOAD:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "lw", tac.op0.reg,
-						tac.op2.value, tac.op1.reg));
-				break;
-			case STORE:
-				bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "sw", tac.op0.reg,
-						tac.op2.value, tac.op1.reg));
-				break;
-			case BRANCH:
-			case BEQZ:
-			case BNEZ:
-			case RETURN:
-				throw new IllegalArgumentException();
-			}
-		}
-	}
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], srcs[0]};
+        }
+    }
 
-	private void genAsmForCall(BasicBlock bb, Tac call) {
-		for (Temp t : call.saves) {
-			bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "sw", t.reg, t.offset,
-					"$fp"));
-		}
-		if (call.opc == Tac.Kind.DIRECT_CALL) {
-			bb.appendAsm(new MipsAsm(MipsAsm.FORMAT1, "jal", call.label));
-		} else {
-			bb.appendAsm(new MipsAsm(MipsAsm.FORMAT1, "jalr", call.op1.reg));
-		}
-		if (call.op0 != null) {
-			bb.appendAsm(new MipsAsm(MipsAsm.FORMAT2, "move", call.op0.reg,
-					"$v0"));
-		}
-		for (Temp t : call.saves) {
-			bb.appendAsm(new MipsAsm(MipsAsm.FORMAT4, "lw", t.reg, t.offset,
-					"$fp"));
-		}
-	}
+    public enum UnaryOp {
+        NEG, NOT
+    }
 
-	private void emitTrace(BasicBlock bb, FlowGraph graph) {
-		if (bb.mark) {
-			return;
-		}
-		bb.mark = true;
-		emit(bb.label.name, null, null);
-		for (Asm asm : bb.getAsms()) {
-			emit(null, asm.toString(), null);
-		}
-		BasicBlock directNext;
-		switch (bb.endKind) {
-		case BY_BRANCH:
-			directNext = graph.getBlock(bb.next[0]);
-			if (directNext.mark) {
-				emit(null, String.format(MipsAsm.FORMAT1, "b",
-						directNext.label.name), null);
-			} else {
-				emitTrace(directNext, graph);
-			}
-			break;
-		case BY_BEQZ:
-		case BY_BNEZ:
-			if (bb.endKind == EndKind.BY_BEQZ) {
-				emit(null, String.format(MipsAsm.FORMAT2, "beqz", bb.varReg,
-						graph.getBlock(bb.next[0]).label.name), null);
-			} else {
-				emit(null, String.format(MipsAsm.FORMAT3, "bne", bb.varReg,
-						"$zero", graph.getBlock(bb.next[0]).label.name), null);
-			}
+    public static class Unary extends PseudoInstr {
 
-			directNext = graph.getBlock(bb.next[1]);
-			if (directNext.mark) {
-				emit(null, String.format(MipsAsm.FORMAT1, "b",
-						directNext.label.name), null);
-			} else {
-				emitTrace(directNext, graph);
-			}
-			emitTrace(graph.getBlock(bb.next[0]), graph);
-			break;
-		case BY_RETURN:
-			if (bb.var != null) {
-				emit(null, String.format(MipsAsm.FORMAT2, "move", "$v0",
-						bb.varReg), null);
-			}
-			emit(null, String.format(MipsAsm.FORMAT2, "move", "$sp", "$fp"),
-					null);
-			emit(null, String.format(MipsAsm.FORMAT2, "lw", "$ra", "-4($fp)"),
-					null);
-			emit(null, String.format(MipsAsm.FORMAT2, "lw", "$fp", "0($fp)"),
-					null);
-			emit(null, String.format(MipsAsm.FORMAT1, "jr", "$ra"), null);
-			break;
-		}
-	}
+        public Unary(UnaryOp op, Temp dst, Temp src) {
+            super(op.toString(), new Temp[]{dst}, new Temp[]{src});
+        }
 
-	private void emitProlog(Label entryLabel, int frameSize) {
-		emit(entryLabel.name, null, "function entry");
-		emit(null, "sw $fp, 0($sp)", null);
-		emit(null, "sw $ra, -4($sp)", null);
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
 
-		emit(null, "move $fp, $sp", null);
-		emit(null, "addiu $sp, $sp, "
-				+ (-frameSize - 2 * OffsetCounter.POINTER_SIZE), null);
-	}
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], srcs[0]};
+        }
+    }
 
-	@Override
-	public void setOutputStream(PrintWriter pw) {
-		this.output = pw;
-	}
+    public enum BinaryOp {
+        ADD, SUB, MUL, DIV, REM,
+        SGT, SGE, SEQ, SNE, SLE, SLT,
+        AND, OR
+    }
 
-	@Override
-	public void emitVTable(List<VTable> vtables) {
-		emit(null, ".text", null);
-		emit(null, ".globl main", null);
+    public static class Binary extends PseudoInstr {
 
-		for (VTable vt : vtables) {
-			emit(null, null, null);
-			emit(null, ".data", null);
-			emit(null, ".align 2", null);
-			emit(vt.name, null, "virtual table");
-			emit(null, ".word " + (vt.parent == null ? "0" : vt.parent.name),
-					"parent");
-			emit(null, ".word " + getStringConstLabel(vt.className),
-					"class name");
-			for (Label l : vt.entries) {
-				emit(null, ".word " + l.name, null);
-			}
-		}
-	}
+        public Binary(BinaryOp op, Temp dst, Temp src0, Temp src1) {
+            super(op.toString(), new Temp[]{dst}, new Temp[]{src0, src1});
+        }
 
-	private String emitToString(String label, String body, String comment) {
-		if (comment != null && label == null && body == null) {
-			return "                                        # " + comment;
-		} else {
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			if (label != null) {
-				if (body == null) {
-					pw.format("%-40s", label + ":");
-				} else {
-					pw.println(label + ":");
-				}
-			}
-			if (body != null) {
-				pw.format("          %-30s", body);
-			}
-			if (comment != null) {
-				pw.print("# " + comment);
-			}
-			pw.close();
-			return sw.toString();
-		}
-	}
+        @Override
+        public String getFormat() {
+            return FMT3;
+        }
 
-	private void emit(String label, String body, String comment) {
-		output.println(emitToString(label, body, comment));
-	}
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], srcs[0], srcs[1]};
+        }
+    }
 
+    public enum BranchOp {
+        BEQZ, BNEZ
+    }
+
+    public static class Branch extends PseudoInstr {
+
+        public Branch(BranchOp op, Temp src, Label to) {
+            super(Kind.COND_JMP, op.toString(), new Temp[]{}, new Temp[]{src}, to);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{srcs[0], jumpTo};
+        }
+    }
+
+    public static class Jump extends PseudoInstr {
+
+        public Jump(Label to) {
+            super(Kind.JMP, "J", new Temp[]{}, new Temp[]{}, to);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT1;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{jumpTo};
+        }
+    }
+
+    /**
+     * The special jump-to-return instruction:
+     * J epilogue
+     * is regarded as a return statement.
+     */
+    public static class JumpToEpilogue extends PseudoInstr {
+
+        public JumpToEpilogue() {
+            super(Kind.RET, "J", new Temp[]{}, new Temp[]{}, Mips.EPILOGUE_LABEL);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT1;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{jumpTo};
+        }
+    }
+
+    public static class JumpAndLink extends PseudoInstr {
+
+        public JumpAndLink(Label to) {
+            super(Kind.SEQ, "JAL", new Temp[]{}, new Temp[]{}, to);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT1;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{jumpTo};
+        }
+    }
+
+    public static class JumpAndLinkReg extends PseudoInstr {
+
+        public JumpAndLinkReg(Temp src) {
+            super("JALR", new Temp[]{}, new Temp[]{src});
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT1;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return srcs;
+        }
+    }
+
+    public static class LoadWord extends PseudoInstr {
+
+        public LoadWord(Temp dst, Temp base, int offset) {
+            super("LW", new Temp[]{dst}, new Temp[]{base}, offset);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT_OFFSET;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], imms[0], srcs[0]};
+        }
+    }
+
+    public static class StoreWord extends PseudoInstr {
+
+        public StoreWord(Temp src, Temp base, int offset) {
+            super("SW", new Temp[]{}, new Temp[]{src, base}, offset);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT_OFFSET;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{srcs[0], imms[0], srcs[1]};
+        }
+    }
+
+    public static class LoadImm extends PseudoInstr {
+
+        public LoadImm(Temp dst, int value) {
+            super("LI", new Temp[]{dst}, new Temp[]{}, value);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], imms[0]};
+        }
+    }
+
+    public static class LoadAddr extends PseudoInstr {
+
+        public LoadAddr(Temp dst, Label label) {
+            super("LA", new Temp[]{dst}, new Temp[]{}, label);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], imms[0]};
+        }
+    }
+
+    public static class MipsLabel extends PseudoInstr {
+
+        public MipsLabel(Label label) {
+            super(label);
+        }
+
+        @Override
+        public String getFormat() {
+            return "%s:";
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{jumpTo};
+        }
+    }
+
+
+    public static class NativeMove extends NativeInstr {
+
+        public NativeMove(Reg dst, Reg src) {
+            super("MOVE", new Reg[]{dst}, new Reg[]{src});
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT2;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], srcs[0]};
+        }
+    }
+
+    public static class NativeLoadWord extends NativeInstr {
+
+        public NativeLoadWord(Reg dst, Reg base, int offset) {
+            super("LW", new Reg[]{dst}, new Reg[]{base}, offset);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT_OFFSET;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], imms[0], srcs[0]};
+        }
+    }
+
+    public static class NativeStoreWord extends NativeInstr {
+
+        public NativeStoreWord(Reg src, Reg base, int offset) {
+            super("SW", new Reg[]{}, new Reg[]{src, base}, offset);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT_OFFSET;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{srcs[0], imms[0], srcs[1]};
+        }
+    }
+
+    /**
+     * Since the only possible usage of the JR instrction is to return a subroutine with
+     * JR $ra
+     * Why not simply call this "Return"?
+     */
+    public static class NativeReturn extends NativeInstr {
+
+        public NativeReturn() {
+            super(Kind.RET, "JR", new Reg[]{Mips.RA}, new Reg[]{}, null);
+        }
+
+        @Override
+        public String getFormat() {
+            return FMT1;
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return dsts;
+        }
+    }
+
+    public static class NativeSPAdd extends NativeInstr {
+
+        public NativeSPAdd(int offset) {
+            super("ADDIU", new Reg[]{Mips.SP}, new Reg[]{Mips.SP}, offset);
+        }
+
+        @Override
+        public String getFormat() {
+            return "%s, %s, (%s)";
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{dsts[0], srcs[0], imms[0]};
+        }
+    }
+
+    public static final Label EPILOGUE_LABEL = new Label("$epilogue");
 }

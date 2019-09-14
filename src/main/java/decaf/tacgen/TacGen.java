@@ -2,21 +2,21 @@ package decaf.tacgen;
 
 import decaf.driver.Config;
 import decaf.driver.Phase;
-import decaf.tools.tac.*;
+import decaf.instr.tac.*;
 import decaf.tree.Tree;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-public class TacGen extends Phase<Tree.TopLevel, Tac.Prog> implements TacEmitter {
+public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter {
 
     public TacGen(Config config) {
         super("tacgen", config);
     }
 
     @Override
-    public Tac.Prog transform(Tree.TopLevel tree) {
+    public TAC.Prog transform(Tree.TopLevel tree) {
         // Create class info.
         var info = new ArrayList<ClassInfo>();
         for (var clazz : tree.classes) {
@@ -58,7 +58,7 @@ public class TacGen extends Phase<Tree.TopLevel, Tac.Prog> implements TacEmitter
     }
 
     @Override
-    public void onSucceed(Tac.Prog program) {
+    public void onSucceed(TAC.Prog program) {
         if (config.target.equals(Config.Target.PA3)) {
             // First dump the tac program to file,
             var path = config.dstPath.resolve(config.getSourceBaseName() + ".tac");

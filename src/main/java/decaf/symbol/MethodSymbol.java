@@ -2,7 +2,6 @@ package decaf.symbol;
 
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
-import decaf.tac.Functy;
 import decaf.tree.Pos;
 import decaf.tree.Tree;
 import decaf.type.FunType;
@@ -63,25 +62,6 @@ public class MethodSymbol extends Symbol {
     }
 
     // TODO
-    private Functy functy;
 
     private boolean isMain;
-
-    private int offset;
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public Functy getFuncty() {
-        return functy;
-    }
-
-    public void setFuncty(Functy functy) {
-        this.functy = functy;
-    }
 }

@@ -9,7 +9,7 @@ import java.nio.file.Path;
 
 public class Config {
     public enum Target {
-        PA1, PA2, PA3
+        PA1, PA2, PA3, PA4, PA5
     }
 
     public final FileInputStream source;
@@ -43,7 +43,7 @@ public class Config {
         var source = new FileInputStream(sourceFile);
         var sourcePath = sourceFile.toPath();
 
-        var target = Target.PA3;
+        var target = Target.PA5;
         if (cli.hasOption(OptParser.TARGET)) {
             target = parseTarget(cli.getOptionValue(OptParser.TARGET));
         }
@@ -74,6 +74,8 @@ public class Config {
             case "PA1" -> Target.PA1;
             case "PA2" -> Target.PA2;
             case "PA3" -> Target.PA3;
+            case "PA4" -> Target.PA4;
+            case "PA5" -> Target.PA5;
             default -> throw new ParseException(String.format("Invalid target: '%s'", target));
         };
     }

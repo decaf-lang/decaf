@@ -1,16 +1,14 @@
 package decaf.symbol;
 
+import decaf.instr.Label;
+import decaf.instr.tac.ClassInfo;
+import decaf.instr.tac.TAC;
 import decaf.scope.ClassScope;
 import decaf.scope.GlobalScope;
-import decaf.tac.Label;
-import decaf.tac.VTable;
-import decaf.tools.tac.ClassInfo;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 
 public class ClassSymbol extends Symbol {
@@ -97,7 +95,7 @@ public class ClassSymbol extends Symbol {
 
     private int size;
 
-    private VTable vtable;
+    private TAC.VTable vtable;
 
     private Label newFuncLabel;
 
@@ -109,11 +107,11 @@ public class ClassSymbol extends Symbol {
         this.newFuncLabel = newFuncLabel;
     }
 
-    public VTable getVtable() {
+    public TAC.VTable getVtable() {
         return vtable;
     }
 
-    public void setVtable(VTable vtable) {
+    public void setVtable(TAC.VTable vtable) {
         this.vtable = vtable;
     }
 

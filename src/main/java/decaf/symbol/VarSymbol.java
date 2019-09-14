@@ -1,7 +1,8 @@
 package decaf.symbol;
 
+import decaf.instr.Temp;
 import decaf.scope.ClassScope;
-import decaf.tools.tac.Tac;
+import decaf.instr.tac.TAC;
 import decaf.tree.Pos;
 import decaf.type.ClassType;
 import decaf.type.Type;
@@ -44,5 +45,5 @@ public class VarSymbol extends Symbol {
     }
 
     // For tac gen
-    public Tac.Temp temp;
+    public Temp temp;
 }

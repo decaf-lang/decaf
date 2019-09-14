@@ -1,11 +1,11 @@
 package decaf.tree;
 
+import decaf.instr.Temp;
 import decaf.scope.GlobalScope;
 import decaf.scope.LocalScope;
 import decaf.symbol.ClassSymbol;
 import decaf.symbol.MethodSymbol;
 import decaf.symbol.VarSymbol;
-import decaf.tools.tac.Tac;
 import decaf.type.Type;
 
 import java.util.ArrayList;
@@ -846,7 +846,7 @@ public abstract class Tree {
         // For type check
         public Type type;
         // For tac gen
-        public Tac.Temp val;
+        public Temp val;
 
         public Expr(Kind kind, String displayName, Pos pos) {
             super(kind, displayName, pos);

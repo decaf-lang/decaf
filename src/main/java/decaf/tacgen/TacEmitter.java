@@ -1,9 +1,11 @@
 package decaf.tacgen;
 
 import decaf.error.RuntimeError;
-import decaf.tools.tac.Intrinsic;
-import decaf.tools.tac.MethodVisitor;
-import decaf.tools.tac.Tac;
+import decaf.instr.Label;
+import decaf.instr.TacInstr;
+import decaf.instr.Temp;
+import decaf.instr.tac.Intrinsic;
+import decaf.instr.tac.MethodVisitor;
 import decaf.tree.Tree;
 import decaf.tree.Visitor;
 import decaf.type.BuiltInType;
@@ -15,7 +17,7 @@ import java.util.function.Function;
 
 public interface TacEmitter extends Visitor<MethodVisitor> {
 
-    Stack<Tac.Label> _loop_exits = new Stack<>();
+    Stack<Label> _loop_exits = new Stack<>();
 
     @Override
     default void visitBlock(Tree.Block block, MethodVisitor mv) {
@@ -73,7 +75,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     @Override
     default void visitWhile(Tree.While loop, MethodVisitor mv) {
         var exit = mv.freshLabel();
-        Function<MethodVisitor, Tac.Temp> test = v -> {
+        Function<MethodVisitor, Temp> test = v -> {
             loop.cond.accept(this, v);
             return loop.cond.val;
         };
@@ -89,7 +91,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     default void visitFor(Tree.For loop, MethodVisitor mv) {
         var exit = mv.freshLabel();
         loop.init.accept(this, mv);
-        Function<MethodVisitor, Tac.Temp> test = v -> {
+        Function<MethodVisitor, Temp> test = v -> {
             loop.cond.accept(this, v);
             return loop.cond.val;
         };
@@ -174,8 +176,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     @Override
     default void visitUnary(Tree.Unary expr, MethodVisitor mv) {
         var op = switch (expr.op) {
-            case NEG -> Tac.Unary.Op.NEG;
-            case NOT -> Tac.Unary.Op.LNOT;
+            case NEG -> TacInstr.Unary.Op.NEG;
+            case NOT -> TacInstr.Unary.Op.LNOT;
         };
 
         expr.operand.accept(this, mv);
@@ -190,25 +192,25 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
             expr.rhs.accept(this, mv);
             expr.val = mv.visitIntrinsicCall(Intrinsic.STRING_EQUAL, expr.lhs.val, expr.rhs.val);
             if (expr.op.equals(Tree.BinaryOp.NE)) {
-                mv.visitUnarySelf(Tac.Unary.Op.LNOT, expr.val);
+                mv.visitUnarySelf(TacInstr.Unary.Op.LNOT, expr.val);
             }
             return;
         }
 
         var op = switch (expr.op) {
-            case ADD -> Tac.Binary.Op.ADD;
-            case SUB -> Tac.Binary.Op.SUB;
-            case MUL -> Tac.Binary.Op.MUL;
-            case DIV -> Tac.Binary.Op.DIV;
-            case MOD -> Tac.Binary.Op.MOD;
-            case EQ -> Tac.Binary.Op.EQU;
-            case NE -> Tac.Binary.Op.NEQ;
-            case LT -> Tac.Binary.Op.LES;
-            case LE -> Tac.Binary.Op.LEQ;
-            case GT -> Tac.Binary.Op.GTR;
-            case GE -> Tac.Binary.Op.GEQ;
-            case AND -> Tac.Binary.Op.LAND;
-            case OR -> Tac.Binary.Op.LOR;
+            case ADD -> TacInstr.Binary.Op.ADD;
+            case SUB -> TacInstr.Binary.Op.SUB;
+            case MUL -> TacInstr.Binary.Op.MUL;
+            case DIV -> TacInstr.Binary.Op.DIV;
+            case MOD -> TacInstr.Binary.Op.MOD;
+            case EQ -> TacInstr.Binary.Op.EQU;
+            case NE -> TacInstr.Binary.Op.NEQ;
+            case LT -> TacInstr.Binary.Op.LES;
+            case LE -> TacInstr.Binary.Op.LEQ;
+            case GT -> TacInstr.Binary.Op.GTR;
+            case GE -> TacInstr.Binary.Op.GEQ;
+            case AND -> TacInstr.Binary.Op.LAND;
+            case OR -> TacInstr.Binary.Op.LOR;
         };
         expr.lhs.accept(this, mv);
         expr.rhs.accept(this, mv);
@@ -260,7 +262,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         }
 
         expr.args.forEach(arg -> arg.accept(this, mv));
-        var temps = new ArrayList<Tac.Temp>();
+        var temps = new ArrayList<Temp>();
         expr.args.forEach(arg -> temps.add(arg.val));
 
         if (expr.symbol.isStatic()) {
@@ -312,7 +314,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
          * </pre>
          */
         var exit = mv.freshLabel();
-        mv.visitBranch(Tac.ConditionalBranch.Op.BNEZ, result, exit);
+        mv.visitBranch(TacInstr.CondBranch.Op.BNEZ, result, exit);
         mv.visitPrint(RuntimeError.CLASS_CAST_ERROR1);
         var vtbl1 = mv.visitLoadFrom(expr.obj.val);
         var fromClass = mv.visitLoadFrom(vtbl1, 4);
@@ -341,9 +343,9 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * skip:
      * </pre>
      */
-    private void emitIfThen(Tac.Temp cond, Consumer<MethodVisitor> action, MethodVisitor mv) {
+    private void emitIfThen(Temp cond, Consumer<MethodVisitor> action, MethodVisitor mv) {
         var skip = mv.freshLabel();
-        mv.visitBranch(Tac.ConditionalBranch.Op.BEQZ, cond, skip);
+        mv.visitBranch(TacInstr.CondBranch.Op.BEQZ, cond, skip);
         action.accept(mv);
         mv.visitLabel(skip);
     }
@@ -368,11 +370,11 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * exit:
      * </pre>
      */
-    private void emitIfThenElse(Tac.Temp cond, Consumer<MethodVisitor> trueBranch, Consumer<MethodVisitor> falseBranch,
+    private void emitIfThenElse(Temp cond, Consumer<MethodVisitor> trueBranch, Consumer<MethodVisitor> falseBranch,
                                 MethodVisitor mv) {
         var skip = mv.freshLabel();
         var exit = mv.freshLabel();
-        mv.visitBranch(Tac.ConditionalBranch.Op.BEQZ, cond, skip);
+        mv.visitBranch(TacInstr.CondBranch.Op.BEQZ, cond, skip);
         trueBranch.accept(mv);
         mv.visitBranch(exit);
         mv.visitLabel(skip);
@@ -398,12 +400,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * exit:
      * </pre>
      */
-    private void emitWhile(Function<MethodVisitor, Tac.Temp> test, Consumer<MethodVisitor> block,
-                           Tac.Label exit, MethodVisitor mv) {
+    private void emitWhile(Function<MethodVisitor, Temp> test, Consumer<MethodVisitor> block,
+                           Label exit, MethodVisitor mv) {
         var entry = mv.freshLabel();
         mv.visitLabel(entry);
         var cond = test.apply(mv);
-        mv.visitBranch(Tac.ConditionalBranch.Op.BEQZ, cond, exit);
+        mv.visitBranch(TacInstr.CondBranch.Op.BEQZ, cond, exit);
         block.accept(mv);
         mv.visitBranch(entry);
         mv.visitLabel(exit);
@@ -436,9 +438,9 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *
      * @return a temp storing the address of the first element of the array
      */
-    private Tac.Temp emitArrayInit(Tac.Temp length, MethodVisitor mv) {
+    private Temp emitArrayInit(Temp length, MethodVisitor mv) {
         var zero = mv.visitLoad(0);
-        var error = mv.visitBinary(Tac.Binary.Op.LES, length, zero);
+        var error = mv.visitBinary(TacInstr.Binary.Op.LES, length, zero);
         var handler = new Consumer<MethodVisitor>() {
             @Override
             public void accept(MethodVisitor v) {
@@ -448,23 +450,23 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         };
         emitIfThen(error, handler, mv);
 
-        var units = mv.visitBinary(Tac.Binary.Op.ADD, length, mv.visitLoad(1));
+        var units = mv.visitBinary(TacInstr.Binary.Op.ADD, length, mv.visitLoad(1));
         var four = mv.visitLoad(4);
-        var size = mv.visitBinary(Tac.Binary.Op.MUL, units, four);
+        var size = mv.visitBinary(TacInstr.Binary.Op.MUL, units, four);
         var a = mv.visitIntrinsicCall(Intrinsic.ALLOCATE, size);
         mv.visitStoreTo(a, length);
-        var p = mv.visitBinary(Tac.Binary.Op.ADD, a, size);
-        mv.visitBinarySelf(Tac.Binary.Op.SUB, p, four);
-        Function<MethodVisitor, Tac.Temp> test = v -> v.visitBinary(Tac.Binary.Op.NEQ, p, a);
+        var p = mv.visitBinary(TacInstr.Binary.Op.ADD, a, size);
+        mv.visitBinarySelf(TacInstr.Binary.Op.SUB, p, four);
+        Function<MethodVisitor, Temp> test = v -> v.visitBinary(TacInstr.Binary.Op.NEQ, p, a);
         var body = new Consumer<MethodVisitor>() {
             @Override
             public void accept(MethodVisitor v) {
                 v.visitStoreTo(p, zero);
-                v.visitBinarySelf(Tac.Binary.Op.SUB, p, four);
+                v.visitBinarySelf(TacInstr.Binary.Op.SUB, p, four);
             }
         };
         emitWhile(test, body, mv.freshLabel(), mv);
-        return mv.visitBinary(Tac.Binary.Op.ADD, a, four);
+        return mv.visitBinary(TacInstr.Binary.Op.ADD, a, four);
     }
 
     /**
@@ -488,12 +490,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param index
      * @return a temp storing the address of the element
      */
-    private Tac.Temp emitArrayElementAddress(Tac.Temp array, Tac.Temp index, MethodVisitor mv) {
+    private Temp emitArrayElementAddress(Temp array, Temp index, MethodVisitor mv) {
         var length = mv.visitLoadFrom(array, -4);
         var zero = mv.visitLoad(0);
-        var error1 = mv.visitBinary(Tac.Binary.Op.LES, index, zero);
-        var error2 = mv.visitBinary(Tac.Binary.Op.GEQ, index, length);
-        var error = mv.visitBinary(Tac.Binary.Op.LOR, error1, error2);
+        var error1 = mv.visitBinary(TacInstr.Binary.Op.LES, index, zero);
+        var error2 = mv.visitBinary(TacInstr.Binary.Op.GEQ, index, length);
+        var error = mv.visitBinary(TacInstr.Binary.Op.LOR, error1, error2);
         var handler = new Consumer<MethodVisitor>() {
             @Override
             public void accept(MethodVisitor v) {
@@ -504,8 +506,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         emitIfThen(error, handler, mv);
 
         var four = mv.visitLoad(4);
-        var offset = mv.visitBinary(Tac.Binary.Op.MUL, index, four);
-        return mv.visitBinary(Tac.Binary.Op.ADD, array, offset);
+        var offset = mv.visitBinary(TacInstr.Binary.Op.MUL, index, four);
+        return mv.visitBinary(TacInstr.Binary.Op.ADD, array, offset);
     }
 
     /**
@@ -528,17 +530,17 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param clazz
      * @return
      */
-    private Tac.Temp emitClassTest(Tac.Temp object, String clazz, MethodVisitor mv) {
+    private Temp emitClassTest(Temp object, String clazz, MethodVisitor mv) {
         var target = mv.visitLoadVTable(clazz);
         var t = mv.visitLoadFrom(object);
 
         var loop = mv.freshLabel();
         var exit = mv.freshLabel();
         mv.visitLabel(loop);
-        var ret = mv.visitBinary(Tac.Binary.Op.EQU, t, target);
-        mv.visitBranch(Tac.ConditionalBranch.Op.BNEZ, ret, exit);
-        mv.visitRaw(new Tac.Memory(Tac.Memory.Op.LOAD, t, t, 0));
-        mv.visitBranch(Tac.ConditionalBranch.Op.BNEZ, t, loop);
+        var ret = mv.visitBinary(TacInstr.Binary.Op.EQU, t, target);
+        mv.visitBranch(TacInstr.CondBranch.Op.BNEZ, ret, exit);
+        mv.visitRaw(new TacInstr.Memory(TacInstr.Memory.Op.LOAD, t, t, 0));
+        mv.visitBranch(TacInstr.CondBranch.Op.BNEZ, t, loop);
         var zero = mv.visitLoad(0);
         mv.visitAssign(ret, zero);
         mv.visitLabel(exit);
