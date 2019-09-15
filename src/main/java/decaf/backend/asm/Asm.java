@@ -31,17 +31,17 @@ public class Asm extends Phase<TAC.Prog, String> {
             emitter.emitVTable(vtbl);
         }
 
-//        var pw = new PrintWriter(System.out);
+        var pw = new PrintWriter(System.out);
 
         emitter.emitSubroutineBegin();
         for (var func : prog.funcs) {
-//            pw.println("In function " + func.entry);
+            pw.println("In function " + func.entry);
             var pair = emitter.selectInstr(func);
             var builder = new CFGBuilder<PseudoInstr>();
             var cfg = builder.buildFrom(pair.getLeft());
             analyzer.accept(cfg);
-//            cfg.printLivenessTo(pw);
-//            pw.flush();
+            cfg.printLivenessTo(pw);
+            pw.flush();
             regAlloc.accept(cfg, pair.getRight());
         }
 

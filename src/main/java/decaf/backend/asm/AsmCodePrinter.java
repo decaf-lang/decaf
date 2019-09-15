@@ -26,12 +26,20 @@ public class AsmCodePrinter {
     }
 
     public void printLabel(Label lbl) {
+        // for debug
+        sb.append(".globl " + lbl.name);
+        sb.append(END_LINE);
+
         sb.append(lbl.name);
         sb.append(":");
         sb.append(END_LINE);
     }
 
     public void printLabel(Label lbl, String comment) {
+        // for debug
+        sb.append(".globl " + lbl.name);
+        sb.append(END_LINE);
+
         sb.append(lbl.name);
         sb.append(":");
         sb.append("    # ");
@@ -43,6 +51,10 @@ public class AsmCodePrinter {
 
     public void printInstr(NativeInstr instr) {
         if (instr.isLabel()) {
+            // for debug
+            sb.append(".globl " + instr.jumpTo.name);
+            sb.append(END_LINE);
+
             sb.append(instr.jumpTo);
             sb.append(":");
             sb.append(END_LINE);

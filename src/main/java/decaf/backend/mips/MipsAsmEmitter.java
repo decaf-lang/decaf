@@ -50,6 +50,11 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         var index = pool.add(vtbl.className);
         printer.println(".word %s%d    # class name", STR_PREFIX, index);
+
+        for (var entry: vtbl.getItems()) {
+            printer.println(".word %s    # member method", entry.name);
+        }
+
         printer.println();
         // vtable end
     }

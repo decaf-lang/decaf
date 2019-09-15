@@ -80,14 +80,16 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
      * @param bb the basic block
      */
     private void analyzeLivenessForEachLocIn(BasicBlock<I> bb) {
-        var liveIn = new TreeSet<>(bb.liveOut);
+        var liveOut = new TreeSet<>(bb.liveOut);
         var it = bb.backwardIterator();
         while (it.hasNext()) {
             var loc = it.next();
-            loc.liveOut = new TreeSet<>(liveIn);
-            liveIn.addAll(loc.instr.getRead());
-            liveIn.removeAll(loc.instr.getWritten());
-            loc.liveIn = new TreeSet<>(liveIn);
+            loc.liveOut = new TreeSet<>(liveOut);
+            // Order is important here, because in an instruction, one temp can be both read and written, e.g.:
+            // In _T1 = _T1 + _T2, _T1 must be alive before execution.
+            liveOut.removeAll(loc.instr.getWritten());
+            liveOut.addAll(loc.instr.getRead());
+            loc.liveIn = new TreeSet<>(liveOut);
         }
         // assert liveIn == bb.liveIn
     }

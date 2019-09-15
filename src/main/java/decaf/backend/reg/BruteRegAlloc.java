@@ -5,6 +5,7 @@ import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.dataflow.BasicBlock;
 import decaf.dataflow.CFG;
+import decaf.dataflow.Loc;
 import decaf.instr.PseudoInstr;
 import decaf.instr.Reg;
 import decaf.instr.Temp;
@@ -77,7 +78,7 @@ public final class BruteRegAlloc extends RegAlloc {
 
         var callerNeedSave = new ArrayList<Reg>();
 
-        for (var loc : bb) {
+        for (var loc : bb.seqLocs()) {
             // Handle special instructions on caller save/restore.
 
             if (loc.instr.isTodo()) {
@@ -104,29 +105,7 @@ public final class BruteRegAlloc extends RegAlloc {
 
             // For normal instructions: allocate registers for every read/written temp. Skip the already specified
             // special registers.
-            var instr = loc.instr;
-            var srcRegs = new Reg[instr.srcs.length];
-            var dstRegs = new Reg[instr.dsts.length];
-
-            for (var i = 0; i < instr.srcs.length; i++) {
-                var temp = instr.srcs[i];
-                if (temp instanceof Reg) {
-                    srcRegs[i] = (Reg) temp;
-                } else {
-                    srcRegs[i] = allocRegFor(temp, true, loc.liveIn, subEmitter);
-                }
-            }
-
-            for (var i = 0; i < instr.dsts.length; i++) {
-                var temp = instr.dsts[i];
-                if (temp instanceof Reg) {
-                    dstRegs[i] = ((Reg) temp);
-                } else {
-                    dstRegs[i] = allocRegFor(temp, false, loc.liveIn, subEmitter);
-                }
-            }
-
-            subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
+            allocForLoc(loc, subEmitter);
         }
 
         // Before we leave a basic block, we must copy values of all live variables from registers (if exist)
@@ -136,6 +115,37 @@ public final class BruteRegAlloc extends RegAlloc {
                 subEmitter.emitStoreToStack(bindings.get(temp));
             }
         }
+
+        // Handle the last instruction, if it is a branch/return block.
+        if (!bb.isEmpty() && !bb.kind.equals(BasicBlock.Kind.CONTINUE)) {
+            allocForLoc(bb.locs.get(bb.locs.size() - 1), subEmitter);
+        }
+    }
+
+    private void allocForLoc(Loc<PseudoInstr> loc, SubroutineEmitter subEmitter) {
+        var instr = loc.instr;
+        var srcRegs = new Reg[instr.srcs.length];
+        var dstRegs = new Reg[instr.dsts.length];
+
+        for (var i = 0; i < instr.srcs.length; i++) {
+            var temp = instr.srcs[i];
+            if (temp instanceof Reg) {
+                srcRegs[i] = (Reg) temp;
+            } else {
+                srcRegs[i] = allocRegFor(temp, true, loc.liveIn, subEmitter);
+            }
+        }
+
+        for (var i = 0; i < instr.dsts.length; i++) {
+            var temp = instr.dsts[i];
+            if (temp instanceof Reg) {
+                dstRegs[i] = ((Reg) temp);
+            } else {
+                dstRegs[i] = allocRegFor(temp, false, loc.liveIn, subEmitter);
+            }
+        }
+
+        subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
     }
 
     /**

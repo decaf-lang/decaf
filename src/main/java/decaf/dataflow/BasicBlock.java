@@ -25,10 +25,10 @@ public class BasicBlock<I extends InstrLike> implements Iterable<Loc<I>> {
         this.bbNum = id;
         this.label = label;
         this.locs = new ArrayList<>();
-        for (var loc : locs) {
-            this.locs.add(loc);
-        }
+        this.locs.addAll(locs);
     }
+
+    public boolean isEmpty() { return locs.isEmpty(); }
 
     @Override
     public Iterator<Loc<I>> iterator() {
@@ -53,15 +53,15 @@ public class BasicBlock<I extends InstrLike> implements Iterable<Loc<I>> {
         };
     }
 
+    public List<Loc<I>> seqLocs() {
+        if (kind.equals(Kind.CONTINUE)) {
+            return locs;
+        }
+
+        return locs.subList(0, locs.size() - 1);
+    }
+
     public I getLastInstr() {
-        if (kind.equals(Kind.BY_RETURN)) {
-            throw new IllegalArgumentException("cannot get the last instruction of a return block");
-        }
-
-        if (locs.isEmpty()) {
-            throw new IllegalArgumentException("locs is empty");
-        }
-
         return locs.get(locs.size() - 1).instr;
     }
 
