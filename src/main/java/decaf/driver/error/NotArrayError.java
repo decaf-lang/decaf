@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class NotArrayError extends DecafError {
 
-	public NotArrayError(Pos pos) {
-		super(pos);
-	}
+    public NotArrayError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "[] can only be applied to arrays";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "[] can only be applied to arrays";
+    }
 
 }

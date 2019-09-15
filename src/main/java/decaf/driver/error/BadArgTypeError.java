@@ -9,24 +9,24 @@ import decaf.frontend.tree.Pos;
  */
 public class BadArgTypeError extends DecafError {
 
-	private int count;
+    private int count;
 
-	private String given;
+    private String given;
 
-	private String expect;
+    private String expect;
 
-	public BadArgTypeError(Pos pos, int count, String given,
-						   String expect) {
-		super(pos);
-		this.count = count;
-		this.given = given;
-		this.expect = expect;
-	}
+    public BadArgTypeError(Pos pos, int count, String given,
+                           String expect) {
+        super(pos);
+        this.count = count;
+        this.given = given;
+        this.expect = expect;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "incompatible argument " + count + ": " + given + " given, "
-				+ expect + " expected";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "incompatible argument " + count + ": " + given + " given, "
+                + expect + " expected";
+    }
 
 }

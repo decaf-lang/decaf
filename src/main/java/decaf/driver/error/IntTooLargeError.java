@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class IntTooLargeError extends DecafError {
 
-	private String val;
+    private String val;
 
-	public IntTooLargeError(Pos pos, String val) {
-		super(pos);
-		this.val = val;
-	}
+    public IntTooLargeError(Pos pos, String val) {
+        super(pos);
+        this.val = val;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "integer literal " + val + " is too large";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "integer literal " + val + " is too large";
+    }
 
 }

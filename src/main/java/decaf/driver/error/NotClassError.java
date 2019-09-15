@@ -7,16 +7,16 @@ import decaf.frontend.tree.Pos;
  */
 public class NotClassError extends DecafError {
 
-	private String type;
+    private String type;
 
-	public NotClassError(String type, Pos pos) {
-		super(pos);
-		this.type = type;
-	}
+    public NotClassError(String type, Pos pos) {
+        super(pos);
+        this.type = type;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return type + " is not a class type";
-	}
+    @Override
+    protected String getErrMsg() {
+        return type + " is not a class type";
+    }
 
 }

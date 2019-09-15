@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class BadNewArrayLength extends DecafError {
 
-	public BadNewArrayLength(Pos pos) {
-		super(pos);
-	}
+    public BadNewArrayLength(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "new array length must be an integer";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "new array length must be an integer";
+    }
 
 }

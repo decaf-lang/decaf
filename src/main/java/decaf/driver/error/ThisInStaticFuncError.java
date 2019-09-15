@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class ThisInStaticFuncError extends DecafError {
 
-	public ThisInStaticFuncError(Pos pos) {
-		super(pos);
-	}
+    public ThisInStaticFuncError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "can not use this in static function";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "can not use this in static function";
+    }
 
 }

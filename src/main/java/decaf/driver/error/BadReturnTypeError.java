@@ -8,19 +8,19 @@ import decaf.frontend.tree.Pos;
  */
 public class BadReturnTypeError extends DecafError {
 
-	private String expect;
+    private String expect;
 
-	private String given;
+    private String given;
 
-	public BadReturnTypeError(Pos pos, String expect, String given) {
-		super(pos);
-		this.expect = expect;
-		this.given = given;
-	}
+    public BadReturnTypeError(Pos pos, String expect, String given) {
+        super(pos);
+        this.expect = expect;
+        this.given = given;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "incompatible return: " + given + " given, " + expect
-				+ " expected";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "incompatible return: " + given + " given, " + expect
+                + " expected";
+    }
 }

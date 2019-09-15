@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class NewlineInStrError extends DecafError {
 
-	private String str;
+    private String str;
 
-	public NewlineInStrError(Pos pos, String str) {
-		super(pos);
-		this.str = str;
-	}
+    public NewlineInStrError(Pos pos, String str) {
+        super(pos);
+        this.str = str;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "illegal newline in string constant " + str;
-	}
+    @Override
+    protected String getErrMsg() {
+        return "illegal newline in string constant " + str;
+    }
 
 }

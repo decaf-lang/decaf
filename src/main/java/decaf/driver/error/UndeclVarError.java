@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class UndeclVarError extends DecafError {
 
-	private String name;
+    private String name;
 
-	public UndeclVarError(Pos pos, String name) {
-		super(pos);
-		this.name = name;
-	}
+    public UndeclVarError(Pos pos, String name) {
+        super(pos);
+        this.name = name;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "undeclared variable '" + name + "'";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "undeclared variable '" + name + "'";
+    }
 
 }

@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class OverridingVarError extends DecafError {
 
-	private String name;
+    private String name;
 
-	public OverridingVarError(Pos pos, String name) {
-		super(pos);
-		this.name = name;
-	}
+    public OverridingVarError(Pos pos, String name) {
+        super(pos);
+        this.name = name;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "overriding variable is not allowed for var '" + name + "'";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "overriding variable is not allowed for var '" + name + "'";
+    }
 
 }

@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class ClassNotFoundError extends DecafError {
 
-	private String name;
+    private String name;
 
-	public ClassNotFoundError(Pos pos, String name) {
-		super(pos);
-		this.name = name;
-	}
+    public ClassNotFoundError(Pos pos, String name) {
+        super(pos);
+        this.name = name;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "class '" + name + "' not found";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "class '" + name + "' not found";
+    }
 
 }

@@ -8,19 +8,19 @@ import decaf.frontend.tree.Pos;
  */
 public class IncompatUnOpError extends DecafError {
 
-	private String op;
+    private String op;
 
-	private String expr;
+    private String expr;
 
-	public IncompatUnOpError(Pos pos, String op, String type) {
-		super(pos);
-		this.op = op;
-		this.expr = type;
-	}
+    public IncompatUnOpError(Pos pos, String op, String type) {
+        super(pos);
+        this.op = op;
+        this.expr = type;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "incompatible operand: " + op + " " + expr;
-	}
+    @Override
+    protected String getErrMsg() {
+        return "incompatible operand: " + op + " " + expr;
+    }
 
 }

@@ -8,23 +8,23 @@ import decaf.frontend.tree.Pos;
  */
 public class BadArgCountError extends DecafError {
 
-	private String method;
+    private String method;
 
-	private int expect;
+    private int expect;
 
-	private int count;
+    private int count;
 
-	public BadArgCountError(Pos pos, String method, int expect,
-							int count) {
-		super(pos);
-		this.method = method;
-		this.expect = expect;
-		this.count = count;
-	}
+    public BadArgCountError(Pos pos, String method, int expect,
+                            int count) {
+        super(pos);
+        this.method = method;
+        this.expect = expect;
+        this.count = count;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "function '" + method + "' expects " + expect
-				+ " argument(s) but " + count + " given";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "function '" + method + "' expects " + expect
+                + " argument(s) but " + count + " given";
+    }
 }

@@ -8,19 +8,19 @@ import decaf.frontend.tree.Pos;
  */
 public class FieldNotFoundError extends DecafError {
 
-	private String name;
+    private String name;
 
-	private String owner;
+    private String owner;
 
-	public FieldNotFoundError(Pos pos, String name, String owner) {
-		super(pos);
-		this.name = name;
-		this.owner = owner;
-	}
+    public FieldNotFoundError(Pos pos, String name, String owner) {
+        super(pos);
+        this.name = name;
+        this.owner = owner;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "field '" + name + "' not found in '" + owner + "'";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "field '" + name + "' not found in '" + owner + "'";
+    }
 
 }

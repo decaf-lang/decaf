@@ -8,17 +8,17 @@ import decaf.frontend.tree.Pos;
  */
 public class BadLengthArgError extends DecafError {
 
-	private int count;
+    private int count;
 
-	public BadLengthArgError(Pos pos, int count) {
-		super(pos);
-		this.count = count;
-	}
+    public BadLengthArgError(Pos pos, int count) {
+        super(pos);
+        this.count = count;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "function 'length' expects 0 argument(s) but " + count
-				+ " given";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "function 'length' expects 0 argument(s) but " + count
+                + " given";
+    }
 
 }

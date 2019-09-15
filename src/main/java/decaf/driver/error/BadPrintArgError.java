@@ -9,20 +9,20 @@ import decaf.frontend.tree.Pos;
  */
 public class BadPrintArgError extends DecafError {
 
-	private String count;
+    private String count;
 
-	private String type;
+    private String type;
 
-	public BadPrintArgError(Pos pos, String count, String type) {
-		super(pos);
-		this.count = count;
-		this.type = type;
-	}
+    public BadPrintArgError(Pos pos, String count, String type) {
+        super(pos);
+        this.count = count;
+        this.type = type;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "incompatible argument " + count + ": " + type
-				+ " given, int/bool/string expected";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "incompatible argument " + count + ": " + type
+                + " given, int/bool/string expected";
+    }
 
 }

@@ -7,16 +7,16 @@ import decaf.frontend.tree.Pos;
  */
 public class MsgError extends DecafError {
 
-	private String msg;
+    private String msg;
 
-	public MsgError(Pos pos, String msg) {
-		super(pos);
-		this.msg = msg;
-	}
+    public MsgError(Pos pos, String msg) {
+        super(pos);
+        this.msg = msg;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return msg;
-	}
+    @Override
+    protected String getErrMsg() {
+        return msg;
+    }
 
 }

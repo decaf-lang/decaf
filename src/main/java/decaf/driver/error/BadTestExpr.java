@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class BadTestExpr extends DecafError {
 
-	public BadTestExpr(Pos pos) {
-		super(pos);
-	}
+    public BadTestExpr(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "test expression must have bool type";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "test expression must have bool type";
+    }
 
 }

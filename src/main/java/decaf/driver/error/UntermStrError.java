@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class UntermStrError extends DecafError {
 
-	private String str;
+    private String str;
 
-	public UntermStrError(Pos pos, String str) {
-		super(pos);
-		this.str = str;
-	}
+    public UntermStrError(Pos pos, String str) {
+        super(pos);
+        this.str = str;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "unterminated string constant " + str;
-	}
+    @Override
+    protected String getErrMsg() {
+        return "unterminated string constant " + str;
+    }
 
 }

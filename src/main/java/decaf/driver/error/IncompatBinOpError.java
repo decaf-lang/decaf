@@ -8,23 +8,23 @@ import decaf.frontend.tree.Pos;
  */
 public class IncompatBinOpError extends DecafError {
 
-	private String left;
+    private String left;
 
-	private String right;
+    private String right;
 
-	private String op;
+    private String op;
 
-	public IncompatBinOpError(Pos pos, String left, String op,
-							  String right) {
-		super(pos);
-		this.left = left;
-		this.right = right;
-		this.op = op;
-	}
+    public IncompatBinOpError(Pos pos, String left, String op,
+                              String right) {
+        super(pos);
+        this.left = left;
+        this.right = right;
+        this.op = op;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "incompatible operands: " + left + " " + op + " " + right;
-	}
+    @Override
+    protected String getErrMsg() {
+        return "incompatible operands: " + left + " " + op + " " + right;
+    }
 
 }

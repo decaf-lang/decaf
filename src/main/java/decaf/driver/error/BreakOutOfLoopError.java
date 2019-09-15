@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class BreakOutOfLoopError extends DecafError {
 
-	public BreakOutOfLoopError(Pos pos) {
-		super(pos);
-	}
+    public BreakOutOfLoopError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "'break' is only allowed inside a loop";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "'break' is only allowed inside a loop";
+    }
 
 }

@@ -11,19 +11,19 @@ import decaf.frontend.tree.Pos;
  */
 public class NotClassFieldError extends DecafError {
 
-	private String name;
+    private String name;
 
-	private String owner;
+    private String owner;
 
-	public NotClassFieldError(Pos pos, String name, String owner) {
-		super(pos);
-		this.name = name;
-		this.owner = owner;
-	}
+    public NotClassFieldError(Pos pos, String name, String owner) {
+        super(pos);
+        this.name = name;
+        this.owner = owner;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "cannot access field '" + name + "' from '" + owner + "'";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "cannot access field '" + name + "' from '" + owner + "'";
+    }
 
 }

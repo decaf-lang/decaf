@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class BadInheritanceError extends DecafError {
 
-	public BadInheritanceError(Pos pos) {
-		super(pos);
-	}
+    public BadInheritanceError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "illegal class inheritance (should be acyclic)";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "illegal class inheritance (should be acyclic)";
+    }
 
 }

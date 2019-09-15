@@ -8,16 +8,16 @@ import decaf.frontend.tree.Pos;
  */
 public class BadVarTypeError extends DecafError {
 
-	private String name;
+    private String name;
 
-	public BadVarTypeError(Pos pos, String name) {
-		super(pos);
-		this.name = name;
-	}
+    public BadVarTypeError(Pos pos, String name) {
+        super(pos);
+        this.name = name;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "cannot declare identifier '" + name + "' as void type";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "cannot declare identifier '" + name + "' as void type";
+    }
 
 }

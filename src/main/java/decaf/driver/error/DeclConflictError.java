@@ -8,20 +8,20 @@ import decaf.frontend.tree.Pos;
  */
 public class DeclConflictError extends DecafError {
 
-	private Pos earlier;
+    private Pos earlier;
 
-	private String name;
+    private String name;
 
-	public DeclConflictError(Pos pos, String name, Pos earlier) {
-		super(pos);
-		this.name = name;
-		this.earlier = earlier;
-	}
+    public DeclConflictError(Pos pos, String name, Pos earlier) {
+        super(pos);
+        this.name = name;
+        this.earlier = earlier;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "declaration of '" + name
-				+ "' here conflicts with earlier declaration at " + earlier;
-	}
+    @Override
+    protected String getErrMsg() {
+        return "declaration of '" + name
+                + "' here conflicts with earlier declaration at " + earlier;
+    }
 
 }

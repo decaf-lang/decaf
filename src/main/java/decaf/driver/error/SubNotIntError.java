@@ -8,13 +8,13 @@ import decaf.frontend.tree.Pos;
  */
 public class SubNotIntError extends DecafError {
 
-	public SubNotIntError(Pos pos) {
-		super(pos);
-	}
+    public SubNotIntError(Pos pos) {
+        super(pos);
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "array subscript must be an integer";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "array subscript must be an integer";
+    }
 
 }

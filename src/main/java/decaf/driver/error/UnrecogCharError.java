@@ -8,15 +8,15 @@ import decaf.frontend.tree.Pos;
  */
 public class UnrecogCharError extends DecafError {
 
-	private char c;
+    private char c;
 
-	public UnrecogCharError(Pos pos, char c) {
-		super(pos);
-		this.c = c;
-	}
+    public UnrecogCharError(Pos pos, char c) {
+        super(pos);
+        this.c = c;
+    }
 
-	@Override
-	protected String getErrMsg() {
-		return "unrecognized character '" + c + "'";
-	}
+    @Override
+    protected String getErrMsg() {
+        return "unrecognized character '" + c + "'";
+    }
 }
