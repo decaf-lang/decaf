@@ -42,8 +42,8 @@ public final class MipsAsmEmitter extends AsmEmitter {
         printer.printLabel(vtbl.label, "virtual table for " + vtbl.className);
 
         if (vtbl.parent.isPresent()) {
-            var index = pool.add(vtbl.parent.get().label.name);
-            printer.println(".word %s%d    # parent: %s", STR_PREFIX, index, vtbl.parent.get().className);
+            var parent = vtbl.parent.get();
+            printer.println(".word %s    # parent: %s", parent.label, parent.className);
         } else {
             printer.println(".word 0    # parent: none");
         }
