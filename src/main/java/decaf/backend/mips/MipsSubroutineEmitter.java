@@ -2,6 +2,7 @@ package decaf.backend.mips;
 
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
+import decaf.instr.Label;
 import decaf.instr.NativeInstr;
 import decaf.instr.Reg;
 import decaf.instr.Temp;
@@ -81,6 +82,11 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
     }
 
     @Override
+    public void emitLabel(Label label) {
+        buf.add(new Mips.MipsLabel(label).toNative(new Reg[]{}, new Reg[]{}));
+    }
+
+    @Override
     public void emitEnd() {
         printer.printComment("start of prologue");
         printer.printInstr(new Mips.NativeSPAdd(-nextLocalOffset), "push stack frame");
@@ -108,7 +114,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
         printer.printComment("end of body");
         printer.println();
 
-        printer.printLabel(Mips.EPILOGUE_LABEL);
+        printer.printLabel(new Label(info.funcLabel.name + Mips.EPILOGUE_SUFFIX));
         printer.printComment("start of epilogue");
         for (var i = 0; i < Mips.calleeSaved.length; i++) {
             if (Mips.calleeSaved[i].isUsed()) {

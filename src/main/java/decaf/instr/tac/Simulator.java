@@ -67,10 +67,10 @@ public final class Simulator {
 
         // Fill in vtables
         for (TAC.VTable vtbl : program.vtables) {
-            addr = _vtable_to_addr.get(vtbl.label);
+            addr = _vtable_to_addr.get(vtbl.label.name);
             var offset = 0;
 
-            var parentAddr = vtbl.parent.map(pv -> _vtable_to_addr.get(pv.label)).orElse(0);
+            var parentAddr = vtbl.parent.map(pv -> _vtable_to_addr.get(pv.label.name)).orElse(0);
             _memory.store(parentAddr, addr, offset);
             offset += 4;
 
@@ -209,7 +209,7 @@ public final class Simulator {
         @Override
         public void visitLoadVTbl(TacInstr.LoadVTbl instr) {
             var frame = _call_stack.peek();
-            frame.array[instr.dst.index] = _vtable_to_addr.get(instr.vtbl.label);
+            frame.array[instr.dst.index] = _vtable_to_addr.get(instr.vtbl.label.name);
 
             _pc++;
         }

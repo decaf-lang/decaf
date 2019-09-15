@@ -1,6 +1,6 @@
 package decaf.instr;
 
-public abstract class NativeInstr extends InstrLike {
+public abstract class NativeInstr extends PseudoInstr {
 
     public NativeInstr(Kind kind, String op, Reg[] dsts, Reg[] srcs, Label jumpTo, Object... imms) {
         super(kind, op, dsts, srcs, jumpTo, imms);

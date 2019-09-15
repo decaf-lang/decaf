@@ -1,5 +1,6 @@
 package decaf.backend.asm;
 
+import decaf.instr.Label;
 import decaf.instr.NativeInstr;
 import decaf.instr.Reg;
 import decaf.instr.Temp;
@@ -18,6 +19,8 @@ public abstract class SubroutineEmitter {
     public abstract void emitMove(Reg dst, Reg src);
 
     public abstract void emitNative(NativeInstr item);
+
+    public abstract void emitLabel(Label label);
 
     public abstract void emitEnd();
 

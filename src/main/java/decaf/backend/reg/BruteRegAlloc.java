@@ -30,6 +30,7 @@ public final class BruteRegAlloc extends RegAlloc {
     public void accept(CFG<PseudoInstr> graph, SubroutineInfo info) {
         var subEmitter = emitter.emitSubroutine(info);
         for (var bb : graph) {
+            bb.label.ifPresent(subEmitter::emitLabel);
             localAlloc(bb, subEmitter);
         }
         subEmitter.emitEnd();

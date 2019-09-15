@@ -39,15 +39,29 @@ public class AsmCodePrinter {
         sb.append(END_LINE);
     }
 
+    // TODO: very ugly
+
     public void printInstr(NativeInstr instr) {
-        sb.append(INDENTS);
-        sb.append(instr);
-        sb.append(END_LINE);
+        if (instr.isLabel()) {
+            sb.append(instr.jumpTo);
+            sb.append(":");
+            sb.append(END_LINE);
+        } else {
+            sb.append(INDENTS);
+            sb.append(instr.toString());
+            sb.append(END_LINE);
+        }
     }
 
     public void printInstr(NativeInstr instr, String comment) {
-        sb.append(INDENTS);
-        sb.append(instr);
+        if (instr.isLabel()) {
+            sb.append(instr.jumpTo);
+            sb.append(":");
+        } else {
+            sb.append(INDENTS);
+            sb.append(instr.toString());
+        }
+
         sb.append("    # ");
         sb.append(comment);
         sb.append(END_LINE);

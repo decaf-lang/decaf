@@ -1,5 +1,6 @@
 package decaf.instr;
 
+import decaf.instr.tac.Intrinsic;
 import decaf.instr.tac.TAC;
 
 import java.util.Optional;
@@ -449,11 +450,34 @@ public abstract class TacInstr extends InstrLike {
             this.entry = entry;
         }
 
+        public DirectCall(Temp dst, Intrinsic intrinsic) {
+            super(new Temp[]{dst}, new Temp[]{}, intrinsic.entry);
+            this.dst = Optional.of(dst);
+            this.entry = intrinsic.entry;
+            this.intrinsic = intrinsic;
+        }
+
+        public DirectCall(Intrinsic intrinsic) {
+            super(new Temp[]{}, new Temp[]{}, intrinsic.entry);
+            this.dst = Optional.empty();
+            this.entry = intrinsic.entry;
+            this.intrinsic = intrinsic;
+        }
+
+        private Intrinsic intrinsic;
+
+        public boolean isIntrinsicCall() {
+            return intrinsic != null;
+        }
+
+        public Intrinsic getIntrinsic() {
+            return intrinsic;
+        }
+
         @Override
         public void accept(InstrVisitor v) {
             v.visitDirectCall(this);
         }
-
 
         @Override
         public String getFormat() {

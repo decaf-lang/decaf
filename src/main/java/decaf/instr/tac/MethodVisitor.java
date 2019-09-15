@@ -117,7 +117,7 @@ public class MethodVisitor {
         for (var arg : args) {
             _func.add(new TacInstr.Parm(arg));
         }
-        _func.add(new TacInstr.DirectCall(temp, func.entry));
+        _func.add(new TacInstr.DirectCall(temp, func));
         return temp;
     }
 

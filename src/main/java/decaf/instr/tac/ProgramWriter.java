@@ -123,29 +123,30 @@ public class ProgramWriter {
     class Context {
 
         void putConstructorLabel(String clazz) {
-            putLabel(clazz + ".<init>");
+            putLabel("_L_" + clazz + "_new");
         }
 
         Label getConstructorLabel(String clazz) {
-            return getLabel(clazz + ".<init>");
+            return getLabel("_L_" + clazz + "_new");
         }
 
         void putMethodLabel(String clazz, String method) {
-            putLabel(clazz + "." + method);
+            putLabel("_L_" + clazz + "_" + method);
         }
 
         Label getMethodLabel(String clazz, String method) {
-            return getLabel(clazz + "." + method);
+            return getLabel("_L_" + clazz + "_" + method);
         }
 
         String getMethodName(Label method) {
-            var index = method.name.indexOf(".");
+            // TODO check if it is always suitable
+            var index = method.name.lastIndexOf("_");
             assert index >= 0;
             return method.name.substring(index + 1);
         }
 
         void putLabel(String name) {
-            _labels.put(name, new Label(name));
+            _labels.put(name, new Label( name));
         }
 
         Label getLabel(String name) {
@@ -153,7 +154,7 @@ public class ProgramWriter {
         }
 
         Label freshLabel() {
-            var name = ".L" + _next_unnamed_label_id;
+            var name = "_L" + _next_unnamed_label_id;
             _next_unnamed_label_id++;
             var lbl = new Label(name);
             _labels.put(name, lbl);
@@ -177,7 +178,7 @@ public class ProgramWriter {
         }
 
         int getOffset(String clazz, String member) {
-            return _offsets.get(clazz + "." + member);
+            return _offsets.get("_L_" + clazz + "_" + member);
         }
 
         void putOffsets(TAC.VTable vtbl) {
@@ -187,7 +188,7 @@ public class ProgramWriter {
                 offset += 4;
             }
 
-            var prefix = vtbl.className + ".";
+            var prefix = "_L_" + vtbl.className + "_";
             offset = 4;
             for (var variable : vtbl.memberVariables) {
                 _offsets.put(prefix + variable, offset);

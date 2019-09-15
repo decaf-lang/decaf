@@ -92,7 +92,7 @@ public abstract class TAC {
         List<String> memberVariables = new ArrayList<>();
 
         VTable(String className, Optional<VTable> parent) {
-            this.label = new Label(".V<" + className + ">");
+            this.label = new Label(Label.Kind.VTABLE, "_V_" + className);
             this.className = className;
             this.parent = parent;
         }
@@ -123,7 +123,7 @@ public abstract class TAC {
      * - a label of the entry point, so that our call instruction can jump into it and execute from the first instruction
      * - a sequence of instructions to be executed
      */
-    public static class Func {
+    public static class Func implements Comparable<Func> {
         public final Label entry;
 
         public final int numArgs;
@@ -165,7 +165,12 @@ public abstract class TAC {
             pw.println("}");
             pw.println();
         }
+
+        @Override
+        public int compareTo(Func that) {
+            return this.entry.name.compareTo(that.entry.name);
+        }
     }
 
-    public static final Label MAIN_LABEL = new Label(".main");
+    public static final Label MAIN_LABEL = new Label(Label.Kind.FUNC, "main");
 }

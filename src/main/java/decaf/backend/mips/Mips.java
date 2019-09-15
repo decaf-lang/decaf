@@ -1,6 +1,7 @@
 package decaf.backend.mips;
 
 import decaf.instr.*;
+import decaf.instr.tac.Intrinsic;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class Mips {
@@ -64,7 +65,7 @@ public class Mips {
     public static class Move extends PseudoInstr {
 
         public Move(Temp dst, Temp src) {
-            super("MOVE", new Temp[]{dst}, new Temp[]{src});
+            super("move", new Temp[]{dst}, new Temp[]{src});
         }
 
         @Override
@@ -85,7 +86,7 @@ public class Mips {
     public static class Unary extends PseudoInstr {
 
         public Unary(UnaryOp op, Temp dst, Temp src) {
-            super(op.toString(), new Temp[]{dst}, new Temp[]{src});
+            super(op.toString().toLowerCase(), new Temp[]{dst}, new Temp[]{src});
         }
 
         @Override
@@ -108,7 +109,7 @@ public class Mips {
     public static class Binary extends PseudoInstr {
 
         public Binary(BinaryOp op, Temp dst, Temp src0, Temp src1) {
-            super(op.toString(), new Temp[]{dst}, new Temp[]{src0, src1});
+            super(op.toString().toLowerCase(), new Temp[]{dst}, new Temp[]{src0, src1});
         }
 
         @Override
@@ -129,7 +130,7 @@ public class Mips {
     public static class Branch extends PseudoInstr {
 
         public Branch(BranchOp op, Temp src, Label to) {
-            super(Kind.COND_JMP, op.toString(), new Temp[]{}, new Temp[]{src}, to);
+            super(Kind.COND_JMP, op.toString().toLowerCase(), new Temp[]{}, new Temp[]{src}, to);
         }
 
         @Override
@@ -146,7 +147,7 @@ public class Mips {
     public static class Jump extends PseudoInstr {
 
         public Jump(Label to) {
-            super(Kind.JMP, "J", new Temp[]{}, new Temp[]{}, to);
+            super(Kind.JMP, "j", new Temp[]{}, new Temp[]{}, to);
         }
 
         @Override
@@ -167,8 +168,8 @@ public class Mips {
      */
     public static class JumpToEpilogue extends PseudoInstr {
 
-        public JumpToEpilogue() {
-            super(Kind.RET, "J", new Temp[]{}, new Temp[]{}, Mips.EPILOGUE_LABEL);
+        public JumpToEpilogue(Label label) {
+            super(Kind.RET, "j", new Temp[]{}, new Temp[]{}, new Label(label + EPILOGUE_SUFFIX));
         }
 
         @Override
@@ -185,7 +186,7 @@ public class Mips {
     public static class JumpAndLink extends PseudoInstr {
 
         public JumpAndLink(Label to) {
-            super(Kind.SEQ, "JAL", new Temp[]{}, new Temp[]{}, to);
+            super(Kind.SEQ, "jal", new Temp[]{}, new Temp[]{}, to);
         }
 
         @Override
@@ -202,7 +203,7 @@ public class Mips {
     public static class JumpAndLinkReg extends PseudoInstr {
 
         public JumpAndLinkReg(Temp src) {
-            super("JALR", new Temp[]{}, new Temp[]{src});
+            super("jalr", new Temp[]{}, new Temp[]{src});
         }
 
         @Override
@@ -219,7 +220,7 @@ public class Mips {
     public static class LoadWord extends PseudoInstr {
 
         public LoadWord(Temp dst, Temp base, int offset) {
-            super("LW", new Temp[]{dst}, new Temp[]{base}, offset);
+            super("lw", new Temp[]{dst}, new Temp[]{base}, offset);
         }
 
         @Override
@@ -236,7 +237,7 @@ public class Mips {
     public static class StoreWord extends PseudoInstr {
 
         public StoreWord(Temp src, Temp base, int offset) {
-            super("SW", new Temp[]{}, new Temp[]{src, base}, offset);
+            super("sw", new Temp[]{}, new Temp[]{src, base}, offset);
         }
 
         @Override
@@ -253,7 +254,7 @@ public class Mips {
     public static class LoadImm extends PseudoInstr {
 
         public LoadImm(Temp dst, int value) {
-            super("LI", new Temp[]{dst}, new Temp[]{}, value);
+            super("li", new Temp[]{dst}, new Temp[]{}, value);
         }
 
         @Override
@@ -270,7 +271,7 @@ public class Mips {
     public static class LoadAddr extends PseudoInstr {
 
         public LoadAddr(Temp dst, Label label) {
-            super("LA", new Temp[]{dst}, new Temp[]{}, label);
+            super("la", new Temp[]{dst}, new Temp[]{}, label);
         }
 
         @Override
@@ -292,20 +293,41 @@ public class Mips {
 
         @Override
         public String getFormat() {
-            return "%s:";
+            return null;
         }
 
         @Override
         public Object[] getArgs() {
-            return new Object[]{jumpTo};
+            return new Object[0];
+        }
+
+        @Override
+        public String toString() {
+            return jumpTo + ":";
         }
     }
 
+    public static class Syscall extends NativeInstr {
+
+        public Syscall() {
+            super("syscall", new Reg[]{}, new Reg[]{});
+        }
+
+        @Override
+        public String getFormat() {
+            return "";
+        }
+
+        @Override
+        public Object[] getArgs() {
+            return new Object[]{};
+        }
+    }
 
     public static class NativeMove extends NativeInstr {
 
         public NativeMove(Reg dst, Reg src) {
-            super("MOVE", new Reg[]{dst}, new Reg[]{src});
+            super("move", new Reg[]{dst}, new Reg[]{src});
         }
 
         @Override
@@ -322,7 +344,7 @@ public class Mips {
     public static class NativeLoadWord extends NativeInstr {
 
         public NativeLoadWord(Reg dst, Reg base, int offset) {
-            super("LW", new Reg[]{dst}, new Reg[]{base}, offset);
+            super("lw", new Reg[]{dst}, new Reg[]{base}, offset);
         }
 
         @Override
@@ -339,7 +361,7 @@ public class Mips {
     public static class NativeStoreWord extends NativeInstr {
 
         public NativeStoreWord(Reg src, Reg base, int offset) {
-            super("SW", new Reg[]{}, new Reg[]{src, base}, offset);
+            super("sw", new Reg[]{}, new Reg[]{src, base}, offset);
         }
 
         @Override
@@ -361,7 +383,7 @@ public class Mips {
     public static class NativeReturn extends NativeInstr {
 
         public NativeReturn() {
-            super(Kind.RET, "JR", new Reg[]{Mips.RA}, new Reg[]{}, null);
+            super(Kind.RET, "jr", new Reg[]{Mips.RA}, new Reg[]{}, null);
         }
 
         @Override
@@ -378,12 +400,12 @@ public class Mips {
     public static class NativeSPAdd extends NativeInstr {
 
         public NativeSPAdd(int offset) {
-            super("ADDIU", new Reg[]{Mips.SP}, new Reg[]{Mips.SP}, offset);
+            super("addiu", new Reg[]{Mips.SP}, new Reg[]{Mips.SP}, offset);
         }
 
         @Override
         public String getFormat() {
-            return "%s, %s, (%s)";
+            return FMT3;
         }
 
         @Override
@@ -392,5 +414,8 @@ public class Mips {
         }
     }
 
-    public static final Label EPILOGUE_LABEL = new Label("$epilogue");
+
+    public static final String STR_PREFIX = "_S";
+
+    public static final String EPILOGUE_SUFFIX = "_exit";
 }

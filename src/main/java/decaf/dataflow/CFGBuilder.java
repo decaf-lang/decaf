@@ -19,10 +19,14 @@ public class CFGBuilder<I extends InstrLike> {
     public CFG<I> buildFrom(List<I> seq) {
         for (var item : seq) {
             if (item.isLabel()) {
-                // close the previous basic block
-                close();
-                // associate the current basic block with this label
-                currentBBLabel = Optional.of(item.jumpTo);
+                if (item.jumpTo.name.equals("main") || item.jumpTo.name.startsWith("_L_")) {
+                    // ignore
+                } else {
+                    // close the previous basic block
+                    close();
+                    // associate the current basic block with this label
+                    currentBBLabel = Optional.of(item.jumpTo);
+                }
             } else {
                 buf.add(new Loc<>(item));
                 if (!item.isSequential()) { // branching, finish this basic block

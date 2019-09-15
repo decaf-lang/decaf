@@ -9,7 +9,7 @@ public class Temp implements Comparable<Temp> {
 
     @Override
     public String toString() {
-        return ".T" + index;
+        return "_T" + index;
     }
 
     @Override

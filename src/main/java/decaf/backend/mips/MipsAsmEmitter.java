@@ -8,6 +8,7 @@ import decaf.instr.Label;
 import decaf.instr.PseudoInstr;
 import decaf.instr.TacInstr;
 import decaf.instr.TodoInstr;
+import decaf.instr.tac.Intrinsic;
 import decaf.instr.tac.StringPool;
 import decaf.instr.tac.TAC;
 import decaf.utils.MiscUtils;
@@ -15,6 +16,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static decaf.backend.mips.Mips.STR_PREFIX;
 
 public final class MipsAsmEmitter extends AsmEmitter {
 
@@ -51,7 +56,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
     @Override
     public Pair<List<PseudoInstr>, SubroutineInfo> selectInstr(TAC.Func func) {
-        var selector = new MipsInstrSelector();
+        var selector = new MipsInstrSelector(func.entry);
         for (var instr : func.getInstrSeq()) {
             instr.accept(selector);
         }
@@ -73,7 +78,22 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
     @Override
     public String emitEnd() {
-        // constant begin
+        if (!usedIntrinsics.isEmpty()) {
+            printer.println("# start of intrinsics");
+            if (usedIntrinsics.contains(Intrinsic.READ_LINE)) {
+                loadReadLine();
+            }
+            if (usedIntrinsics.contains(Intrinsic.STRING_EQUAL)) {
+                loadStringEqual();
+            }
+            if (usedIntrinsics.contains(Intrinsic.PRINT_BOOL)) {
+                loadPrintBool();
+            }
+            printer.println("# end of intrinsics");
+            printer.println();
+        }
+
+        printer.println("# start of constant strings");
         printer.println(".data");
         var i = 0;
         for (var str : pool) {
@@ -81,22 +101,101 @@ public final class MipsAsmEmitter extends AsmEmitter {
             printer.println(".asciiz %s", MiscUtils.quote(str));
             i++;
         }
-        // constant end
+        printer.println("# end of constant strings");
 
         return printer.close();
     }
 
+    private void loadReadLine() {
+        printer.printLabel(Intrinsic.READ_LINE.entry, "intrinsic: read line");
+        printer.println("sw $a0, -4($sp)");
+        printer.println("sw $a1, -8($sp)");
+        printer.println("li $a0, 64    # allocate space, fixed size 64");
+        printer.println("li $v0, 9     # memory allocation");
+        printer.println("syscall");
+        printer.println("move $a0, $v0");
+        printer.println("li $a1, 64");
+        printer.println("li $v0, 8     # read string");
+        printer.println("syscall");
+        printer.println("move $v0, $a0");
+        printer.printLabel(new Label(Intrinsic.READ_LINE.entry + "_loop"));
+        printer.println("lb $a1, ($a0)");
+        printer.println("beqz $a1, " + Intrinsic.READ_LINE.entry + "_exit");
+        printer.println("addi $a1, $a1, -10  # subtract ASCII newline");
+        printer.println("beqz $a1, _RLLoopDone");
+        printer.println("addi $a0, $a0, 1");
+        printer.println("j " + Intrinsic.READ_LINE.entry + "_loop");
+        printer.printLabel(new Label(Intrinsic.READ_LINE.entry + "_exit"));
+        printer.println("sb $a1, ($a0)");
+        printer.println("lw $a0, -4($sp)");
+        printer.println("lw $a1, -8($sp)");
+        printer.println("jr $ra");
+        printer.println();
+    }
+
+    private void loadStringEqual() {
+        var loop = new Label(Intrinsic.STRING_EQUAL.entry + "_loop");
+        var exit = new Label(Intrinsic.STRING_EQUAL.entry + "_exit");
+
+        printer.printLabel(Intrinsic.STRING_EQUAL.entry, "intrinsic: string equal");
+        printer.println("sw $a2, -4($sp)");
+        printer.println("sw $a3, -8($sp)");
+        printer.println("li $v0, 1");
+        printer.printLabel(loop);
+        printer.println("lb $a2, ($a0)");
+        printer.println("lb $a3, ($a1)");
+        printer.println("seq $v0, $a2, $a3");
+        printer.println("beqz $v0, %s", exit);
+        printer.println("beqz $a2, %s", exit);
+        printer.println("addiu $a0, $a0, 1");
+        printer.println("addiu $a1, $a1, 1");
+        printer.println("j %s", loop);
+        printer.printLabel(exit);
+        printer.println("lw $a2, -4($sp)");
+        printer.println("lw $a3, -8($sp)");
+        printer.println("jr $ra");
+        printer.println();
+    }
+
+    private void loadPrintBool() {
+        var trueString = new Label(Intrinsic.PRINT_BOOL.entry + "_S_true");
+        var falseString = new Label(Intrinsic.PRINT_BOOL.entry + "_S_false");
+        var isFalse = new Label(Intrinsic.PRINT_BOOL.entry + "_false");
+
+        printer.printLabel(Intrinsic.PRINT_BOOL.entry, "intrinsic: print bool");
+        printer.println(".data");
+        printer.printLabel(trueString);
+        printer.println(".asciiz \"true\"");
+        printer.printLabel(falseString);
+        printer.println(".asciiz \"false\"");
+
+        printer.println(".text");
+        printer.println("li $v0, 4    # print string");
+        printer.println("beqz $a0, %s", isFalse);
+        printer.println("la $a0, %s", trueString);
+        printer.println("syscall");
+        printer.println("jr $ra");
+        printer.printLabel(isFalse);
+        printer.println("la $a0, %s", falseString);
+        printer.println("syscall");
+        printer.println("jr $ra");
+    }
+
     private class MipsInstrSelector implements TacInstr.InstrVisitor {
 
+        MipsInstrSelector(Label entry) {
+            this.entry = entry;
+        }
+
         List<PseudoInstr> seq = new ArrayList<>();
+
+        Label entry;
 
         int maxArgs = 0;
 
         private int argCount = 0;
 
         boolean hasCall = false;
-
-        public static final String PREFIX = STR_PREFIX;
 
         @Override
         public void visitAssign(TacInstr.Assign instr) {
@@ -116,7 +215,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
         @Override
         public void visitLoadStrConst(TacInstr.LoadStrConst instr) {
             var index = pool.add(instr.value);
-            seq.add(new Mips.LoadAddr(instr.dst, new Label(PREFIX + index)));
+            seq.add(new Mips.LoadAddr(instr.dst, new Label(STR_PREFIX + index)));
         }
 
         @Override
@@ -165,7 +264,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
         @Override
         public void visitReturn(TacInstr.Return instr) {
             instr.value.ifPresent(v -> seq.add(new Mips.Move(Mips.V0, v)));
-            seq.add(new Mips.JumpToEpilogue());
+            seq.add(new Mips.JumpToEpilogue(entry));
         }
 
         @Override
@@ -180,30 +279,75 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitIndirectCall(TacInstr.IndirectCall instr) {
-            beforeCall();
+            hasCall = true;
+
+            callerSave();
             seq.add(new Mips.JumpAndLinkReg(instr.entry));
-            afterCall();
+            callerRestore();
+
+            argCount = 0;
+
             instr.dst.ifPresent(temp -> seq.add(new Mips.Move(temp, Mips.V0)));
         }
 
         @Override
         public void visitDirectCall(TacInstr.DirectCall instr) {
-            beforeCall();
-            seq.add(new Mips.JumpAndLink(new Label(instr.entry.name)));
-            afterCall();
+            hasCall = true;
+
+            if (instr.isIntrinsicCall()) { // special case: inline or embed the code (no registers need be saved)
+                switch (instr.getIntrinsic().kind) {
+                    case ALLOCATE -> {
+                        seq.add(new Mips.LoadImm(Mips.V0, 9)); // memory allocation
+                        seq.add(new Mips.Syscall());
+                    }
+                    case READ_LINE -> {
+                        seq.add(new Mips.JumpAndLink(Intrinsic.READ_LINE.entry));
+                        usedIntrinsics.add(Intrinsic.READ_LINE);
+                    }
+                    case READ_INT -> {
+                        seq.add(new Mips.LoadImm(Mips.V0, 5)); // read integer
+                        seq.add(new Mips.Syscall());
+                    }
+                    case STRING_EQUAL -> {
+                        seq.add(new Mips.JumpAndLink(Intrinsic.STRING_EQUAL.entry));
+                        usedIntrinsics.add(Intrinsic.STRING_EQUAL);
+                    }
+                    case PRINT_INT -> {
+                        seq.add(new Mips.LoadImm(Mips.V0, 1)); // print integer
+                        seq.add(new Mips.Syscall());
+                    }
+                    case PRINT_STRING -> {
+                        seq.add(new Mips.LoadImm(Mips.V0, 4)); // print string
+                        seq.add(new Mips.Syscall());
+                    }
+                    case PRINT_BOOL -> {
+                        seq.add(new Mips.JumpAndLink(Intrinsic.PRINT_BOOL.entry));
+                        usedIntrinsics.add(Intrinsic.PRINT_BOOL);
+                    }
+                    case HALT -> {
+                        seq.add(new Mips.LoadImm(Mips.V0, 10)); // exit
+                        seq.add(new Mips.Syscall());
+                    }
+                }
+            } else {  // normal call
+                callerSave();
+                seq.add(new Mips.JumpAndLink(new Label(instr.entry.name)));
+                callerRestore();
+            }
+
+            argCount = 0;
+
+            // finally
             instr.dst.ifPresent(temp -> seq.add(new Mips.Move(temp, Mips.V0)));
         }
 
-        private void beforeCall() {
-            hasCall = true;
+        private void callerSave() {
             maxArgs = Math.max(maxArgs, argCount);
-
             seq.add(TodoInstr.callerSave());
         }
 
-        private void afterCall() {
+        private void callerRestore() {
             seq.add(TodoInstr.callerRestore());
-            argCount = 0;
         }
 
         @Override
@@ -222,5 +366,5 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
     private StringPool pool = new StringPool();
 
-    public static final String STR_PREFIX = "_string_";
+    private Set<Intrinsic> usedIntrinsics = new TreeSet<>();
 }
