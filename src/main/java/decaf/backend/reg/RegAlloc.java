@@ -2,8 +2,8 @@ package decaf.backend.reg;
 
 import decaf.backend.asm.AsmEmitter;
 import decaf.backend.asm.SubroutineInfo;
-import decaf.dataflow.CFG;
-import decaf.instr.PseudoInstr;
+import decaf.backend.dataflow.CFG;
+import decaf.lowlevel.PseudoInstr;
 
 import java.util.Random;
 

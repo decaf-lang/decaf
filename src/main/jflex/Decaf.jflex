@@ -1,9 +1,9 @@
 // Decaf lexer grammar
 
-package decaf.parsing;
+package decaf.frontend.parsing;
 
-import decaf.tree.Pos;
-import decaf.error.*;
+import decaf.frontend.tree.Pos;
+import decaf.driver.error.*;
 import decaf.utils.MiscUtils;
 
 %%

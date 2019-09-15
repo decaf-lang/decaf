@@ -1,7 +1,5 @@
 package decaf.driver;
 
-import decaf.error.ErrorIssuer;
-
 import java.io.PrintStream;
 import java.util.Optional;
 

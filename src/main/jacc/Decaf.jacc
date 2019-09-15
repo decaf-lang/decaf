@@ -1,9 +1,9 @@
 // Decaf grammar
 
-%package decaf.parsing
+%package decaf.frontend.parsing
 
 %{
-import decaf.tree.Tree.*;
+import decaf.frontend.tree.Tree.*;
 
 import java.util.Optional;
 %}

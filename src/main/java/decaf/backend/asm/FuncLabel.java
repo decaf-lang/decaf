@@ -1,7 +1,7 @@
 package decaf.backend.asm;
 
-import decaf.instr.Label;
-import decaf.instr.tac.TAC;
+import decaf.lowlevel.Label;
+import decaf.lowlevel.tac.TAC;
 
 public class FuncLabel extends Label {
 

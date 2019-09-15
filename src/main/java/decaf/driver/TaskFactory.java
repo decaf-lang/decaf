@@ -1,14 +1,14 @@
 package decaf.driver;
 
 import decaf.backend.asm.Asm;
-import decaf.backend.mips.MipsAsmEmitter;
+import decaf.backend.asm.mips.MipsAsmEmitter;
 import decaf.backend.reg.BruteRegAlloc;
-import decaf.instr.tac.TAC;
-import decaf.parsing.Parser;
-import decaf.tacgen.TacGen;
-import decaf.tree.Tree;
-import decaf.typecheck.Namer;
-import decaf.typecheck.Typer;
+import decaf.lowlevel.tac.TAC;
+import decaf.frontend.parsing.Parser;
+import decaf.frontend.tacgen.TacGen;
+import decaf.frontend.tree.Tree;
+import decaf.frontend.typecheck.Namer;
+import decaf.frontend.typecheck.Typer;
 
 import java.io.InputStream;
 

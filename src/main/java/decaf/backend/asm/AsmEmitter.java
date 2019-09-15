@@ -1,8 +1,8 @@
 package decaf.backend.asm;
 
-import decaf.instr.PseudoInstr;
-import decaf.instr.Reg;
-import decaf.instr.tac.TAC;
+import decaf.lowlevel.PseudoInstr;
+import decaf.lowlevel.Reg;
+import decaf.lowlevel.tac.TAC;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;

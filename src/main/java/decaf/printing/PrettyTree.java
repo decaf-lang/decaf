@@ -1,7 +1,7 @@
 package decaf.printing;
 
-import decaf.tree.Tree;
-import decaf.tree.TreeNode;
+import decaf.frontend.tree.Tree;
+import decaf.frontend.tree.TreeNode;
 
 import java.util.List;
 import java.util.Optional;

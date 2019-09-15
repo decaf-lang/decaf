@@ -1,7 +1,7 @@
 package decaf.backend.asm;
 
-import decaf.instr.Label;
-import decaf.instr.NativeInstr;
+import decaf.lowlevel.Label;
+import decaf.lowlevel.NativeInstr;
 
 public class AsmCodePrinter {
     private StringBuilder sb = new StringBuilder();

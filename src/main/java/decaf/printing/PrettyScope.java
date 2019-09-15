@@ -1,6 +1,6 @@
 package decaf.printing;
 
-import decaf.scope.*;
+import decaf.frontend.scope.*;
 
 /**
  * PA2 output.

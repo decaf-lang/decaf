@@ -1,12 +1,12 @@
 package decaf.backend.asm;
 
 import decaf.backend.reg.RegAlloc;
-import decaf.dataflow.CFGBuilder;
-import decaf.dataflow.LivenessAnalyzer;
+import decaf.backend.dataflow.CFGBuilder;
+import decaf.backend.dataflow.LivenessAnalyzer;
 import decaf.driver.Config;
 import decaf.driver.Phase;
-import decaf.instr.PseudoInstr;
-import decaf.instr.tac.TAC;
+import decaf.lowlevel.PseudoInstr;
+import decaf.lowlevel.tac.TAC;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -31,17 +31,12 @@ public class Asm extends Phase<TAC.Prog, String> {
             emitter.emitVTable(vtbl);
         }
 
-        var pw = new PrintWriter(System.out);
-
         emitter.emitSubroutineBegin();
         for (var func : prog.funcs) {
-            pw.println("In function " + func.entry);
             var pair = emitter.selectInstr(func);
             var builder = new CFGBuilder<PseudoInstr>();
             var cfg = builder.buildFrom(pair.getLeft());
             analyzer.accept(cfg);
-            cfg.printLivenessTo(pw);
-            pw.flush();
             regAlloc.accept(cfg, pair.getRight());
         }
 
