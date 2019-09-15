@@ -30,7 +30,7 @@ public class OptParser {
             .longOpt("target")
             .hasArg()
             .argName("target")
-            .desc("compilation target: PA1, PA2, or PA3 (default)")
+            .desc("target/task: PA1, PA2, PA3, PA4, or PA5 (default)")
             .build();
 
     static final String HELP = "h";
