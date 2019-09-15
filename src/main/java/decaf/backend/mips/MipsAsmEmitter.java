@@ -112,6 +112,9 @@ public final class MipsAsmEmitter extends AsmEmitter {
     }
 
     private void loadReadLine() {
+        var loop = new Label(Intrinsic.READ_LINE.entry + "_loop");
+        var exit = new Label(Intrinsic.READ_LINE.entry + "_exit");
+
         printer.printLabel(Intrinsic.READ_LINE.entry, "intrinsic: read line");
         printer.println("sw $a0, -4($sp)");
         printer.println("sw $a1, -8($sp)");
@@ -123,14 +126,14 @@ public final class MipsAsmEmitter extends AsmEmitter {
         printer.println("li $v0, 8     # read string");
         printer.println("syscall");
         printer.println("move $v0, $a0");
-        printer.printLabel(new Label(Intrinsic.READ_LINE.entry + "_loop"));
+        printer.printLabel(loop);
         printer.println("lb $a1, ($a0)");
-        printer.println("beqz $a1, " + Intrinsic.READ_LINE.entry + "_exit");
+        printer.println("beqz $a1, %s", exit);
         printer.println("addi $a1, $a1, -10  # subtract ASCII newline");
-        printer.println("beqz $a1, _RLLoopDone");
+        printer.println("beqz $a1, %s", exit);
         printer.println("addi $a0, $a0, 1");
-        printer.println("j " + Intrinsic.READ_LINE.entry + "_loop");
-        printer.printLabel(new Label(Intrinsic.READ_LINE.entry + "_exit"));
+        printer.println("j %s", loop);
+        printer.printLabel(exit);
         printer.println("sb $a1, ($a0)");
         printer.println("lw $a0, -4($sp)");
         printer.println("lw $a1, -8($sp)");

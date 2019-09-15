@@ -81,7 +81,7 @@ public class BasicBlock<I extends InstrLike> implements Iterable<Loc<I>> {
     }
 
     public void printLivenessTo(PrintWriter pw) {
-        pw.println("BASIC BLOCK " + bbNum + " : ");
+        pw.println("BASIC BLOCK " + bbNum + " " + label.map(Label::toString).orElse("<unnamed>") + ": ");
         pw.println("  Def     = " + setToString(def));
         pw.println("  liveUse = " + setToString(liveUse));
         pw.println("  liveIn  = " + setToString(liveIn));
