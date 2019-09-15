@@ -279,7 +279,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         }
 
         if (def.typeLit.type.noError()) {
-            var symbol = new VarSymbol(def.name, def.typeLit.type, def.pos);
+            var symbol = new VarSymbol(def.name, def.typeLit.type, def.id.pos);
             ctx.declare(symbol);
             def.symbol = symbol;
         }
@@ -287,7 +287,13 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitFor(Tree.For loop, ScopeStack ctx) {
-        loop.body.accept(this, ctx);
+        loop.scope = new LocalScope(ctx.currentScope());
+        ctx.open(loop.scope);
+        loop.init.accept(this, ctx);
+        for (var stmt : loop.body.stmts) {
+            stmt.accept(this, ctx);
+        }
+        ctx.close();
     }
 
     @Override

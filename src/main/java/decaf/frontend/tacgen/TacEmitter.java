@@ -29,6 +29,11 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     @Override
     default void visitLocalVarDef(Tree.LocalVarDef def, MethodVisitor mv) {
         def.symbol.temp = mv.freshTemp();
+        if (!def.initVal.isPresent()) return;
+        var initVal = def.initVal.get();
+
+        initVal.accept(this, mv);
+        mv.visitAssign(def.symbol.temp, initVal.val);
     }
 
     @Override

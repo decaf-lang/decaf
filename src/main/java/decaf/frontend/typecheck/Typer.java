@@ -14,6 +14,9 @@ import decaf.frontend.type.ArrayType;
 import decaf.frontend.type.BuiltInType;
 import decaf.frontend.type.ClassType;
 import decaf.frontend.type.Type;
+import decaf.frontend.tree.Pos;
+
+import java.util.Optional;
 
 public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLitVisited {
 
@@ -116,12 +119,16 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitFor(Tree.For loop, ScopeStack ctx) {
+        ctx.open(loop.scope);
         loop.init.accept(this, ctx);
         checkTestExpr(loop.cond, ctx);
         loop.update.accept(this, ctx);
         _loop_level++;
-        loop.body.accept(this, ctx);
+        for (var stmt : loop.body.stmts) {
+            stmt.accept(this, ctx);
+        }
         _loop_level--;
+        ctx.close();
     }
 
     @Override
@@ -309,7 +316,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         if (expr.receiver.isEmpty()) {
             // Variable, which should be complicated since a legal variable could refer to a local var,
             // a visible member var, and a class name.
-            var symbol = ctx.lookupBefore(expr.name, expr.pos);
+            var symbol = ctx.lookupBefore(expr.name, localVarDefsPos.orElse(expr.pos));
             if (symbol.isPresent()) {
                 if (symbol.get().isVarSymbol()) {
                     var var = (VarSymbol) symbol.get();
@@ -522,4 +529,23 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
             expr.type = expr.symbol.type;
         }
     }
+
+    @Override
+    public void visitLocalVarDef(Tree.LocalVarDef stmt, ScopeStack ctx) {
+        if (!stmt.initVal.isPresent()) return;
+
+        var initVal = stmt.initVal.get();
+        localVarDefsPos = Optional.ofNullable(stmt.id.pos);
+        initVal.accept(this, ctx);
+        localVarDefsPos = Optional.empty();
+        var lt = stmt.symbol.type;
+        var rt = initVal.type;
+
+        if (lt.noError() && (lt.isFuncType() || !rt.subtypeOf(lt))) {
+            issue(new IncompatBinOpError(stmt.assignPos.get(), lt.toString(), "=", rt.toString()));
+        }
+    }
+
+    // Only usage: check initializers must not use variables being declared
+    private Optional<Pos> localVarDefsPos = Optional.empty();
 }

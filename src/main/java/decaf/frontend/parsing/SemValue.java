@@ -21,8 +21,9 @@ class SemValue {
     // Kind
     final Kind kind;
 
-    // Position
+    // Position and possibly needed extra position
     Pos pos;
+    Pos pos2;
 
     // Make sure every semantic value has a position.
     SemValue(Kind kind, Pos pos) {

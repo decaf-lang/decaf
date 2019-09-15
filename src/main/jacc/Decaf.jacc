@@ -105,6 +105,16 @@ Var        		:	Type Id
                     }
                 ;
 
+LocalVar        :   Type Id
+                    {
+                        $$ = svVarLocal($1.type, $2.id, null, null, $2.pos);
+                    }
+                |   Type Id '=' Expr
+                    {
+                        $$ = svVarLocal($1.type, $2.id, $3.pos, $4.expr, $2.pos);
+                    }
+                ;
+
 MethodDef    	:	STATIC Type Id '(' VarList ')' Block
                     {
                         $$ = svField(new MethodDef(true, $3.id, $2.type, $5.varList, $7.block, $3.pos));
@@ -128,11 +138,11 @@ VarList         :	VarList1
 VarList1    	:	VarList1 ',' Var
                     {
                         $$ = $1;
-                        $$.varList.add(new LocalVarDef($3.type, $3.id, $3.pos));
+                        $$.varList.add(new LocalVarDef($3.type, $3.id, Optional.empty(), Optional.empty(), $3.pos));
                     }
                 |	Var
                     {
-                        $$ = svVars(new LocalVarDef($1.type, $1.id, $1.pos));
+                        $$ = svVars(new LocalVarDef($1.type, $1.id, Optional.empty(), Optional.empty(), $1.pos));
                     }
                 ;
 
@@ -166,9 +176,9 @@ Type            :	INT
 
 // Statements
 
-Stmt		    :	Var ';'
+Stmt		    :	LocalVar ';'
                     {
-                        $$ = svStmt(new LocalVarDef($1.type, $1.id, $1.pos));
+                        $$ = svStmt(new LocalVarDef($1.type, $1.id, Optional.ofNullable($1.pos2), Optional.ofNullable($1.expr), $1.pos));
                     }
                 |	Block
                     {
@@ -187,6 +197,13 @@ Stmt		    :	Var ';'
                 |	WHILE '(' Expr ')' Stmt
                     {
                         $$ = svStmt(new While($3.expr, $5.stmt, $1.pos));
+                    }
+                |   FOR '(' LocalVar ';' Expr ';' SimpleStmt ')' Stmt
+                    {
+                        var _3 = svStmt(new LocalVarDef($3.type, $3.id, Optional.ofNullable($3.pos2), Optional.ofNullable($3.expr), $3.pos));
+                        if (_3.stmt == null) _3.stmt = new Skip($4.pos);
+                        if ($7.stmt == null) $7.stmt = new Skip($8.pos);
+                        $$ = svStmt(new For(_3.stmt, $5.expr, $7.stmt, $9.stmt, $1.pos));
                     }
                 |	FOR '(' SimpleStmt ';' Expr ';'	SimpleStmt ')' Stmt
                     {

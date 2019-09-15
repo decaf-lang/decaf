@@ -137,6 +137,8 @@ public abstract class Tree {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
+        // For now, member variable must not have initial values
+        public final Optional<Expr> initVal = Optional.empty();
         //
         public String name;
         // For type check
@@ -154,13 +156,14 @@ public abstract class Tree {
             return switch (index) {
                 case 0 -> typeLit;
                 case 1 -> id;
+                case 2 -> initVal;
                 default -> throw new IndexOutOfBoundsException(index);
             };
         }
 
         @Override
         public int treeArity() {
-            return 2;
+            return 3;
         }
 
         @Override
@@ -432,15 +435,20 @@ public abstract class Tree {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
+        public Optional<Pos> assignPos;
+        public Optional<Expr> initVal;
         //
         public String name;
         // For type check
         public VarSymbol symbol;
 
-        public LocalVarDef(TypeLit typeLit, Id id, Pos pos) {
+        public LocalVarDef(TypeLit typeLit, Id id, Optional<Pos> assignPos, Optional<Expr> initVal, Pos pos) {
+            // pos = id.pos, assignPos = position of the '='
             super(Kind.LOCAL_VAR_DEF, "LocalVarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
+            this.assignPos = assignPos;
+            this.initVal = initVal;
             this.name = id.name;
         }
 
@@ -449,13 +457,14 @@ public abstract class Tree {
             return switch (index) {
                 case 0 -> typeLit;
                 case 1 -> id;
+                case 2 -> initVal;
                 default -> throw new IndexOutOfBoundsException(index);
             };
         }
 
         @Override
         public int treeArity() {
-            return 2;
+            return 3;
         }
 
         @Override
@@ -710,6 +719,8 @@ public abstract class Tree {
         public Expr cond;
         public Stmt update;
         public Block body;
+        // For type check
+        public LocalScope scope;
 
         public For(Stmt init, Expr cond, Stmt update, Stmt body, Pos pos) {
             super(Kind.FOR, "For", pos);
@@ -1545,7 +1556,7 @@ public abstract class Tree {
     public static class Modifiers extends TreeNode {
         public final int code;
 
-        private StringBuilder _sb = new StringBuilder();
+        private List<String> flags;
 
         // Available modifiers:
         public static final int STATIC = 1;
@@ -1553,7 +1564,8 @@ public abstract class Tree {
         public Modifiers(int code, Pos pos) {
             super(Kind.MODIFIERS, "Modifiers", pos);
             this.code = code;
-            if (code == 1) _sb.append("STATIC");
+            flags = new ArrayList<>();
+            if (isStatic()) flags.add("STATIC");
         }
 
         public Modifiers() {
@@ -1581,7 +1593,7 @@ public abstract class Tree {
 
         @Override
         public String toString() {
-            return _sb.toString();
+            return String.join(" ", flags);
         }
     }
 }

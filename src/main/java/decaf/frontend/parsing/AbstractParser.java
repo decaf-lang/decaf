@@ -7,6 +7,7 @@ import decaf.frontend.tree.Tree;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * The abstract parser specifies all methods that a concrete parser should implement, and provide a couple of helper
@@ -102,6 +103,15 @@ public abstract class AbstractParser {
         var v = new SemValue(SemValue.Kind.VAR, pos);
         v.type = type;
         v.id = id;
+        return v;
+    }
+
+    protected SemValue svVarLocal(Tree.TypeLit type, Tree.Id id, Pos assignPos, Tree.Expr initVal, Pos pos) {
+        var v = new SemValue(SemValue.Kind.VAR, pos);
+        v.type = type;
+        v.id = id;
+        v.pos2 = assignPos;
+        v.expr = initVal;
         return v;
     }
 

@@ -61,7 +61,7 @@ public abstract class TAC {
      */
     public static class VTable {
         /**
-         * Name. NOTE: may differs from `className`.
+         * Name. NOTE: may differ from `className`.
          */
         public final Label label;
 
