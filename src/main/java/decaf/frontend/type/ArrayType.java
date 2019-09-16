@@ -1,6 +1,13 @@
 package decaf.frontend.type;
 
-public class ArrayType extends Type {
+/**
+ * Array type.
+ * <p>
+ * Note: Decaf arrays are <em>invariant</em>, not <em>covariant</em> as Java arrays do.
+ * In Java, if {@code t} {@literal <:} {@code s}, then {@code t[]} {@literal <:} {@code s[]}.
+ * But in Decaf, {@code t[]} {@literal <:} {@code s[]} if and only if {@code t} and {@code s} are equal.
+ */
+public final class ArrayType extends Type {
 
     public final Type elementType;
 
@@ -9,22 +16,19 @@ public class ArrayType extends Type {
     }
 
     @Override
-    public boolean subtypeOf(Type type) {
-        if (type.eq(BuiltInType.ERROR)) {
+    public boolean subtypeOf(Type that) {
+        if (that.eq(BuiltInType.ERROR)) {
             return true;
         }
-        // NOTE: arrays in decaf are _invariant_, but not _covariant_ as Java arrays do.
-        // In Java, if t <: s, then t[] <: s[].
-        // But in decaf, NO! t[] <: s[] if and only if t == s.
-        return eq(type);
+        return eq(that);
     }
 
     @Override
-    public boolean eq(Type type) {
-        if (!type.isArrayType()) {
+    public boolean eq(Type that) {
+        if (!that.isArrayType()) {
             return false;
         }
-        return elementType.eq(((ArrayType) type).elementType);
+        return elementType.eq(((ArrayType) that).elementType);
     }
 
     @Override

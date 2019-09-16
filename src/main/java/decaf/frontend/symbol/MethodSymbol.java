@@ -5,19 +5,29 @@ import decaf.frontend.scope.FormalScope;
 import decaf.frontend.tree.Pos;
 import decaf.frontend.tree.Tree;
 import decaf.frontend.type.FunType;
-import decaf.frontend.type.Type;
 
-public class MethodSymbol extends Symbol {
+/**
+ * Method symbol, representing a method definition.
+ * <p>
+ * TODO: change to FunSymbol in future?
+ */
+public final class MethodSymbol extends Symbol {
 
+    public final FunType type;
+
+    /**
+     * Associated formal scope of the method parameters.
+     */
     public final FormalScope scope;
 
     public final Tree.Modifiers modifiers;
 
     public final ClassSymbol owner;
 
-    public MethodSymbol(String name, Type type, FormalScope scope, Pos pos, Tree.Modifiers modifiers,
+    public MethodSymbol(String name, FunType type, FormalScope scope, Pos pos, Tree.Modifiers modifiers,
                         ClassSymbol owner) {
         super(name, type, pos);
+        this.type = type;
         this.scope = scope;
         this.modifiers = modifiers;
         this.owner = owner;
@@ -26,7 +36,7 @@ public class MethodSymbol extends Symbol {
 
     @Override
     public ClassScope domain() {
-        return (ClassScope) _definedIn;
+        return (ClassScope) definedIn;
     }
 
     @Override
@@ -41,27 +51,25 @@ public class MethodSymbol extends Symbol {
         return modStr + String.format("function %s : %s", name, type);
     }
 
-    public FunType getFunType() {
-        return (FunType) type;
-    }
-
-    public Type getReturnType() {
-        return getFunType().returnType;
-    }
-
+    /**
+     * Is it a main function?
+     *
+     * @return true/false
+     */
     public boolean isMain() {
-        return isMain;
+        return main;
     }
 
+    /**
+     * Set as main function, by {@link decaf.frontend.typecheck.Namer}.
+     */
     public void setMain() {
-        this.isMain = true;
+        this.main = true;
     }
 
     public boolean isStatic() {
         return modifiers.isStatic();
     }
 
-    // TODO
-
-    private boolean isMain;
+    private boolean main = false;
 }

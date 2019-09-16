@@ -2,7 +2,10 @@ package decaf.frontend.type;
 
 import java.util.Optional;
 
-public class ClassType extends Type {
+/**
+ * Class type.
+ */
+public final class ClassType extends Type {
 
     public final String name;
 
@@ -19,18 +22,18 @@ public class ClassType extends Type {
     }
 
     @Override
-    public boolean subtypeOf(Type type) {
-        if (type.eq(BuiltInType.ERROR)) {
+    public boolean subtypeOf(Type that) {
+        if (that.eq(BuiltInType.ERROR)) {
             return true;
         }
 
-        if (!type.isClassType()) {
+        if (!that.isClassType()) {
             return false;
         }
 
         var t = this;
         while (true) {
-            if (t.eq(type)) return true;
+            if (t.eq(that)) return true;
             if (t.superType.isPresent()) t = t.superType.get();
             else break;
         }
@@ -39,8 +42,8 @@ public class ClassType extends Type {
     }
 
     @Override
-    public boolean eq(Type type) {
-        return type.isClassType() && name.equals(((ClassType) type).name);
+    public boolean eq(Type that) {
+        return that.isClassType() && name.equals(((ClassType) that).name);
     }
 
     @Override

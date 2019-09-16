@@ -1,30 +1,46 @@
 package decaf.frontend.symbol;
 
-import java.util.Comparator;
-
-import decaf.frontend.tree.Pos;
 import decaf.frontend.scope.Scope;
+import decaf.frontend.tree.Pos;
 import decaf.frontend.type.Type;
 
-public abstract class Symbol {
+/**
+ * Symbols.
+ * <p>
+ * A symbol is created when a definition is identified and type-checked, indicating a class/variable/method is
+ * resolved successfully, by {@link decaf.frontend.typecheck.Namer}.
+ * <p>
+ * Symbols are used in two ways: stored in the symbol table of a scope, and referred by other expressions/statements.
+ *
+ * @see ClassSymbol
+ * @see MethodSymbol
+ * @see VarSymbol
+ */
+public abstract class Symbol implements Comparable<Symbol> {
+
     public final String name;
 
     public final Type type;
 
     public final Pos pos;
 
-    protected Symbol(String name, Type type, Pos pos) {
+    Symbol(String name, Type type, Pos pos) {
         this.name = name;
         this.type = type;
         this.pos = pos;
     }
 
+    /**
+     * In which scope does this symbol define?
+     *
+     * @return defined-in scope
+     */
     public Scope domain() {
-        return _definedIn;
+        return definedIn;
     }
 
     public void setDomain(Scope scope) {
-        this._definedIn = scope;
+        this.definedIn = scope;
     }
 
     public boolean isClassSymbol() {
@@ -39,6 +55,11 @@ public abstract class Symbol {
         return false;
     }
 
+    /**
+     * Get string representation of a symbol, excluding the position.
+     *
+     * @return string representation
+     */
     protected abstract String str();
 
     @Override
@@ -46,28 +67,16 @@ public abstract class Symbol {
         return pos + " -> " + str();
     }
 
-    protected Scope _definedIn;
+    Scope definedIn;
 
-    public static final Comparator<Symbol> POS_COMPARATOR = (o1, o2) -> o1.pos.compareTo(o2.pos);
-
-    // TODO: remove
-
-    protected int order;
-
-    public static final Comparator<Symbol> ORDER_COMPARATOR = new Comparator<Symbol>() {
-
-        @Override
-        public int compare(Symbol o1, Symbol o2) {
-            return o1.order > o2.order ? 1 : o1.order == o2.order ? 0 : -1;
-        }
-
-    };
-
-    public int getOrder() {
-        return order;
-    }
-
-    public void setOrder(int order) {
-        this.order = order;
+    /**
+     * Two symbols are compared by their positions.
+     *
+     * @param that another symbol
+     * @return comparing result
+     */
+    @Override
+    public int compareTo(Symbol that) {
+        return this.pos.compareTo(that.pos);
     }
 }

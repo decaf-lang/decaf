@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Class scope: stores class member symbols, i.e. variables and functions. It is owned by a class symbol.
+ */
 public class ClassScope extends Scope {
 
     public final Optional<ClassScope> parentScope;
@@ -23,11 +26,11 @@ public class ClassScope extends Scope {
     }
 
     public ClassSymbol getOwner() {
-        return _owner;
+        return owner;
     }
 
     public void setOwner(ClassSymbol owner) {
-        _owner = owner;
+        this.owner = owner;
     }
 
     @Override
@@ -35,6 +38,12 @@ public class ClassScope extends Scope {
         return true;
     }
 
+    /**
+     * Lookup a symbol in the entire class scope -- including this class scope and all parents' scopes.
+     *
+     * @param key symbol's name
+     * @return symbol (if found)
+     */
     public Optional<Symbol> lookup(String key) {
         var scope = this;
         while (true) {
@@ -53,6 +62,11 @@ public class ClassScope extends Scope {
         return Optional.empty();
     }
 
+    /**
+     * Collect all formal scopes of the defined function symbols.
+     *
+     * @return formal scopes
+     */
     public List<FormalScope> nestedFormalScopes() {
         var scopes = new ArrayList<FormalScope>();
         for (var symbol : this) {
@@ -63,5 +77,5 @@ public class ClassScope extends Scope {
         return scopes;
     }
 
-    private ClassSymbol _owner;
+    private ClassSymbol owner;
 }

@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
- * The parser phase: parse a decaf source and build an abstract syntax tree.
+ * The parser phase: parse a Decaf source and build an abstract syntax tree.
  * <p>
  * Hint: make sure {@code jflex} and {@code jacc} are executed first, otherwise your IDE may be unhappy with some
  * symbols.

@@ -3,18 +3,18 @@ package decaf.frontend.typecheck;
 import decaf.driver.Config;
 import decaf.driver.Phase;
 import decaf.driver.error.*;
-import decaf.printing.IndentPrinter;
-import decaf.printing.PrettyScope;
 import decaf.frontend.scope.ScopeStack;
 import decaf.frontend.symbol.ClassSymbol;
 import decaf.frontend.symbol.MethodSymbol;
 import decaf.frontend.symbol.VarSymbol;
+import decaf.frontend.tree.Pos;
 import decaf.frontend.tree.Tree;
 import decaf.frontend.type.ArrayType;
 import decaf.frontend.type.BuiltInType;
 import decaf.frontend.type.ClassType;
 import decaf.frontend.type.Type;
-import decaf.frontend.tree.Pos;
+import decaf.printing.IndentPrinter;
+import decaf.printing.PrettyScope;
 
 import java.util.Optional;
 
@@ -60,7 +60,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     public void visitMethodDef(Tree.MethodDef method, ScopeStack ctx) {
         ctx.open(method.symbol.scope);
         method.body.accept(this, ctx);
-        if (!method.symbol.getReturnType().isVoidType() && !method.body.returns) {
+        if (!method.symbol.type.returnType.isVoidType() && !method.body.returns) {
             issue(new MissingReturnError(method.body.pos));
         }
         ctx.close();
@@ -140,7 +140,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitReturn(Tree.Return stmt, ScopeStack ctx) {
-        var expected = ctx.currentMethod().getReturnType();
+        var expected = ctx.currentMethod().type.returnType;
         stmt.expr.ifPresent(e -> e.accept(this, ctx));
         var actual = stmt.expr.map(e -> e.type).orElse(BuiltInType.VOID);
         if (actual.noError() && !actual.subtypeOf(expected)) {
@@ -457,7 +457,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
             if (symbol.get().isMethodSymbol()) {
                 var method = (MethodSymbol) symbol.get();
                 call.symbol = method;
-                call.type = method.getReturnType();
+                call.type = method.type.returnType;
                 if (requireStatic && !method.isStatic()) {
                     issue(new NotClassFieldError(call.pos, call.methodName, clazz.type.toString()));
                     return;
@@ -475,10 +475,10 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                 }
 
                 // check signature compatibility
-                if (method.getFunType().arity() != args.size()) {
-                    issue(new BadArgCountError(call.pos, method.name, method.getFunType().arity(), args.size()));
+                if (method.type.arity() != args.size()) {
+                    issue(new BadArgCountError(call.pos, method.name, method.type.arity(), args.size()));
                 }
-                var iter1 = method.getFunType().argTypes.iterator();
+                var iter1 = method.type.argTypes.iterator();
                 var iter2 = call.args.iterator();
                 for (int i = 1; iter1.hasNext() && iter2.hasNext(); i++) {
                     Type t1 = iter1.next();
@@ -532,7 +532,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitLocalVarDef(Tree.LocalVarDef stmt, ScopeStack ctx) {
-        if (!stmt.initVal.isPresent()) return;
+        if (stmt.initVal.isEmpty()) return;
 
         var initVal = stmt.initVal.get();
         localVarDefsPos = Optional.ofNullable(stmt.id.pos);

@@ -1,22 +1,26 @@
 package decaf.frontend.symbol;
 
-import decaf.lowlevel.Label;
-import decaf.lowlevel.tac.ClassInfo;
-import decaf.lowlevel.tac.TAC;
 import decaf.frontend.scope.ClassScope;
 import decaf.frontend.scope.GlobalScope;
 import decaf.frontend.tree.Pos;
 import decaf.frontend.type.ClassType;
+import decaf.lowlevel.tac.ClassInfo;
 
-import java.util.HashSet;
 import java.util.Optional;
+import java.util.TreeSet;
 
-public class ClassSymbol extends Symbol {
+/**
+ * Class symbol, representing a class definition.
+ */
+public final class ClassSymbol extends Symbol {
 
     public final Optional<ClassSymbol> parentSymbol;
 
     public final ClassType type;
 
+    /**
+     * Associated class scope of this class.
+     */
     public final ClassScope scope;
 
     public ClassSymbol(String name, ClassType type, ClassScope scope, Pos pos) {
@@ -37,7 +41,7 @@ public class ClassSymbol extends Symbol {
 
     @Override
     public GlobalScope domain() {
-        return (GlobalScope) _definedIn;
+        return (GlobalScope) definedIn;
     }
 
     @Override
@@ -45,12 +49,20 @@ public class ClassSymbol extends Symbol {
         return true;
     }
 
+    /**
+     * Set as main class, by {@link decaf.frontend.typecheck.Namer}.
+     */
     public void setMainClass() {
-        _main = true;
+        main = true;
     }
 
+    /**
+     * Is it a main function?
+     *
+     * @return true/false
+     */
     public boolean isMainClass() {
-        return _main;
+        return main;
     }
 
     @Override
@@ -58,11 +70,16 @@ public class ClassSymbol extends Symbol {
         return "class " + name + parentSymbol.map(classSymbol -> " : " + classSymbol.name).orElse("");
     }
 
-    // For tac generation.
+    /**
+     * Get class info, required by tac generation.
+     *
+     * @return class info
+     * @see decaf.lowlevel.tac.ClassInfo
+     */
     public ClassInfo getInfo() {
-        var memberVariables = new HashSet<String>();
-        var memberMethods = new HashSet<String>();
-        var staticMethods = new HashSet<String>();
+        var memberVariables = new TreeSet<String>();
+        var memberMethods = new TreeSet<String>();
+        var staticMethods = new TreeSet<String>();
 
         for (var symbol : scope) {
             if (symbol.isVarSymbol()) {
@@ -81,77 +98,5 @@ public class ClassSymbol extends Symbol {
                 staticMethods, isMainClass());
     }
 
-    private boolean _main;
-
-    // TODO: remove
-
-    private int order;
-
-    private boolean check;
-
-    private int numNonStaticFunc;
-
-    private int numVar;
-
-    private int size;
-
-    private TAC.VTable vtable;
-
-    private Label newFuncLabel;
-
-    public Label getNewFuncLabel() {
-        return newFuncLabel;
-    }
-
-    public void setNewFuncLabel(Label newFuncLabel) {
-        this.newFuncLabel = newFuncLabel;
-    }
-
-    public TAC.VTable getVtable() {
-        return vtable;
-    }
-
-    public void setVtable(TAC.VTable vtable) {
-        this.vtable = vtable;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public int getNumNonStaticFunc() {
-        return numNonStaticFunc;
-    }
-
-    public void setNumNonStaticFunc(int numNonStaticFunc) {
-        this.numNonStaticFunc = numNonStaticFunc;
-    }
-
-    public int getNumVar() {
-        return numVar;
-    }
-
-    public void setNumVar(int numVar) {
-        this.numVar = numVar;
-    }
-
-    public int getOrder() {
-        return order;
-    }
-
-    public void setOrder(int order) {
-        this.order = order;
-    }
-
-    public boolean isCheck() {
-        return check;
-    }
-
-    public void setCheck(boolean check) {
-        this.check = check;
-    }
+    private boolean main;
 }

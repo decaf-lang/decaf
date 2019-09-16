@@ -5,6 +5,7 @@ import decaf.frontend.scope.LocalScope;
 import decaf.frontend.symbol.ClassSymbol;
 import decaf.frontend.symbol.MethodSymbol;
 import decaf.frontend.symbol.VarSymbol;
+import decaf.frontend.type.FunType;
 import decaf.frontend.type.Type;
 import decaf.lowlevel.Temp;
 
@@ -28,7 +29,7 @@ public abstract class Tree {
     }
 
     /**
-     * A top-level decaf program, which consists of many class definitions.
+     * A top-level Decaf program, which consists of many class definitions.
      */
     public static class TopLevel extends TreeNode {
         // Tree elements
@@ -194,7 +195,7 @@ public abstract class Tree {
         // For convenience
         public String name;
         // For type check
-        public Type type;
+        public FunType type;
         public MethodSymbol symbol;
 
         public MethodDef(boolean isStatic, Id id, TypeLit returnType, List<LocalVarDef> params, Block body, Pos pos) {
@@ -1553,7 +1554,7 @@ public abstract class Tree {
      * Modifiers are encoded as an integer, whose binary representation reveals which modifiers are enabled. In this
      * way, you can use {@code +} or {@code |} to enable multiple modifiers, like we do in system programming.
      * <p>
-     * In particular, the original decaf language only has one modifier -- static. If a method is static, then the
+     * In particular, the original Decaf language only has one modifier -- static. If a method is static, then the
      * lowest bit is set.
      * <p>
      * TODO it seems not necessary to have Modifiers extends TreeNode?

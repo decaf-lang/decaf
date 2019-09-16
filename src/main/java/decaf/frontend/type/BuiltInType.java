@@ -1,6 +1,9 @@
 package decaf.frontend.type;
 
-public class BuiltInType extends Type {
+/**
+ * Built-in types: int, bool, string, void and error (ONLY for type checking).
+ */
+public final class BuiltInType extends Type {
 
     private final String name;
 
@@ -8,35 +11,57 @@ public class BuiltInType extends Type {
         this.name = name;
     }
 
+    /**
+     * Type {@code int}.
+     */
     public static final BuiltInType INT = new BuiltInType("int");
 
+    /**
+     * Type {@code bool}.
+     */
     public static final BuiltInType BOOL = new BuiltInType("bool");
 
+    /**
+     * Type {@code null}, ONLY null values have this type.
+     */
     public static final BuiltInType NULL = new BuiltInType("null");
 
-    public static final BuiltInType ERROR = new BuiltInType("Error");
-
+    /**
+     * Type {@code string}.
+     */
     public static final BuiltInType STRING = new BuiltInType("string");
 
+    /**
+     * Type {@code void}, return type ONLY.
+     */
     public static final BuiltInType VOID = new BuiltInType("void");
 
+    /**
+     * Ill-typed, reserved for type checking. A well-typed program can never contain this.
+     */
+    public static final BuiltInType ERROR = new BuiltInType("Error");
+
     @Override
-    public boolean subtypeOf(Type type) {
-        if (eq(ERROR) || type.eq(ERROR)) {
+    public boolean subtypeOf(Type that) {
+        if (eq(ERROR) || that.eq(ERROR)) {
             return true;
         }
-        if (eq(NULL) && type.isClassType()) {
+        if (eq(NULL) && that.isClassType()) {
             return true;
         }
-        return eq(type);
+        return eq(that);
     }
 
     @Override
-    public boolean eq(Type type) {
-        return this == type;
+    public boolean eq(Type that) {
+        return this == that;
     }
 
-
+    /**
+     * Is this type int, bool, or string?
+     *
+     * @return checking result
+     */
     @Override
     public boolean isBaseType() {
         return eq(INT) || eq(BOOL) || eq(STRING);

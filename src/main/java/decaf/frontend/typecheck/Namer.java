@@ -86,7 +86,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                 var symbol = clazz.symbol.scope.find("main");
                 if (symbol.isPresent() && symbol.get().isMethodSymbol()) {
                     var method = (MethodSymbol) symbol.get();
-                    if (method.isStatic() && method.getReturnType().isVoidType() && method.getFunType().arity() == 0) {
+                    if (method.isStatic() && method.type.returnType.isVoidType() && method.type.arity() == 0) {
                         method.setMain();
                         program.mainClass = clazz.symbol;
                         clazz.symbol.setMainClass();

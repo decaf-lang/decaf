@@ -21,9 +21,9 @@ abstract class AbstractLexer {
     abstract Pos getPos();
 
     /**
-     * Get the next token (if any). NOTE that every token is encoded as an integer, called the token's _code_.
+     * Get the next token (if any). NOTE that every token is encoded as an integer, called the token's <em>code</em>.
      *
-     * @throws IOException
+     * @throws IOException in case I/O error occurs
      */
     abstract int yylex() throws IOException;
 

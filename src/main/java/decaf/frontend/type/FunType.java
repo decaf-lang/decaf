@@ -2,7 +2,10 @@ package decaf.frontend.type;
 
 import java.util.List;
 
-public class FunType extends Type {
+/**
+ * Function type.
+ */
+public final class FunType extends Type {
 
     public final Type returnType;
 
