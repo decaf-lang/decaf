@@ -39,3 +39,14 @@ jar {
         }
     }
 }
+
+javadoc {
+    // Ignore the auto-generated file, because their javadoc comments may be out-dated (e.g. jflex <tt>).
+    source = sourceSets.main.allJava.filter { !it.toString().contains('generated-src') }
+
+    options.source('12')
+    // NOTE: the first '-' is added by Gradle and thus ignored.
+    // See https://github.com/gradle/gradle/issues/2354
+    options.addBooleanOption('-enable-preview', true)
+    options.showFromPrivate()
+}

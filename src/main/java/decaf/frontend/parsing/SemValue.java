@@ -7,10 +7,10 @@ import decaf.utils.MiscUtils;
 import java.util.List;
 
 /**
- * A semantic value simply simulates a "union" (which we see from C++, etc.), so that we can store all kinds of
- * tree nodes in one class.
+ * A semantic value simply simulates a "union" (which we see, e.g. in C++), so that we can store ALL kinds of tree
+ * nodes in ONE kind of object.
  * <p>
- * This class should be visible only in this package.
+ * DO NOT use this anywhere else!
  */
 class SemValue {
     enum Kind {
@@ -18,14 +18,27 @@ class SemValue {
         LVALUE, ID
     }
 
-    // Kind
+    /**
+     * Which kind of tree node is this?
+     */
     final Kind kind;
 
-    // Position and possibly needed extra position
+    /**
+     * The position of this tree node.
+     */
     Pos pos;
+
+    /**
+     * Maybe you need to store another position?
+     */
     Pos pos2;
 
-    // Make sure every semantic value has a position.
+    /**
+     * Create a semantic value.
+     *
+     * @param kind its kind
+     * @param pos  its position
+     */
     SemValue(Kind kind, Pos pos) {
         this.kind = kind;
         this.pos = pos;
@@ -37,7 +50,12 @@ class SemValue {
     boolean boolVal;
     String strVal;
 
-    // Create a lexer semantic value. This is called by the helper methods in AbstractLexer.java.
+    /**
+     * Create a semantic value for a lexer token, called by {@link AbstractLexer}.
+     *
+     * @param code the token's code
+     * @param pos  its position
+     */
     SemValue(int code, Pos pos) {
         this.kind = Kind.TOKEN;
         this.pos = pos;
@@ -67,7 +85,7 @@ class SemValue {
     Tree.Id id;
 
     /**
-     * Pretty print sem value. For debug.
+     * Pretty print SemValue. For debug.
      */
     @Override
     public String toString() {
@@ -124,25 +142,20 @@ class SemValue {
     }
 
     /**
-     * 辅助模版（切勿直接调用）
-     *
-     * @param $$ 对应 YACC 语义动作中的 $$
-     * @param $1 对应 YACC 语义动作中的 $1
-     * @param $2 对应 YACC 语义动作中的 $2
-     * @param $3 对应 YACC 语义动作中的 $3
-     * @param $4 对应 YACC 语义动作中的 $4
-     * @param $5 对应 YACC 语义动作中的 $5
-     * @param $6 对应 YACC 语义动作中的 $6
+     * A template to write a semantic action in jacc. Given a production of the form
+     * <pre>
+     *     A : B C D E F G
+     * </pre>
+     * {@code $$} stands for the SemValue associated with the left-hand side, i.e. the nonterminal A.
+     * {@code $1} -- {@code $6} stand for the SemValue associated with the right-hand side, i.e. B, C, ..., G,
+     * respectively.
+     * <p>
+     * If you believe that you can write 100% correct Java code in plain text, then don't care about this.
      */
-    void UserAction(SemValue $$, SemValue $1, SemValue $2, SemValue $3,
-                    SemValue $4, SemValue $5, SemValue $6) {
-        /*
-         * 这个函数作用是提供一个模版给你编写你的 YACC 语义动作。 因为在一般编辑器中编写 YACC 脚本的时候没法充分调用 IDE
-         * 的各种编辑功能， 因此专门开辟一个函数。使用的时候你只需要把语义动作写在下面的花括号中， 然后连同花括号一起复制-粘贴到 YACC
-         * 脚本对应位置即可。
-         */
+    private void UserAction(SemValue $$,
+                            SemValue $1, SemValue $2, SemValue $3, SemValue $4, SemValue $5, SemValue $6) {
         {
-
+            // Your action
         }
     }
 }

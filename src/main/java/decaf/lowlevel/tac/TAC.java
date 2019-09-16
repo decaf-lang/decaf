@@ -40,21 +40,21 @@ public abstract class TAC {
      * those ones (virtual table of the parent class), for example:
      * {{{
      * VTABLE(_Animal) {
-     * <empty>
+     * empty
      * Animal
-     * _Animal.GetMom;       <-- offset 8 (byte)
-     * _Animal.GetHeight;    <-- offset 12
-     * _Animal.InitAnimal;   <-- offset 16
+     * _Animal.GetMom;       -- offset 8 (byte)
+     * _Animal.GetHeight;    -- offset 12
+     * _Animal.InitAnimal;   -- offset 16
      * }
      * <p>
      * VTABLE(_Cow) {
      * _Animal
      * Cow
-     * _Animal.GetMom;       <-- inherited from _Animal, offset 8
-     * _Cow.GetHeight;       <-- override _Animal's GetHeight, offset 12
-     * _Animal.InitAnimal;   <-- inherited from _Animal, offset 16
-     * _Cow.InitCow;         <-- newly defined
-     * _Cow.IsSpottedCow;    <-- newly defined
+     * _Animal.GetMom;       -- inherited from _Animal, offset 8
+     * _Cow.GetHeight;       -- override _Animal's GetHeight, offset 12
+     * _Animal.InitAnimal;   -- inherited from _Animal, offset 16
+     * _Cow.InitCow;         -- newly defined
+     * _Cow.IsSpottedCow;    -- newly defined
      * }
      * }}}
      * Note that each item takes 4 bytes, and the offsets 8, 12, and 16 are consistent.

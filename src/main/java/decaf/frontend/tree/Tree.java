@@ -1,18 +1,23 @@
 package decaf.frontend.tree;
 
-import decaf.lowlevel.Temp;
 import decaf.frontend.scope.GlobalScope;
 import decaf.frontend.scope.LocalScope;
 import decaf.frontend.symbol.ClassSymbol;
 import decaf.frontend.symbol.MethodSymbol;
 import decaf.frontend.symbol.VarSymbol;
 import decaf.frontend.type.Type;
+import decaf.lowlevel.Temp;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * All kinds of tree node in the abstract syntax tree.
+ *
+ * @see TreeNode
+ */
 public abstract class Tree {
     public enum Kind {
         TOP_LEVEL, CLASS_DEF, VAR_DEF, METHOD_DEF,
@@ -57,10 +62,10 @@ public abstract class Tree {
     }
 
     /**
-     * Class definition:
-     * {{{
-     * class <id> (extends <parent>)? { <fields> }
-     * }}}
+     * Class definition.
+     * <pre>
+     *     'class' id {'extends' parent}? '{' fields '}'
+     * </pre>
      */
     public static class ClassDef extends TreeNode {
         // Tree elements
@@ -127,19 +132,19 @@ public abstract class Tree {
     }
 
     /**
-     * Member variable declaration:
-     * {{{
-     * <typ> <id>;
-     * }}}
+     * Member variable declaration.
+     * <pre>
+     *     type id ';'
+     * </pre>
      * Initialization is not supported.
      */
     public static class VarDef extends Field {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
-        // For now, member variable must not have initial values
+        // For now, member variable must not have initial values, but we need to print this
         public final Optional<Expr> initVal = Optional.empty();
-        //
+        // For convenience
         public String name;
         // For type check
         public VarSymbol symbol;
@@ -173,11 +178,11 @@ public abstract class Tree {
     }
 
     /**
-     * Member method definition:
-     * {{{
-     * [static] <returnType> <id> (<typ1> <id1>, <typ2> <id2>, ...) { <body> }
-     * }}}
-     * Decaf has static methods but _no_ static variables, strange!
+     * Member method definition.
+     * <pre>
+     *     'static'? returnType id '(' type1 id1 ',' type2 id2 ',' ... ')' '{' body '}'
+     * </pre>
+     * Decaf has static methods but NO static variables, strange!
      */
     public static class MethodDef extends Field {
         // Tree elements
@@ -186,7 +191,7 @@ public abstract class Tree {
         public TypeLit returnType;
         public List<LocalVarDef> params;
         public Block body;
-        //
+        // For convenience
         public String name;
         // For type check
         public Type type;
@@ -229,7 +234,9 @@ public abstract class Tree {
     }
 
     /**
-     * Type. Decaf only supports
+     * Type.
+     * <p>
+     * Decaf only supports
      * - basic types (integer, boolean, string, void),
      * - class types (using class identifiers), and
      * - array types (whose element could be any type, but homogeneous).
@@ -243,7 +250,7 @@ public abstract class Tree {
     }
 
     /**
-     * 32 bit integer type: {{{ int }}}
+     * 32 bit integer type: {@code int}.
      */
     public static class TInt extends TypeLit {
         public TInt(Pos pos) {
@@ -267,7 +274,7 @@ public abstract class Tree {
     }
 
     /**
-     * Boolean type: {{{ bool }}}
+     * Boolean type: {@code bool}.
      */
     public static class TBool extends TypeLit {
         public TBool(Pos pos) {
@@ -291,7 +298,7 @@ public abstract class Tree {
     }
 
     /**
-     * String type: {{{ string }}}
+     * String type: {@code string}.
      */
     public static class TString extends TypeLit {
         public TString(Pos pos) {
@@ -315,8 +322,9 @@ public abstract class Tree {
     }
 
     /**
-     * Void type: {{{ void }}}
-     * For method return type _only_.
+     * Void type: {@code void}.
+     * <p>
+     * For method return type ONLY.
      */
     public static class TVoid extends TypeLit {
         public TVoid(Pos pos) {
@@ -340,10 +348,10 @@ public abstract class Tree {
     }
 
     /**
-     * Class type:
-     * {{{
-     * class <id>
-     * }}}
+     * Class type.
+     * <pre>
+     *     'class' id
+     * </pre>
      */
     public static class TClass extends TypeLit {
         // Tree element
@@ -374,10 +382,10 @@ public abstract class Tree {
     }
 
     /**
-     * Array type:
-     * {{{
-     * <elemType>[]
-     * }}}
+     * Array type.
+     * <pre>
+     *     elemType '[' ']'
+     * </pre>
      */
     public static class TArray extends TypeLit {
         // Tree element
@@ -416,7 +424,9 @@ public abstract class Tree {
             super(kind, displayName, pos);
         }
 
-        // For type check
+        /**
+         * For type check: does this return a value?
+         */
         public boolean returns = false;
 
         public boolean isBlock() {
@@ -425,11 +435,11 @@ public abstract class Tree {
     }
 
     /**
-     * Local variable declaration:
-     * {{{
-     * <typeLit> <id>;
-     * }}}
-     * Initialization is not supported.
+     * Local variable declaration.
+     * <pre>
+     *     typeLit id {'=' expr}? ';'
+     * </pre>
+     * Initialization is optional.
      */
     public static class LocalVarDef extends Stmt {
         // Tree elements
@@ -437,13 +447,14 @@ public abstract class Tree {
         public Id id;
         public Optional<Pos> assignPos;
         public Optional<Expr> initVal;
-        //
+        // For convenience
         public String name;
         // For type check
         public VarSymbol symbol;
 
         public LocalVarDef(TypeLit typeLit, Id id, Optional<Pos> assignPos, Optional<Expr> initVal, Pos pos) {
             // pos = id.pos, assignPos = position of the '='
+            // TODO: looks not very consistent, maybe we shall always report error simply at `pos`, not `assignPos`?
             super(Kind.LOCAL_VAR_DEF, "LocalVarDef", pos);
             this.typeLit = typeLit;
             this.id = id;
@@ -474,10 +485,10 @@ public abstract class Tree {
     }
 
     /**
-     * Statement block:
-     * {{{
-     * { <stmt1> <stmt2> ... }
-     * }}}
+     * Statement block.
+     * <pre>
+     *     '{' stmt1 stmt2 ... '}'
+     * </pre>
      */
     public static class Block extends Stmt {
         // Tree element
@@ -515,10 +526,11 @@ public abstract class Tree {
     }
 
     /**
-     * Assignment:
-     * {{{
-     * <lhs> = <rhs>;
-     * }}}
+     * Assignment.
+     * <pre>
+     *     lhs = rhs;
+     * </pre>
+     * Note the left-hand side must be a {@link LValue}.
      */
     public static class Assign extends Stmt {
         // Tree elements
@@ -608,16 +620,18 @@ public abstract class Tree {
     }
 
     /**
-     * To ease the analysis of statements that naturally opens a local scope, like loop bodies and condition branches,
-     * we represent them each as a Block in the abstract syntax tree level. However, it could be a single statement,
-     * like a single return:
-     * {{{
-     * if (true) return 1;
-     * }}}
-     * which obeys in the grammar. In this case, we simply wrap it as a block:
-     * {{{
-     * if (true) { return 1; }
-     * }}}
+     * Wrap a single statement as a block. In case the statement itself is already a block, then return itself.
+     * <p>
+     * Why? To ease the analysis of statements that naturally opens a local scope, like loop bodies and condition
+     * branches, we represent them each as a {@link Block} in the abstract syntax tree level. However, if it contains a
+     * single statement, like the following:
+     * <pre>
+     *     if (true) return 1;
+     * </pre>
+     * It do obey the syntax but NOT fit our tree node. In this case, we simply wrap it as a block:
+     * <pre>
+     *     if (true) { return 1; }
+     * </pre>
      *
      * @param stmt a statement
      * @return the wrapped block
@@ -630,10 +644,11 @@ public abstract class Tree {
     }
 
     /**
-     * If statement:
-     * {{{
-     * if (<cond>) <trueBranch> [else <falseBranch>]
-     * }}}
+     * If statement.
+     * <pre>
+     *     if '(' cond ')' trueBranch {'else' falseBranch}?
+     * </pre>
+     * False branch is optional.
      */
     public static class If extends Stmt {
         // Tree elements
@@ -669,12 +684,11 @@ public abstract class Tree {
         }
     }
 
-
     /**
-     * While statement:
-     * {{{
-     * while (<cond>) <body>
-     * }}}
+     * While statement.
+     * <pre>
+     *     'while' '(' cond ')' body
+     * </pre>
      */
     public static class While extends Stmt {
         // Tree elements
@@ -708,16 +722,16 @@ public abstract class Tree {
     }
 
     /**
-     * For statement:
-     * {{{
-     * for (<init>; <cond>; <update>) <body>
-     * }}}
+     * For statement.
+     * <pre>
+     *     'for' '(' init ';' cond ';' update ')' body
+     * </pre>
      */
     public static class For extends Stmt {
         // Tree elements
-        public Stmt init;
+        public Stmt init; // In syntax, this is limited to a simple statement.
         public Expr cond;
-        public Stmt update;
+        public Stmt update; // In syntax, this is limited to a simple statement.
         public Block body;
         // For type check
         public LocalScope scope;
@@ -755,12 +769,11 @@ public abstract class Tree {
     }
 
     /**
-     * Break statement:
-     * {{{
-     * break;
-     * }}}
-     * <p>
-     * Jump out of the _innermost_ loop.
+     * Break statement.
+     * <pre>
+     *     break;
+     * </pre>
+     * Jump out of the <em>innermost</em> loop.
      */
     public static class Break extends Stmt {
 
@@ -784,12 +797,12 @@ public abstract class Tree {
         }
     }
 
-
     /**
-     * Method return statement:
-     * {{{
-     * return [<expr>];
-     * }}}
+     * Return statement.
+     * <pre>
+     *     return {expr}? ';'
+     * </pre>
+     * If the expression is none, then we say its return type is void.
      */
     public static class Return extends Stmt {
         // Tree elements
@@ -820,7 +833,11 @@ public abstract class Tree {
     }
 
     /**
-     * A return statement.
+     * Print statement.
+     * <pre>
+     *     'Print' '(' expr1 ',' expr2 ',' ... ')' ';'
+     * </pre>
+     * ONLY print integers, booleans and strings.
      */
     public static class Print extends Stmt {
         // Tree elements
@@ -958,7 +975,7 @@ public abstract class Tree {
     }
 
     /**
-     * Null literal:  {{{ null }}}
+     * Null literal: {@code null}.
      */
     public static class NullLit extends Expr {
         // Tree element
@@ -984,35 +1001,30 @@ public abstract class Tree {
         }
     }
 
+    /**
+     * Left value, i.e. an expression that can be assigned to a value.
+     */
     public static abstract class LValue extends Expr {
-
-        public enum LVKind {
-            LOCAL_VAR, PARAM_VAR, MEMBER_VAR, ARRAY_ELEMENT
-        }
-
-        public LVKind lvKind;
-
         public LValue(Kind kind, String displayName, Pos pos) {
             super(kind, displayName, pos);
         }
     }
 
     /**
-     * Field selection, or simply a local variable:
-     * {{{
-     * [<receiver>.]<field>
-     * }}}
+     * Field selection, or simply a local variable.
+     * <pre>
+     *     {receiver '.'}? field
+     * </pre>
      */
     public static class VarSel extends LValue {
         // Tree element
         public Optional<Expr> receiver;
         public Id variable;
-        //
+        // For convenience
         public String name;
         // For type check
         public VarSymbol symbol;
         public boolean isClassName = false;
-        public boolean isDefined;
 
         public VarSel(Optional<Expr> receiver, Id variable, Pos pos) {
             super(Kind.VAR_SEL, "VarSel", pos);
@@ -1021,7 +1033,11 @@ public abstract class Tree {
             this.name = variable.name;
         }
 
-        // For type check
+        /**
+         * Set its receiver as {@code this}.
+         * <p>
+         * Reversed for type check.
+         */
         public void setThis() {
             if (receiver.isEmpty()) {
                 receiver = Optional.of(new Tree.This(pos));
@@ -1050,10 +1066,10 @@ public abstract class Tree {
 
 
     /**
-     * Array element selection by index:
-     * {{{
-     * <array>[<index>]
-     * }}}
+     * Array element selection by index.
+     * <pre>
+     *     array '[' index ']'
+     * </pre>
      */
     public static class IndexSel extends LValue {
 
@@ -1087,10 +1103,7 @@ public abstract class Tree {
     }
 
     /**
-     * This expression:
-     * {{{
-     * this
-     * }}}
+     * This expression: {@code this}.
      * <p>
      * Refers to the instance of the current class.
      */
@@ -1121,10 +1134,10 @@ public abstract class Tree {
     }
 
     /**
-     * 获得操作符的字符串表示
+     * Get the string representation of an unary operator.
      *
-     * @param op 操作符的符号码
-     * @return 该操作符的字符串形式
+     * @param op operator
+     * @return string representation
      */
     public static String opStr(UnaryOp op) {
         return switch (op) {
@@ -1173,38 +1186,28 @@ public abstract class Tree {
         AND, OR
     }
 
-    // TODO: rewrite using case expression
-    public static String opStr(BinaryOp opCode) {
-        switch (opCode) {
-            case AND:
-                return "&&";
-            case EQ:
-                return "==";
-            case GE:
-                return ">=";
-            case LE:
-                return "<=";
-            case NE:
-                return "!=";
-            case OR:
-                return "||";
-            case ADD:
-                return "+";
-            case SUB:
-                return "-";
-            case MUL:
-                return "*";
-            case DIV:
-                return "/";
-            case MOD:
-                return "%";
-            case GT:
-                return ">";
-            case LT:
-                return "<";
-            default:
-                return "<unknown>";
-        }
+    /**
+     * Get the string representation of a binary operator.
+     *
+     * @param op operator
+     * @return string representation
+     */
+    public static String opStr(BinaryOp op) {
+        return switch (op) {
+            case ADD -> "+";
+            case SUB -> "-";
+            case MUL -> "*";
+            case DIV -> "/";
+            case MOD -> "%";
+            case EQ -> "==";
+            case NE -> "!=";
+            case GE -> ">=";
+            case GT -> ">";
+            case LE -> "<=";
+            case LT -> "<";
+            case AND -> "&&";
+            case OR -> "||";
+        };
     }
 
     /**
@@ -1245,10 +1248,7 @@ public abstract class Tree {
     }
 
     /**
-     * IO expression for reading an integer from stdin:
-     * {{{
-     * ReadInteger()
-     * }}}
+     * IO expression for reading an integer from stdin: {@code ReadInteger()}.
      */
     public static class ReadInt extends Expr {
 
@@ -1273,10 +1273,7 @@ public abstract class Tree {
     }
 
     /**
-     * IO expression for reading a line from stdin:
-     * {{{
-     * ReadLine()
-     * }}}
+     * IO expression for reading a line from stdin: {@code ReadLine()}.
      */
     public static class ReadLine extends Expr {
 
@@ -1302,10 +1299,11 @@ public abstract class Tree {
 
 
     /**
-     * New expression for creating an instance:
-     * {{{
-     * new <id>()
-     * }}}
+     * New expression for creating an instance.
+     * <pre>
+     *     'new' id '(' ')'
+     * </pre>
+     * Currently, no arguments are allowed.
      */
     public static class NewClass extends Expr {
         // Tree elements
@@ -1338,10 +1336,10 @@ public abstract class Tree {
     }
 
     /**
-     * New expression for creating an array:
-     * {{{
-     * new <elemType>[<length>]
-     * }}}
+     * New expression for creating an array.
+     * <pre>
+     *     'new' elemType '[' length ']'
+     * </pre>
      */
     public static class NewArray extends Expr {
         // Tree elements
@@ -1375,11 +1373,11 @@ public abstract class Tree {
     }
 
     /**
-     * Instance-of-expression:
-     * {{{
-     * instanceof(<obj>, <is>)
-     * }}}
-     * Check if the given object `obj` is an instance of class `is`.
+     * Instance-of expression.
+     * <pre>
+     *     'instanceof' '(' obj ','  is ')'
+     * </pre>
+     * Check if the given object {@code obj} is an instance of class {@code is}.
      */
     public static class ClassTest extends Expr {
         // Tree elements
@@ -1415,11 +1413,11 @@ public abstract class Tree {
     }
 
     /**
-     * Class type cast expression:
-     * {{{
-     * (class <to>)obj
-     * }}}
-     * Cast the given object `obj` into class type `to`.
+     * Class type cast expression.
+     * <pre>
+     *     '(' 'class' to ')' obj
+     * </pre>
+     * Cast the given object {@code obj} into class type {@code to}.
      */
     public static class ClassCast extends Expr {
         // Tree elements
@@ -1456,10 +1454,10 @@ public abstract class Tree {
 
 
     /**
-     * Call expression:
-     * {{{
-     * [<receiver>.]<id>(<arg1>, <arg2>, ...)
-     * }}}
+     * Call expression.
+     * <pre>
+     *     {receiver '.'}? id '(' arg1 ',' arg2 ',' ... ')'
+     * </pre>
      */
     public static class Call extends Expr {
         // Tree elements
@@ -1480,6 +1478,11 @@ public abstract class Tree {
             this.methodName = method.name;
         }
 
+        /**
+         * Set its receiver as {@code this}.
+         * <p>
+         * Reversed for type check.
+         */
         public void setThis() {
             this.receiver = Optional.of(new This(pos));
         }
@@ -1508,7 +1511,7 @@ public abstract class Tree {
     /**
      * An identifier.
      * <p>
-     * TODO it seems not necessary to have Id <: TreeNode?
+     * TODO it seems not necessary to have Id extends TreeNode?
      */
     public static class Id extends TreeNode {
         // Tree element
@@ -1548,10 +1551,12 @@ public abstract class Tree {
      * Modifiers.
      * <p>
      * Modifiers are encoded as an integer, whose binary representation reveals which modifiers are enabled. In this
-     * way, you can use `+` or `|` to enable multiple modifiers, like we do in system programming. However, the
-     * original decaf language only has one modifier -- static. If a method is static, then the lowest bit is set.
+     * way, you can use {@code +} or {@code |} to enable multiple modifiers, like we do in system programming.
      * <p>
-     * TODO it seems not necessary to have Modifiers <: TreeNode?
+     * In particular, the original decaf language only has one modifier -- static. If a method is static, then the
+     * lowest bit is set.
+     * <p>
+     * TODO it seems not necessary to have Modifiers extends TreeNode?
      */
     public static class Modifiers extends TreeNode {
         public final int code;

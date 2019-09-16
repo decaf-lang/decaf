@@ -1,54 +1,60 @@
 package decaf.frontend.tree;
 
 /**
- * 语法符号在源代码中的位置<br>
+ * Position of a token/tree node in the source file.
  */
 public class Pos implements Comparable<Pos> {
 
+    /**
+     * Undefined position.
+     */
     public static final Pos NoPos = new Pos(-1, -1);
-    /**
-     * 该符号第一个字符所在的行号
-     */
-    private int line;
 
     /**
-     * 该符号第一个字符所在的列号
+     * Line number, start from 1.
      */
-    private int column;
+    public final int line;
 
     /**
-     * 构造一个位置记录
+     * Column number, also start from 1.
+     */
+    public final int column;
+
+    /**
+     * Create a position.
      *
-     * @param lin
-     *            行号
-     * @param col
-     *            列号
+     * @param line   its line number
+     * @param column its column number
      */
-    public Pos(int lin, int col) {
-        line = lin;
-        column = col;
+    public Pos(int line, int column) {
+        this.line = line;
+        this.column = column;
     }
 
-    /**
-     * 转换成(x,y)形式的字符串
-     */
     @Override
     public String toString() {
         return "(" + line + "," + column + ")";
     }
 
+    /**
+     * Positions are compared by lexicographic order, i.e. first compare line numbers, and if they are same,
+     * compare their column numbers.
+     *
+     * @param that another position
+     * @return comparing result
+     */
     @Override
-    public int compareTo(Pos o) {
-        if (line > o.line) {
+    public int compareTo(Pos that) {
+        if (line > that.line) {
             return 1;
         }
-        if (line < o.line) {
+        if (line < that.line) {
             return -1;
         }
-        if (column > o.column) {
+        if (column > that.column) {
             return 1;
         }
-        if (column < o.column) {
+        if (column < that.column) {
             return -1;
         }
         return 0;

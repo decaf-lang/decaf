@@ -91,7 +91,7 @@ BAD_ESC             = "\\"[^nrt\"\\]
                       yybegin(YYINITIAL); }
 <S>\"               { buffer.append('"');
                       yybegin(YYINITIAL);
-                      return StringConst(buffer.toString(), startPos); }
+                      return stringConst(buffer.toString(), startPos); }
 <S>{ESC}            { buffer.append(yytext()); }
 <S>{BAD_ESC}        { buffer.append(yytext());
                       issueError(new BadEscCharError(getPos())); }

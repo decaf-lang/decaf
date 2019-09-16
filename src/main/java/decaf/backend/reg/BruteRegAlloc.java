@@ -58,12 +58,12 @@ public final class BruteRegAlloc extends RegAlloc {
      * Main algorithm of local register allocation à la brute-force. Basic idea:
      * - Allocation is preformed block-by-block.
      * - Assume that every allocatable unlocked register is unoccupied before entering every basic block.
-     * - For every read (src) & written (dst) temp `t` in every pseudo instruction, attempt the following in order:
+     * - For every read (src) and written (dst) temp `t` in every pseudo instruction, attempt the following in order:
      * 1. `t` is already bound to a register: keep on using it.
      * 2. If there exists an available (unoccupied, or the occupied temp is no longer alive) register: bind to it.
      * 3. Arbitrarily pick a general register (avoid being locked), spill its value to stack, and then bind to it.
      *
-     * {@see allocRegFor} for more details.
+     * See allocRegFor for more details.
      *
      * The output assembly code is stored by the {@code emitter}.
      *

@@ -2,13 +2,19 @@ package decaf.frontend.parsing;
 
 import decaf.driver.Config;
 import decaf.driver.Phase;
+import decaf.frontend.tree.Tree;
 import decaf.printing.IndentPrinter;
 import decaf.printing.PrettyTree;
-import decaf.frontend.tree.Tree;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+/**
+ * The parser phase: parse a decaf source and build an abstract syntax tree.
+ * <p>
+ * Hint: make sure {@code jflex} and {@code jacc} are executed first, otherwise your IDE may be unhappy with some
+ * symbols.
+ */
 public class Parser extends Phase<InputStream, Tree.TopLevel> {
 
     public Parser(Config config) {

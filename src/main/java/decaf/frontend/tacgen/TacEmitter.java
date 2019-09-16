@@ -423,7 +423,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *
      * Pseudo code:
      * <pre>
-     *     error = length < 0
+     *     error = length &lt; 0
      *     if (error) {
      *         throw RuntimeError.NEGATIVE_ARR_SIZE
      *     }
@@ -480,8 +480,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * Pseudo code:
      * <pre>
      *     length = *(array - 4)
-     *     error1 = index < 0
-     *     error2 = index >= length
+     *     error1 = index lt 0
+     *     error2 = index ge length
      *     error = error1 || error2
      *     if (error) {
      *         throw RuntimeError.ARRAY_INDEX_OUT_OF_BOUND
