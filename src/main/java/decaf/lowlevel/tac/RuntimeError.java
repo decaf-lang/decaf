@@ -1,7 +1,7 @@
 package decaf.lowlevel.tac;
 
 /**
- * 运行期的错误
+ * TAC runtime error messages.
  */
 public final class RuntimeError {
 

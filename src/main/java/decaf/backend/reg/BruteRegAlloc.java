@@ -1,23 +1,23 @@
 package decaf.backend.reg;
 
 import decaf.backend.asm.AsmEmitter;
+import decaf.backend.asm.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.backend.dataflow.BasicBlock;
 import decaf.backend.dataflow.CFG;
 import decaf.backend.dataflow.Loc;
-import decaf.lowlevel.PseudoInstr;
-import decaf.lowlevel.Reg;
-import decaf.lowlevel.Temp;
-import decaf.lowlevel.TodoInstr;
+import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.instr.Reg;
+import decaf.lowlevel.instr.Temp;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
-// Brute force greedy register allocator.
-// To make our life easier, don't consider any special registers that may be used during call.
+/**
+ * Brute force greedy register allocation algorithm.
+ * <p>
+ * To make our life easier, don't consider any special registers that may be used during call.
+ */
 public final class BruteRegAlloc extends RegAlloc {
 
     public BruteRegAlloc(AsmEmitter emitter) {
@@ -56,19 +56,24 @@ public final class BruteRegAlloc extends RegAlloc {
 
     /**
      * Main algorithm of local register allocation à la brute-force. Basic idea:
-     * - Allocation is preformed block-by-block.
-     * - Assume that every allocatable unlocked register is unoccupied before entering every basic block.
-     * - For every read (src) and written (dst) temp `t` in every pseudo instruction, attempt the following in order:
-     * 1. `t` is already bound to a register: keep on using it.
-     * 2. If there exists an available (unoccupied, or the occupied temp is no longer alive) register: bind to it.
-     * 3. Arbitrarily pick a general register (avoid being locked), spill its value to stack, and then bind to it.
-     *
-     * See allocRegFor for more details.
-     *
-     * The output assembly code is stored by the {@code emitter}.
+     * <ul>
+     *     <li>Allocation is preformed block-by-block.</li>
+     *     <li>Assume that every allocatable register is unoccupied before entering every basic block.</li>
+     *     <li>For every read (src) and written (dst) temp {@code t} in every pseudo instruction, attempt the following
+     *     in order:</li>
+     *     <li><ol>
+     *         <li>{@code t} is already bound to a register: keep on using it.</li>
+     *         <li>If there exists an available (unoccupied, or the occupied temp is no longer alive) register,
+     *         then bind to it.</li>
+     *         <li>Arbitrarily pick a general register, spill its value to stack, and then bind to it.</li>
+     *     </ol></li>
+     * </ul>
+     * <p>
+     * The output assembly code is maintained by {@code emitter}.
      *
      * @param bb         the basic block which the algorithm performs on
      * @param subEmitter the current subroutine emitter
+     * @see #allocRegFor
      */
     private void localAlloc(BasicBlock<PseudoInstr> bb, SubroutineEmitter subEmitter) {
         bindings.clear();
@@ -81,10 +86,8 @@ public final class BruteRegAlloc extends RegAlloc {
         for (var loc : bb.seqLocs()) {
             // Handle special instructions on caller save/restore.
 
-            if (loc.instr.isTodo()) {
-                var todo = (TodoInstr) loc.instr;
-
-                if (todo.isCallerSave()) {
+            if (loc.instr.isSpecial()) {
+                if (loc.instr.equals(HoleInstr.CallerSave)) {
                     for (var reg : emitter.callerSaveRegs) {
                         if (reg.occupied && loc.liveOut.contains(reg.temp)) {
                             callerNeedSave.add(reg);
@@ -94,7 +97,7 @@ public final class BruteRegAlloc extends RegAlloc {
                     continue;
                 }
 
-                if (todo.isCallerRestore()) {
+                if (loc.instr.equals(HoleInstr.CallerRestore)) {
                     for (var reg : callerNeedSave) {
                         subEmitter.emitLoadFromStack(reg, reg.temp);
                     }
@@ -117,7 +120,7 @@ public final class BruteRegAlloc extends RegAlloc {
         }
 
         // Handle the last instruction, if it is a branch/return block.
-        if (!bb.isEmpty() && !bb.kind.equals(BasicBlock.Kind.CONTINUE)) {
+        if (!bb.isEmpty() && !bb.kind.equals(BasicBlock.Kind.CONTINUOUS)) {
             allocForLoc(bb.locs.get(bb.locs.size() - 1), subEmitter);
         }
     }
@@ -151,11 +154,11 @@ public final class BruteRegAlloc extends RegAlloc {
     /**
      * Allocate a register for a temp.
      *
-     * @param temp       the temp appeared in the pseudo instruction
+     * @param temp       temp appeared in the pseudo instruction
      * @param isRead     true = read, false = write
-     * @param live       the set of live temps before executing this instruction
-     * @param subEmitter the current subroutine emitter
-     * @return the allocated register
+     * @param live       set of live temps before executing this instruction
+     * @param subEmitter current subroutine emitter
+     * @return register for use
      */
     private Reg allocRegFor(Temp temp, boolean isRead, Set<Temp> live, SubroutineEmitter subEmitter) {
         // Best case: the value of `temp` is already in register.
@@ -190,4 +193,9 @@ public final class BruteRegAlloc extends RegAlloc {
         }
         return reg;
     }
+
+    /**
+     * Random number generator.
+     */
+    private Random random = new Random();
 }

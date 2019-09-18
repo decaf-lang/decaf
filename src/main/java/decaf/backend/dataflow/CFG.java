@@ -1,15 +1,29 @@
 package decaf.backend.dataflow;
 
-import decaf.lowlevel.InstrLike;
+import decaf.lowlevel.instr.PseudoInstr;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.PrintWriter;
 import java.util.*;
 
-public class CFG<I extends InstrLike> implements Iterable<BasicBlock<I>> {
+/**
+ * Control flow graph.
+ * <p>
+ * In a control flow graph, the nodes are basic blocks, and an edge {@code (i, j)} indicates that basic block {@code j}
+ * is a reachable successor of basic block {@code i}.
+ *
+ * @param <I> type of the instruction stored in the block
+ */
+public class CFG<I extends PseudoInstr> implements Iterable<BasicBlock<I>> {
 
+    /**
+     * Nodes.
+     */
     public final List<BasicBlock<I>> nodes;
 
+    /**
+     * Edges.
+     */
     public final List<Pair<Integer, Integer>> edges;
 
     // fst: prev, snd: succ
@@ -32,18 +46,52 @@ public class CFG<I extends InstrLike> implements Iterable<BasicBlock<I>> {
         }
     }
 
+    /**
+     * Get basic block by id.
+     *
+     * @param id basic block id
+     * @return basic block
+     */
+    public BasicBlock<I> getBlock(int id) {
+        return nodes.get(id);
+    }
+
+    /**
+     * Get predecessors.
+     *
+     * @param id basic block id
+     * @return its predecessors
+     */
     public Set<Integer> getPrev(int id) {
         return links.get(id).getLeft();
     }
 
+    /**
+     * Get successors.
+     *
+     * @param id basic block id
+     * @return its successors
+     */
     public Set<Integer> getSucc(int id) {
         return links.get(id).getRight();
     }
 
+    /**
+     * Get in-degree.
+     *
+     * @param id basic block id
+     * @return its in-degree
+     */
     public int getInDegree(int id) {
         return links.get(id).getLeft().size();
     }
 
+    /**
+     * Get out-degree.
+     *
+     * @param id basic block id
+     * @return its out-degree
+     */
     public int getOutDegree(int id) {
         return links.get(id).getRight().size();
     }
@@ -53,21 +101,13 @@ public class CFG<I extends InstrLike> implements Iterable<BasicBlock<I>> {
         return nodes.iterator();
     }
 
-    public BasicBlock<I> getBlock(int i) {
-        return nodes.get(i);
-    }
-
-    public int size() {
-        return nodes.size();
-    }
-
     public void printTo(PrintWriter pw) {
         pw.println("CFG : ");
         for (BasicBlock bb : nodes) {
             bb.printTo(pw);
             pw.print(bb.kind);
             pw.print(", succ");
-            for (var b : getSucc(bb.bbNum)) {
+            for (var b : getSucc(bb.id)) {
                 pw.print(' ');
                 pw.print(b);
             }
@@ -81,7 +121,7 @@ public class CFG<I extends InstrLike> implements Iterable<BasicBlock<I>> {
             bb.printLivenessTo(pw);
             pw.print(bb.kind);
             pw.print(", succ");
-            for (var b : getSucc(bb.bbNum)) {
+            for (var b : getSucc(bb.id)) {
                 pw.print(' ');
                 pw.print(b);
             }

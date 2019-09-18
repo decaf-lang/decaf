@@ -1,16 +1,17 @@
 package decaf.backend.asm.mips;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.FuncLabel;
+import decaf.backend.asm.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
-import decaf.lowlevel.Label;
-import decaf.lowlevel.PseudoInstr;
-import decaf.lowlevel.TacInstr;
-import decaf.lowlevel.TodoInstr;
+import decaf.lowlevel.Mips;
+import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.label.IntrinsicLabel;
+import decaf.lowlevel.label.Label;
 import decaf.lowlevel.tac.Intrinsic;
 import decaf.lowlevel.tac.StringPool;
 import decaf.lowlevel.tac.TAC;
+import decaf.lowlevel.tac.TacInstr;
 import decaf.utils.MiscUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -19,8 +20,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static decaf.backend.asm.mips.Mips.STR_PREFIX;
+import static decaf.lowlevel.Mips.STR_PREFIX;
 
+/**
+ * Emit MIPS assembly code.
+ */
 public final class MipsAsmEmitter extends AsmEmitter {
 
     public MipsAsmEmitter() {
@@ -51,7 +55,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
         var index = pool.add(vtbl.className);
         printer.println(".word %s%d    # class name", STR_PREFIX, index);
 
-        for (var entry: vtbl.getItems()) {
+        for (var entry : vtbl.getItems()) {
             printer.println(".word %s    # member method", entry.name);
         }
 
@@ -66,8 +70,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
             instr.accept(selector);
         }
 
-        var info = new SubroutineInfo(new FuncLabel(func.entry.name, func), func.numArgs, selector.hasCall,
-                selector.maxArgs * 4);
+        var info = new SubroutineInfo(func.entry, func.numArgs, selector.hasCall, selector.maxArgs * 4);
         return Pair.of(selector.seq, info);
     }
 
@@ -189,7 +192,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
         printer.println("jr $ra");
     }
 
-    private class MipsInstrSelector implements TacInstr.InstrVisitor {
+    private class MipsInstrSelector implements TacInstr.Visitor {
 
         MipsInstrSelector(Label entry) {
             this.entry = entry;
@@ -228,7 +231,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitUnary(TacInstr.Unary instr) {
-            var op = switch (instr.kind) {
+            var op = switch (instr.op) {
                 case NEG -> Mips.UnaryOp.NEG;
                 case LNOT -> Mips.UnaryOp.NOT;
             };
@@ -237,7 +240,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitBinary(TacInstr.Binary instr) {
-            var op = switch (instr.kind) {
+            var op = switch (instr.op) {
                 case ADD -> Mips.BinaryOp.ADD;
                 case SUB -> Mips.BinaryOp.SUB;
                 case MUL -> Mips.BinaryOp.MUL;
@@ -262,7 +265,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitCondBranch(TacInstr.CondBranch instr) {
-            var op = switch (instr.kind) {
+            var op = switch (instr.op) {
                 case BEQZ -> Mips.BranchOp.BEQZ;
                 case BNEZ -> Mips.BranchOp.BNEZ;
             };
@@ -302,8 +305,9 @@ public final class MipsAsmEmitter extends AsmEmitter {
         public void visitDirectCall(TacInstr.DirectCall instr) {
             hasCall = true;
 
-            if (instr.isIntrinsicCall()) { // special case: inline or embed the code (no registers need be saved)
-                switch (instr.getIntrinsic().kind) {
+            if (instr.label.isIntrinsic()) { // special case: inline or embed the code (no registers need be saved)
+                var opcode = ((IntrinsicLabel) instr.label).opcode;
+                switch (opcode) {
                     case ALLOCATE -> {
                         seq.add(new Mips.LoadImm(Mips.V0, 9)); // memory allocation
                         seq.add(new Mips.Syscall());
@@ -351,16 +355,16 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         private void callerSave() {
             maxArgs = Math.max(maxArgs, argCount);
-            seq.add(TodoInstr.callerSave());
+            seq.add(HoleInstr.CallerSave);
         }
 
         private void callerRestore() {
-            seq.add(TodoInstr.callerRestore());
+            seq.add(HoleInstr.CallerRestore);
         }
 
         @Override
         public void visitMemory(TacInstr.Memory instr) {
-            seq.add(switch (instr.kind) {
+            seq.add(switch (instr.op) {
                 case LOAD -> new Mips.LoadWord(instr.dst, instr.base, instr.offset);
                 case STORE -> new Mips.StoreWord(instr.dst, instr.base, instr.offset);
             });

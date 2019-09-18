@@ -7,7 +7,7 @@ import decaf.frontend.symbol.MethodSymbol;
 import decaf.frontend.symbol.VarSymbol;
 import decaf.frontend.type.FunType;
 import decaf.frontend.type.Type;
-import decaf.lowlevel.Temp;
+import decaf.lowlevel.instr.Temp;
 
 import java.util.ArrayList;
 import java.util.List;

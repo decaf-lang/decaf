@@ -3,12 +3,12 @@ package decaf.frontend.tacgen;
 import decaf.frontend.tree.Tree;
 import decaf.frontend.tree.Visitor;
 import decaf.frontend.type.BuiltInType;
-import decaf.lowlevel.Label;
-import decaf.lowlevel.TacInstr;
-import decaf.lowlevel.Temp;
+import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.label.Label;
+import decaf.lowlevel.tac.FuncVisitor;
 import decaf.lowlevel.tac.Intrinsic;
-import decaf.lowlevel.tac.MethodVisitor;
 import decaf.lowlevel.tac.RuntimeError;
+import decaf.lowlevel.tac.TacInstr;
 
 import java.util.ArrayList;
 import java.util.Stack;
@@ -18,12 +18,12 @@ import java.util.function.Function;
 /**
  * TAC emitter. Traverse the tree and emit TAC.
  * <p>
- * When emitting TAC, we use utility methods from {@link decaf.lowlevel.tac.MethodVisitor}, so that we don't bother
+ * When emitting TAC, we use utility methods from {@link FuncVisitor}, so that we don't bother
  * ourselves understanding the underlying format of TAC instructions.
  * <p>
  * See {@link #emitIfThen} for the usage of {@link Consumer}.
  */
-public interface TacEmitter extends Visitor<MethodVisitor> {
+public interface TacEmitter extends Visitor<FuncVisitor> {
 
     /**
      * Record the exit labels of loops entered so far. In this way, when we encounter a break statement, we know the
@@ -34,14 +34,14 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     Stack<Label> loopExits = new Stack<>();
 
     @Override
-    default void visitBlock(Tree.Block block, MethodVisitor mv) {
+    default void visitBlock(Tree.Block block, FuncVisitor mv) {
         for (var stmt : block.stmts) {
             stmt.accept(this, mv);
         }
     }
 
     @Override
-    default void visitLocalVarDef(Tree.LocalVarDef def, MethodVisitor mv) {
+    default void visitLocalVarDef(Tree.LocalVarDef def, FuncVisitor mv) {
         def.symbol.temp = mv.freshTemp();
         if (def.initVal.isEmpty()) return;
         var initVal = def.initVal.get();
@@ -51,7 +51,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitAssign(Tree.Assign assign, MethodVisitor mv) {
+    default void visitAssign(Tree.Assign assign, FuncVisitor mv) {
         if (assign.lhs instanceof Tree.IndexSel) {
             var indexSel = (Tree.IndexSel) assign.lhs;
             indexSel.array.accept(this, mv);
@@ -74,31 +74,31 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitExprEval(Tree.ExprEval eval, MethodVisitor mv) {
+    default void visitExprEval(Tree.ExprEval eval, FuncVisitor mv) {
         eval.expr.accept(this, mv);
     }
 
     @Override
-    default void visitIf(Tree.If stmt, MethodVisitor mv) {
+    default void visitIf(Tree.If stmt, FuncVisitor mv) {
         stmt.cond.accept(this, mv);
-        Consumer<MethodVisitor> trueBranch = v -> stmt.trueBranch.accept(this, v);
+        Consumer<FuncVisitor> trueBranch = v -> stmt.trueBranch.accept(this, v);
 
         if (stmt.falseBranch.isEmpty()) {
             emitIfThen(stmt.cond.val, trueBranch, mv);
         } else {
-            Consumer<MethodVisitor> falseBranch = v -> stmt.falseBranch.get().accept(this, v);
+            Consumer<FuncVisitor> falseBranch = v -> stmt.falseBranch.get().accept(this, v);
             emitIfThenElse(stmt.cond.val, trueBranch, falseBranch, mv);
         }
     }
 
     @Override
-    default void visitWhile(Tree.While loop, MethodVisitor mv) {
+    default void visitWhile(Tree.While loop, FuncVisitor mv) {
         var exit = mv.freshLabel();
-        Function<MethodVisitor, Temp> test = v -> {
+        Function<FuncVisitor, Temp> test = v -> {
             loop.cond.accept(this, v);
             return loop.cond.val;
         };
-        Consumer<MethodVisitor> body = v -> {
+        Consumer<FuncVisitor> body = v -> {
             loopExits.push(exit);
             loop.body.accept(this, v);
             loopExits.pop();
@@ -107,14 +107,14 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitFor(Tree.For loop, MethodVisitor mv) {
+    default void visitFor(Tree.For loop, FuncVisitor mv) {
         var exit = mv.freshLabel();
         loop.init.accept(this, mv);
-        Function<MethodVisitor, Temp> test = v -> {
+        Function<FuncVisitor, Temp> test = v -> {
             loop.cond.accept(this, v);
             return loop.cond.val;
         };
-        Consumer<MethodVisitor> body = v -> {
+        Consumer<FuncVisitor> body = v -> {
             loopExits.push(exit);
             loop.body.accept(this, v);
             loopExits.pop();
@@ -124,12 +124,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitBreak(Tree.Break stmt, MethodVisitor mv) {
+    default void visitBreak(Tree.Break stmt, FuncVisitor mv) {
         mv.visitBranch(loopExits.peek());
     }
 
     @Override
-    default void visitReturn(Tree.Return stmt, MethodVisitor mv) {
+    default void visitReturn(Tree.Return stmt, FuncVisitor mv) {
         if (stmt.expr.isEmpty()) {
             mv.visitReturn();
         } else {
@@ -140,7 +140,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitPrint(Tree.Print stmt, MethodVisitor mv) {
+    default void visitPrint(Tree.Print stmt, FuncVisitor mv) {
         for (var expr : stmt.exprs) {
             expr.accept(this, mv);
             if (expr.type.eq(BuiltInType.INT)) {
@@ -156,17 +156,17 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     // Expressions
 
     @Override
-    default void visitIntLit(Tree.IntLit expr, MethodVisitor mv) {
+    default void visitIntLit(Tree.IntLit expr, FuncVisitor mv) {
         expr.val = mv.visitLoad(expr.value);
     }
 
     @Override
-    default void visitBoolLit(Tree.BoolLit expr, MethodVisitor mv) {
+    default void visitBoolLit(Tree.BoolLit expr, FuncVisitor mv) {
         expr.val = mv.visitLoad(expr.value);
     }
 
     @Override
-    default void visitStringLit(Tree.StringLit expr, MethodVisitor mv) {
+    default void visitStringLit(Tree.StringLit expr, FuncVisitor mv) {
         // Remember to unquote the string literal
         var unquoted = expr.value.substring(1, expr.value.length() - 1)
                 .replaceAll("\\\\r", "\r")
@@ -178,22 +178,22 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitNullLit(Tree.NullLit expr, MethodVisitor mv) {
+    default void visitNullLit(Tree.NullLit expr, FuncVisitor mv) {
         expr.val = mv.visitLoad(0);
     }
 
     @Override
-    default void visitReadInt(Tree.ReadInt expr, MethodVisitor mv) {
-        expr.val = mv.visitIntrinsicCall(Intrinsic.READ_INT);
+    default void visitReadInt(Tree.ReadInt expr, FuncVisitor mv) {
+        expr.val = mv.visitIntrinsicCall(Intrinsic.READ_INT, true);
     }
 
     @Override
-    default void visitReadLine(Tree.ReadLine expr, MethodVisitor mv) {
-        expr.val = mv.visitIntrinsicCall(Intrinsic.READ_LINE);
+    default void visitReadLine(Tree.ReadLine expr, FuncVisitor mv) {
+        expr.val = mv.visitIntrinsicCall(Intrinsic.READ_LINE, true);
     }
 
     @Override
-    default void visitUnary(Tree.Unary expr, MethodVisitor mv) {
+    default void visitUnary(Tree.Unary expr, FuncVisitor mv) {
         var op = switch (expr.op) {
             case NEG -> TacInstr.Unary.Op.NEG;
             case NOT -> TacInstr.Unary.Op.LNOT;
@@ -204,12 +204,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitBinary(Tree.Binary expr, MethodVisitor mv) {
+    default void visitBinary(Tree.Binary expr, FuncVisitor mv) {
         if ((expr.op.equals(Tree.BinaryOp.EQ) || expr.op.equals(Tree.BinaryOp.NE)) &&
                 expr.lhs.type.eq(BuiltInType.STRING)) { // string eq/ne
             expr.lhs.accept(this, mv);
             expr.rhs.accept(this, mv);
-            expr.val = mv.visitIntrinsicCall(Intrinsic.STRING_EQUAL, expr.lhs.val, expr.rhs.val);
+            expr.val = mv.visitIntrinsicCall(Intrinsic.STRING_EQUAL, true, expr.lhs.val, expr.rhs.val);
             if (expr.op.equals(Tree.BinaryOp.NE)) {
                 mv.visitUnarySelf(TacInstr.Unary.Op.LNOT, expr.val);
             }
@@ -237,7 +237,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitVarSel(Tree.VarSel expr, MethodVisitor mv) {
+    default void visitVarSel(Tree.VarSel expr, FuncVisitor mv) {
         if (expr.symbol.isMemberVar()) {
             var object = expr.receiver.get();
             object.accept(this, mv);
@@ -248,7 +248,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitIndexSel(Tree.IndexSel expr, MethodVisitor mv) {
+    default void visitIndexSel(Tree.IndexSel expr, FuncVisitor mv) {
         expr.array.accept(this, mv);
         expr.index.accept(this, mv);
         var addr = emitArrayElementAddress(expr.array.val, expr.index.val, mv);
@@ -256,23 +256,23 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitNewArray(Tree.NewArray expr, MethodVisitor mv) {
+    default void visitNewArray(Tree.NewArray expr, FuncVisitor mv) {
         expr.length.accept(this, mv);
         expr.val = emitArrayInit(expr.length.val, mv);
     }
 
     @Override
-    default void visitNewClass(Tree.NewClass expr, MethodVisitor mv) {
+    default void visitNewClass(Tree.NewClass expr, FuncVisitor mv) {
         expr.val = mv.visitNewClass(expr.symbol.name);
     }
 
     @Override
-    default void visitThis(Tree.This expr, MethodVisitor mv) {
+    default void visitThis(Tree.This expr, FuncVisitor mv) {
         expr.val = mv.getArgTemp(0);
     }
 
     @Override
-    default void visitCall(Tree.Call expr, MethodVisitor mv) {
+    default void visitCall(Tree.Call expr, FuncVisitor mv) {
         if (expr.isArrayLength) { // special case for array.length()
             var array = expr.receiver.get();
             array.accept(this, mv);
@@ -285,16 +285,24 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         expr.args.forEach(arg -> temps.add(arg.val));
 
         if (expr.symbol.isStatic()) {
-            expr.val = mv.visitStaticCall(expr.symbol.owner.name, expr.symbol.name, temps);
+            if (expr.symbol.type.returnType.isVoidType()) {
+                mv.visitStaticCall(expr.symbol.owner.name, expr.symbol.name, temps);
+            } else {
+                expr.val = mv.visitStaticCall(expr.symbol.owner.name, expr.symbol.name, temps, true);
+            }
         } else {
             var object = expr.receiver.get();
             object.accept(this, mv);
-            expr.val = mv.visitMemberCall(object.val, expr.symbol.owner.name, expr.symbol.name, temps);
+            if (expr.symbol.type.returnType.isVoidType()) {
+                mv.visitMemberCall(object.val, expr.symbol.owner.name, expr.symbol.name, temps);
+            } else {
+                expr.val = mv.visitMemberCall(object.val, expr.symbol.owner.name, expr.symbol.name, temps, true);
+            }
         }
     }
 
     @Override
-    default void visitClassTest(Tree.ClassTest expr, MethodVisitor mv) {
+    default void visitClassTest(Tree.ClassTest expr, FuncVisitor mv) {
         // Accelerate: when obj.type <: class.type, then the test must be successful!
         if (expr.obj.type.subtypeOf(expr.symbol.type)) {
             expr.val = mv.visitLoad(1);
@@ -306,7 +314,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     @Override
-    default void visitClassCast(Tree.ClassCast expr, MethodVisitor mv) {
+    default void visitClassCast(Tree.ClassCast expr, FuncVisitor mv) {
         expr.obj.accept(this, mv);
         expr.val = expr.obj.val;
 
@@ -365,14 +373,14 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * Why {@link Consumer} for the true branch? Because the method visitor will append TAC code <em>in order</em>.
      * Since the instructions of the true branch go AFTER the conditional branch instruction, we must first append the
      * conditional branch, and then the true branch. So instead of appending the code first, which is wrong, we must
-     * wrap the <em>process</em> which emits the actual code as a function {@link MethodVisitor} {@literal ->} void,
+     * wrap the <em>process</em> which emits the actual code as a function {@link FuncVisitor} {@literal ->} void,
      * expressed by {@link Consumer} in Java. Same story for the helper methods below.
      *
      * @param cond   temp of condition
      * @param action code (to be generated) of the true branch
      * @param mv     current method visitor
      */
-    private void emitIfThen(Temp cond, Consumer<MethodVisitor> action, MethodVisitor mv) {
+    private void emitIfThen(Temp cond, Consumer<FuncVisitor> action, FuncVisitor mv) {
         var skip = mv.freshLabel();
         mv.visitBranch(TacInstr.CondBranch.Op.BEQZ, cond, skip);
         action.accept(mv);
@@ -404,8 +412,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param falseBranch code (to be generated) of the false branch
      * @param mv          current method visitor
      */
-    private void emitIfThenElse(Temp cond, Consumer<MethodVisitor> trueBranch, Consumer<MethodVisitor> falseBranch,
-                                MethodVisitor mv) {
+    private void emitIfThenElse(Temp cond, Consumer<FuncVisitor> trueBranch, Consumer<FuncVisitor> falseBranch,
+                                FuncVisitor mv) {
         var skip = mv.freshLabel();
         var exit = mv.freshLabel();
         mv.visitBranch(TacInstr.CondBranch.Op.BEQZ, cond, skip);
@@ -439,8 +447,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param exit  label of loop exit
      * @param mv    current method visitor
      */
-    private void emitWhile(Function<MethodVisitor, Temp> test, Consumer<MethodVisitor> block,
-                           Label exit, MethodVisitor mv) {
+    private void emitWhile(Function<FuncVisitor, Temp> test, Consumer<FuncVisitor> block,
+                           Label exit, FuncVisitor mv) {
         var entry = mv.freshLabel();
         mv.visitLabel(entry);
         var cond = test.apply(mv);
@@ -481,12 +489,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param mv     current method visitor
      * @return a temp storing the address of the first element of the array
      */
-    private Temp emitArrayInit(Temp length, MethodVisitor mv) {
+    private Temp emitArrayInit(Temp length, FuncVisitor mv) {
         var zero = mv.visitLoad(0);
         var error = mv.visitBinary(TacInstr.Binary.Op.LES, length, zero);
-        var handler = new Consumer<MethodVisitor>() {
+        var handler = new Consumer<FuncVisitor>() {
             @Override
-            public void accept(MethodVisitor v) {
+            public void accept(FuncVisitor v) {
                 v.visitPrint(RuntimeError.NEGATIVE_ARR_SIZE);
                 v.visitIntrinsicCall(Intrinsic.HALT);
             }
@@ -496,14 +504,14 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         var units = mv.visitBinary(TacInstr.Binary.Op.ADD, length, mv.visitLoad(1));
         var four = mv.visitLoad(4);
         var size = mv.visitBinary(TacInstr.Binary.Op.MUL, units, four);
-        var a = mv.visitIntrinsicCall(Intrinsic.ALLOCATE, size);
+        var a = mv.visitIntrinsicCall(Intrinsic.ALLOCATE, true, size);
         mv.visitStoreTo(a, length);
         var p = mv.visitBinary(TacInstr.Binary.Op.ADD, a, size);
         mv.visitBinarySelf(TacInstr.Binary.Op.SUB, p, four);
-        Function<MethodVisitor, Temp> test = v -> v.visitBinary(TacInstr.Binary.Op.NEQ, p, a);
-        var body = new Consumer<MethodVisitor>() {
+        Function<FuncVisitor, Temp> test = v -> v.visitBinary(TacInstr.Binary.Op.NEQ, p, a);
+        var body = new Consumer<FuncVisitor>() {
             @Override
-            public void accept(MethodVisitor v) {
+            public void accept(FuncVisitor v) {
                 v.visitStoreTo(p, zero);
                 v.visitBinarySelf(TacInstr.Binary.Op.SUB, p, four);
             }
@@ -533,15 +541,15 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param index temp of the index
      * @return a temp storing the address of the element
      */
-    private Temp emitArrayElementAddress(Temp array, Temp index, MethodVisitor mv) {
+    private Temp emitArrayElementAddress(Temp array, Temp index, FuncVisitor mv) {
         var length = mv.visitLoadFrom(array, -4);
         var zero = mv.visitLoad(0);
         var error1 = mv.visitBinary(TacInstr.Binary.Op.LES, index, zero);
         var error2 = mv.visitBinary(TacInstr.Binary.Op.GEQ, index, length);
         var error = mv.visitBinary(TacInstr.Binary.Op.LOR, error1, error2);
-        var handler = new Consumer<MethodVisitor>() {
+        var handler = new Consumer<FuncVisitor>() {
             @Override
-            public void accept(MethodVisitor v) {
+            public void accept(FuncVisitor v) {
                 v.visitPrint(RuntimeError.ARRAY_INDEX_OUT_OF_BOUND);
                 v.visitIntrinsicCall(Intrinsic.HALT);
             }
@@ -573,7 +581,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * @param clazz  name of the class
      * @return a temp storing the result (1 for true, and 0 for false)
      */
-    private Temp emitClassTest(Temp object, String clazz, MethodVisitor mv) {
+    private Temp emitClassTest(Temp object, String clazz, FuncVisitor mv) {
         var target = mv.visitLoadVTable(clazz);
         var t = mv.visitLoadFrom(object);
 

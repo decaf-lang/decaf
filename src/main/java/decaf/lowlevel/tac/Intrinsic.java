@@ -1,11 +1,11 @@
 package decaf.lowlevel.tac;
 
-import decaf.lowlevel.Label;
+import decaf.lowlevel.label.IntrinsicLabel;
 
 /**
  * Intrinsic procedure, a built-in function behave like "system calls".
  */
-public final class Intrinsic extends TAC.Func {
+public final class Intrinsic {
     public enum Opcode {
         ALLOCATE, READ_LINE, READ_INT, STRING_EQUAL, PRINT_INT, PRINT_STRING, PRINT_BOOL, HALT
     }
@@ -18,14 +18,14 @@ public final class Intrinsic extends TAC.Func {
     public final String name;
 
     /**
+     * Label.
+     */
+    public final IntrinsicLabel entry;
+
+    /**
      * Number of arguments.
      */
     public final int numArgs;
-
-    @Override
-    public boolean isIntrinsic() {
-        return true;
-    }
 
     /**
      * Allocate memory, exit if fails.
@@ -94,10 +94,9 @@ public final class Intrinsic extends TAC.Func {
     }
 
     private Intrinsic(Opcode kind, String name, int numArgs) {
-        super(new Label(Label.Kind.INTRINSIC, name), numArgs);
         this.kind = kind;
         this.name = name;
         this.numArgs = numArgs;
-        this.tempUsed = numArgs;
+        this.entry = new IntrinsicLabel(name, kind);
     }
 }

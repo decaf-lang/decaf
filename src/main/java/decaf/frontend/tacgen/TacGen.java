@@ -33,7 +33,7 @@ public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter
         // Step 2: emit tac instructions for every method.
         for (var clazz : tree.classes) {
             for (var method : clazz.methods()) {
-                MethodVisitor mv;
+                FuncVisitor mv;
                 if (method.symbol.isMain()) {
                     mv = pw.visitMainMethod();
                 } else {
@@ -45,7 +45,7 @@ public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter
                         i++;
                     }
 
-                    mv = pw.visitMethod(clazz.name, method.name, numArgs);
+                    mv = pw.visitFunc(clazz.name, method.name, numArgs);
                     for (var param : method.params) {
                         param.symbol.temp = mv.getArgTemp(i);
                         i++;

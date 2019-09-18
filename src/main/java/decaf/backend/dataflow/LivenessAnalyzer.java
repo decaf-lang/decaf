@@ -1,11 +1,16 @@
 package decaf.backend.dataflow;
 
-import decaf.lowlevel.InstrLike;
+import decaf.lowlevel.instr.PseudoInstr;
 
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
+/**
+ * Perform liveness analysis on a control flow graph.
+ *
+ * @param <I> type of instructions in the control flow graph
+ */
+public class LivenessAnalyzer<I extends PseudoInstr> implements Consumer<CFG<I>> {
 
     @Override
     public void accept(CFG<I> graph) {
@@ -20,14 +25,14 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
         do {
             changed = false;
             for (var bb : graph.nodes) {
-                for (var next : graph.getSucc(bb.bbNum)) {
+                for (var next : graph.getSucc(bb.id)) {
                     bb.liveOut.addAll(graph.getBlock(next).liveIn);
                 }
                 bb.liveOut.removeAll(bb.def);
                 if (bb.liveIn.addAll(bb.liveOut)) {
                     changed = true;
                 }
-                for (var next : graph.getSucc(bb.bbNum)) {
+                for (var next : graph.getSucc(bb.id)) {
                     bb.liveOut.addAll(graph.getBlock(next).liveIn);
                 }
             }
@@ -40,7 +45,7 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
 
     /**
      * Compute the {@code def} and {@code liveUse} set for basic block {@code bb}.
-     *
+     * <p>
      * Recall the definition:
      * - {@code def}: set of all variables (i.e. temps) that are assigned to a value. Thus, we simply union all the
      * written temps of every instruction.
@@ -48,7 +53,7 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
      * basic block. Note this is NOT simply equal to the union set all read temps, but only those are not yet
      * assigned/reassigned.
      *
-     * @param bb the basic block
+     * @param bb basic block
      */
     private void computeDefAndLiveUseFor(BasicBlock<I> bb) {
         bb.def = new TreeSet<>();
@@ -68,7 +73,7 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
     /**
      * Perform liveness analysis for every single location in a basic block, so that we know at each program location,
      * which variables stay alive.
-     *
+     * <p>
      * Idea: realizing that every location loc can be regarded as a "mini" basic block -- a block containing that
      * instruction solely, then the data flow equations also hold, and the situation becomes much simpler:
      * - loc.liveOut = loc.next.liveIn
@@ -85,8 +90,8 @@ public class LivenessAnalyzer<I extends InstrLike> implements Consumer<CFG<I>> {
         while (it.hasNext()) {
             var loc = it.next();
             loc.liveOut = new TreeSet<>(liveOut);
-            // Order is important here, because in an instruction, one temp can be both read and written, e.g.:
-            // In _T1 = _T1 + _T2, _T1 must be alive before execution.
+            // Order is important here, because in an instruction, one temp can be both read and written, e.g.
+            // in `_T1 = _T1 + _T2`, `_T1` must be alive before execution.
             liveOut.removeAll(loc.instr.getWritten());
             liveOut.addAll(loc.instr.getRead());
             loc.liveIn = new TreeSet<>(liveOut);

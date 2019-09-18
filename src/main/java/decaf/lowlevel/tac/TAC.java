@@ -1,13 +1,14 @@
 package decaf.lowlevel.tac;
 
-import decaf.lowlevel.Label;
-import decaf.lowlevel.TacInstr;
+import decaf.lowlevel.label.FuncLabel;
+import decaf.lowlevel.label.VTableLabel;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// TODO doc
 public abstract class TAC {
 
     public static class Prog {
@@ -61,9 +62,9 @@ public abstract class TAC {
      */
     public static class VTable {
         /**
-         * Name. NOTE: may differ from `className`.
+         * Label.
          */
-        public final Label label;
+        public final VTableLabel label;
 
         /**
          * The name of the class.
@@ -79,20 +80,19 @@ public abstract class TAC {
             return 8 + 4 * memberMethods.size();
         }
 
-        public List<Label> getItems() {
+        public List<FuncLabel> getItems() {
             return memberMethods;
         }
-
 
         /**
          * Labels of all member methods.
          */
-        List<Label> memberMethods = new ArrayList<>();
+        List<FuncLabel> memberMethods = new ArrayList<>();
 
         List<String> memberVariables = new ArrayList<>();
 
         VTable(String className, Optional<VTable> parent) {
-            this.label = new Label(Label.Kind.VTABLE, "_V_" + className);
+            this.label = new VTableLabel(className);
             this.className = className;
             this.parent = parent;
         }
@@ -124,11 +124,11 @@ public abstract class TAC {
      * - a sequence of instructions to be executed
      */
     public static class Func implements Comparable<Func> {
-        public final Label entry;
+        public final FuncLabel entry;
 
         public final int numArgs;
 
-        Func(Label entry, int numArgs) {
+        Func(FuncLabel entry, int numArgs) {
             this.entry = entry;
             this.numArgs = numArgs;
         }
@@ -171,6 +171,4 @@ public abstract class TAC {
             return this.entry.name.compareTo(that.entry.name);
         }
     }
-
-    public static final Label MAIN_LABEL = new Label(Label.Kind.FUNC, "main");
 }

@@ -2,10 +2,11 @@ package decaf.backend.asm.mips;
 
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
-import decaf.lowlevel.Label;
-import decaf.lowlevel.NativeInstr;
-import decaf.lowlevel.Reg;
-import decaf.lowlevel.Temp;
+import decaf.lowlevel.Mips;
+import decaf.lowlevel.instr.NativeInstr;
+import decaf.lowlevel.instr.Reg;
+import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.label.Label;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
+ * Emit MIPS assembly code for a subroutine.
+ * <p>
  * Recall the stack frame of a MIPS subroutine looks this:
  * <pre>
  *                   previous stack frame ...
@@ -30,7 +33,7 @@ import java.util.TreeMap;
  *                   ...
  * SP             : (arg 0)
  * </pre>
- *
+ * <p>
  * The parenthesized slots may not be used, but to make our life easier, we always reserve them.
  */
 public class MipsSubroutineEmitter extends SubroutineEmitter {
@@ -38,7 +41,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
     MipsSubroutineEmitter(MipsAsmEmitter emitter, SubroutineInfo info) {
         super(emitter, info);
         nextLocalOffset = info.argsSize + 36;
-        printer.printLabel(info.funcLabel, "function " + info.funcLabel.func.entry);
+        printer.printLabel(info.funcLabel, "function " + info.funcLabel.prettyString());
     }
 
     @Override
@@ -77,8 +80,8 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
     }
 
     @Override
-    public void emitNative(NativeInstr item) {
-        buf.add(item);
+    public void emitNative(NativeInstr instr) {
+        buf.add(instr);
     }
 
     @Override
@@ -89,7 +92,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
     @Override
     public void emitEnd() {
         printer.printComment("start of prologue");
-        printer.printInstr(new Mips.NativeSPAdd(-nextLocalOffset), "push stack frame");
+        printer.printInstr(new Mips.SPAdd(-nextLocalOffset), "push stack frame");
         if (Mips.RA.isUsed() || info.hasCalls) {
             printer.printInstr(new Mips.NativeStoreWord(Mips.RA, Mips.SP, info.argsSize + 32),
                     "save the return address");
@@ -126,7 +129,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
             printer.printInstr(new Mips.NativeLoadWord(Mips.RA, Mips.SP, info.argsSize + 32),
                     "restore the return address");
         }
-        printer.printInstr(new Mips.NativeSPAdd(nextLocalOffset), "pop stack frame");
+        printer.printInstr(new Mips.SPAdd(nextLocalOffset), "pop stack frame");
         printer.printComment("end of epilogue");
         printer.println();
 

@@ -14,10 +14,10 @@ public class StringPool implements Iterable<String> {
      * @return the allocated index
      */
     public int add(String value) {
-        int index = _strings.indexOf(value);
+        int index = pool.indexOf(value);
         if (index == -1) {
-            _strings.add(value);
-            return _strings.size() - 1;
+            pool.add(value);
+            return pool.size() - 1;
         }
         return index;
     }
@@ -29,12 +29,12 @@ public class StringPool implements Iterable<String> {
      * @return the string
      */
     public String get(int index) {
-        return _strings.get(index);
+        return pool.get(index);
     }
 
     public int find(String value) {
-        for (var i = 0; i < _strings.size(); i++) {
-            if (_strings.get(i).equals(value)) {
+        for (var i = 0; i < pool.size(); i++) {
+            if (pool.get(i).equals(value)) {
                 return i;
             }
         }
@@ -42,10 +42,10 @@ public class StringPool implements Iterable<String> {
         throw new IllegalArgumentException(value + " not found in string pool");
     }
 
-    private Vector<String> _strings = new Vector<>();
+    private Vector<String> pool = new Vector<>();
 
     @Override
     public Iterator<String> iterator() {
-        return _strings.iterator();
+        return pool.iterator();
     }
 }

@@ -1,8 +1,11 @@
-package decaf.backend.asm;
+package decaf.lowlevel;
 
-import decaf.lowlevel.Label;
-import decaf.lowlevel.NativeInstr;
+import decaf.lowlevel.label.Label;
+import decaf.lowlevel.instr.NativeInstr;
 
+/**
+ * Assembly code pretty printer.
+ */
 public class AsmCodePrinter {
     private StringBuilder sb = new StringBuilder();
 
@@ -52,10 +55,10 @@ public class AsmCodePrinter {
     public void printInstr(NativeInstr instr) {
         if (instr.isLabel()) {
             // for debug
-            sb.append(".globl " + instr.jumpTo.name);
+            sb.append(".globl " + instr.label.name);
             sb.append(END_LINE);
 
-            sb.append(instr.jumpTo);
+            sb.append(instr.label);
             sb.append(":");
             sb.append(END_LINE);
         } else {
@@ -67,7 +70,7 @@ public class AsmCodePrinter {
 
     public void printInstr(NativeInstr instr, String comment) {
         if (instr.isLabel()) {
-            sb.append(instr.jumpTo);
+            sb.append(instr.label);
             sb.append(":");
         } else {
             sb.append(INDENTS);

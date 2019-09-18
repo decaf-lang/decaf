@@ -1,36 +1,44 @@
-package decaf.lowlevel;
+package decaf.lowlevel.tac;
 
-import decaf.lowlevel.tac.Intrinsic;
-import decaf.lowlevel.tac.TAC;
+import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.label.Label;
 
 import java.util.Optional;
 
-public abstract class TacInstr extends InstrLike {
-
-    public TacInstr(Kind kind, Temp[] dsts, Temp[] srcs, Label jumpTo, Object... imms) {
-        super(kind, "", dsts, srcs, jumpTo, imms);
+public abstract class TacInstr extends PseudoInstr {
+    /**
+     * Similar to {@link PseudoInstr#PseudoInstr(Kind, Temp[], Temp[], Label)}
+     */
+    public TacInstr(Kind kind, Temp[] dsts, Temp[] srcs, Label label) {
+        super(kind, dsts, srcs, label);
     }
 
-    public TacInstr(Temp[] dsts, Temp[] srcs, Object... imms) {
-        super(Kind.SEQ, "", dsts, srcs, null, imms);
+    /**
+     * Similar to {@link PseudoInstr#PseudoInstr(Temp[], Temp[])}
+     */
+    public TacInstr(Temp[] dsts, Temp[] srcs) {
+        super(Kind.SEQ, dsts, srcs, null);
     }
 
+    /**
+     * Similar to {@link PseudoInstr#PseudoInstr(Label)}
+     */
     public TacInstr(Label label) {
         super(label);
     }
 
-    @Override
-    public String toString() {
-        return String.format(getFormat(), getArgs());
-    }
+    /**
+     * Accept a visitor.
+     *
+     * @param v visitor
+     */
+    public abstract void accept(Visitor v);
 
-    public boolean isReturn() {
-        return false;
-    }
-
-    public abstract void accept(InstrVisitor v);
-
-    public interface InstrVisitor {
+    /**
+     * Visitors of Tac instructions.
+     */
+    public interface Visitor {
         default void visitAssign(Assign instr) {
             visitOthers(instr);
         }
@@ -95,6 +103,12 @@ public abstract class TacInstr extends InstrLike {
         }
     }
 
+    /**
+     * Assignment.
+     * <pre>
+     *     dst = src
+     * </pre>
+     */
     public static class Assign extends TacInstr {
         public final Temp dst;
         public final Temp src;
@@ -106,162 +120,166 @@ public abstract class TacInstr extends InstrLike {
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitAssign(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst, src};
+        public String toString() {
+            return String.format("%s = %s", dst, src);
         }
     }
 
+    /**
+     * Load a virtual table.
+     * <pre>
+     *     dst = VTABLE&lt;vtbl&gt;
+     * </pre>
+     */
     public static class LoadVTbl extends TacInstr {
         public final Temp dst;
         public final TAC.VTable vtbl;
 
         public LoadVTbl(Temp dst, TAC.VTable vtbl) {
-            super(new Temp[]{dst}, new Temp[]{}, vtbl);
+            super(new Temp[]{dst}, new Temp[]{});
             this.dst = dst;
             this.vtbl = vtbl;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitLoadVTbl(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst, vtbl};
+        public String toString() {
+            return String.format("%s = %s", dst, vtbl.label);
         }
     }
 
+    /**
+     * Load a 32-bit signed integer.
+     * <pre>
+     *     dst = value
+     * </pre>
+     */
     public static class LoadImm4 extends TacInstr {
         public final Temp dst;
         public final int value;
 
         public LoadImm4(Temp dst, int value) {
-            super(new Temp[]{dst}, new Temp[]{}, value);
+            super(new Temp[]{dst}, new Temp[]{});
             this.dst = dst;
             this.value = value;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitLoadImm4(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst, value};
+        public String toString() {
+            return String.format("%s = %d", dst, value);
         }
     }
 
+    /**
+     * Load constant string.
+     * <pre>
+     *     dst = value
+     * </pre>
+     */
     public static class LoadStrConst extends TacInstr {
         public final Temp dst;
         public final String value;
 
         public LoadStrConst(Temp dst, String value) {
-            super(new Temp[]{dst}, new Temp[]{}, value);
+            super(new Temp[]{dst}, new Temp[]{});
             this.dst = dst;
             this.value = value;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitLoadStrConst(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst, value};
+        public String toString() {
+            return String.format("%s = %s", dst, value);
         }
     }
 
+    /**
+     * Unary instruction.
+     * <pre>
+     *     dst = op operand
+     * </pre>
+     */
     public static class Unary extends TacInstr {
-        public final Op kind;
+        public final Op op;
         public final Temp dst;
         public final Temp operand;
 
-        public Unary(Op kind, Temp dst, Temp operand) {
+        public enum Op {
+            NEG, LNOT
+        }
+
+        public Unary(Op op, Temp dst, Temp operand) {
             super(new Temp[]{dst}, new Temp[]{operand});
-            this.kind = kind;
+            this.op = op;
             this.dst = dst;
             this.operand = operand;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitUnary(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = %s %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            var opStr = switch (kind) {
+        public String toString() {
+            var opStr = switch (op) {
                 case NEG -> "-";
                 case LNOT -> "!";
             };
-            return new Object[]{dst, opStr, operand};
-        }
-
-        public enum Op {
-            NEG, LNOT
+            return String.format("%s = %s %s", dst, opStr, operand);
         }
     }
 
+    /**
+     * Binary instruction.
+     * <pre>
+     *     dst = (lhs op rhs)
+     * </pre>
+     */
     public static class Binary extends TacInstr {
-        public final Op kind;
+        public final Op op;
         public final Temp dst;
         public final Temp lhs;
         public final Temp rhs;
 
-        public Binary(Op kind, Temp dst, Temp lhs, Temp rhs) {
+        public enum Op {
+            ADD, SUB, MUL, DIV, MOD, EQU, NEQ, LES, LEQ, GTR, GEQ, LAND, LOR
+        }
+
+        public Binary(Op op, Temp dst, Temp lhs, Temp rhs) {
             super(new Temp[]{dst}, new Temp[]{lhs, rhs});
-            this.kind = kind;
+            this.op = op;
             this.dst = dst;
             this.lhs = lhs;
             this.rhs = rhs;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitBinary(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%s = (%s %s %s)";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            var opStr = switch (kind) {
+        public String toString() {
+            var opStr = switch (op) {
                 case ADD -> "+";
                 case SUB -> "-";
                 case MUL -> "*";
@@ -276,14 +294,16 @@ public abstract class TacInstr extends InstrLike {
                 case LAND -> "&&";
                 case LOR -> "||";
             };
-            return new Object[]{dst, lhs, opStr, rhs};
-        }
-
-        public enum Op {
-            ADD, SUB, MUL, DIV, MOD, EQU, NEQ, LES, LEQ, GTR, GEQ, LAND, LOR
+            return String.format("%s = (%s %s %s)", dst, lhs, opStr, rhs);
         }
     }
 
+    /**
+     * Branch instruction.
+     * <pre>
+     *     branch target
+     * </pre>
+     */
     public static class Branch extends TacInstr {
         public final Label target;
 
@@ -293,57 +313,60 @@ public abstract class TacInstr extends InstrLike {
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitBranch(this);
         }
 
         @Override
-        public String getFormat() {
-            return "branch %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{target};
+        public String toString() {
+            return String.format("branch %s", target);
         }
     }
 
+    /**
+     * Branch instruction.
+     * <pre>
+     *     if (cond == 0) branch target
+     *     if (cond != 0) branch target
+     * </pre>
+     */
     public static class CondBranch extends TacInstr {
-        public final Op kind;
+        public final Op op;
         public final Temp cond;
         public final Label target;
 
-        public CondBranch(Op kind, Temp cond, Label target) {
+        public enum Op {
+            BEQZ, BNEZ
+        }
+
+        public CondBranch(Op op, Temp cond, Label target) {
             super(Kind.COND_JMP, new Temp[]{}, new Temp[]{cond}, target);
-            this.kind = kind;
+            this.op = op;
             this.cond = cond;
             this.target = target;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitCondBranch(this);
         }
 
         @Override
-        public String getFormat() {
-            return "if (%s %s) branch %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            var opStr = switch (kind) {
+        public String toString() {
+            var opStr = switch (op) {
                 case BEQZ -> "== 0";
                 case BNEZ -> "!= 0";
             };
-            return new Object[]{cond, opStr, target};
-        }
-
-        public enum Op {
-            BEQZ, BNEZ
+            return String.format("if (%s %s) branch %s", cond, opStr, target);
         }
     }
 
+    /**
+     * Return instruction.
+     * <pre>
+     *     return value?
+     * </pre>
+     */
     public static class Return extends TacInstr {
         public final Optional<Temp> value;
 
@@ -358,26 +381,22 @@ public abstract class TacInstr extends InstrLike {
         }
 
         @Override
-        public boolean isReturn() {
-            return true;
-        }
-
-        @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitReturn(this);
         }
 
         @Override
-        public String getFormat() {
-            return "return %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{value.map(Temp::toString).orElse("<empty>")};
+        public String toString() {
+            return String.format("return %s", value.map(Temp::toString).orElse("<empty>"));
         }
     }
 
+    /**
+     * Push a parameter.
+     * <pre>
+     *     parm value
+     * </pre>
+     */
     public static class Parm extends TacInstr {
         public final Temp value;
 
@@ -387,21 +406,22 @@ public abstract class TacInstr extends InstrLike {
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitParm(this);
         }
 
         @Override
-        public String getFormat() {
-            return "parm %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{value};
+        public String toString() {
+            return String.format("parm %s", value);
         }
     }
 
+    /**
+     * Call by address (which is stored in a temp).
+     * <pre>
+     *     {dst =}? call entry
+     * </pre>
+     */
     public static class IndirectCall extends TacInstr {
         public final Optional<Temp> dst;
         public final Temp entry;
@@ -419,164 +439,159 @@ public abstract class TacInstr extends InstrLike {
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitIndirectCall(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%scall %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst.map(Temp::toString).orElse(""), entry};
+        public String toString() {
+            var sb = new StringBuffer();
+            dst.ifPresent(d -> {
+                sb.append(d);
+                sb.append(" = ");
+            });
+            sb.append(entry);
+            return sb.toString();
         }
     }
 
+    /**
+     * Call by label.
+     * <pre>
+     *     {dst =}? call entry
+     * </pre>
+     */
     public static class DirectCall extends TacInstr {
         public final Optional<Temp> dst;
         public final Label entry;
 
         public DirectCall(Temp dst, Label entry) {
-            super(new Temp[]{dst}, new Temp[]{}, entry);
+            super(new Temp[]{dst}, new Temp[]{});
             this.dst = Optional.of(dst);
             this.entry = entry;
         }
 
         public DirectCall(Label entry) {
-            super(new Temp[]{}, new Temp[]{}, entry);
+            super(new Temp[]{}, new Temp[]{});
             this.dst = Optional.empty();
             this.entry = entry;
         }
 
         public DirectCall(Temp dst, Intrinsic intrinsic) {
-            super(new Temp[]{dst}, new Temp[]{}, intrinsic.entry);
+            super(new Temp[]{dst}, new Temp[]{});
             this.dst = Optional.of(dst);
             this.entry = intrinsic.entry;
-            this.intrinsic = intrinsic;
         }
 
         public DirectCall(Intrinsic intrinsic) {
-            super(new Temp[]{}, new Temp[]{}, intrinsic.entry);
+            super(new Temp[]{}, new Temp[]{});
             this.dst = Optional.empty();
             this.entry = intrinsic.entry;
-            this.intrinsic = intrinsic;
-        }
-
-        private Intrinsic intrinsic;
-
-        public boolean isIntrinsicCall() {
-            return intrinsic != null;
-        }
-
-        public Intrinsic getIntrinsic() {
-            return intrinsic;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitDirectCall(this);
         }
 
         @Override
-        public String getFormat() {
-            return "%scall %s";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dst.map(Temp::toString).orElse(""), entry};
+        public String toString() {
+            var sb = new StringBuffer();
+            dst.ifPresent(d -> {
+                sb.append(d);
+                sb.append(" = ");
+            });
+            sb.append(entry);
+            return sb.toString();
         }
     }
 
+    /**
+     * Memory access: load/store.
+     * <pre>
+     *     dst = *(base + offset)
+     *     *(base + offset) = dst
+     * </pre>
+     */
     public static class Memory extends TacInstr {
-        public final Op kind;
+        public final Op op;
         public final Temp dst;
         public final Temp base;
         public final int offset;
 
-        public Memory(Op kind, Temp dst, Temp base, int offset) {
-            super(kind.equals(Op.LOAD) ? new Temp[]{dst} : new Temp[]{},
-                    kind.equals(Op.LOAD) ? new Temp[]{base} : new Temp[]{dst, base});
-            this.kind = kind;
+        public enum Op {
+            LOAD, STORE
+        }
+
+        public Memory(Op op, Temp dst, Temp base, int offset) {
+            super(op.equals(Op.LOAD) ? new Temp[]{dst} : new Temp[]{},
+                    op.equals(Op.LOAD) ? new Temp[]{base} : new Temp[]{dst, base});
+            this.op = op;
             this.dst = dst;
             this.base = base;
             this.offset = offset;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitMemory(this);
         }
 
         @Override
-        public String getFormat() {
-            return switch (kind) {
-                case LOAD -> "%s = *(%s %s %d)";
-                case STORE -> "*(%s %s %d) = %s";
+        public String toString() {
+            var sign = offset >= 0 ? "+" : "-";
+            var value = offset >= 0 ? offset : -offset;
+            return switch (op) {
+                case LOAD -> String.format("%s = *(%s %s %d)", dst, base, sign, value);
+                case STORE -> String.format("*(%s %s %d) = %s", base, sign, offset, dst);
             };
-        }
-
-        @Override
-        public Object[] getArgs() {
-            var opStr = offset >= 0 ? "+" : "-";
-            return switch (kind) {
-                case LOAD -> new Object[]{dst, base, opStr, offset};
-                case STORE -> new Object[]{base, opStr, offset, dst};
-            };
-        }
-
-        public enum Op {
-            LOAD, STORE
         }
     }
 
+    /**
+     * Comment.
+     * <pre>
+     *     memo 'msg'
+     * </pre>
+     */
     public static class Memo extends TacInstr {
         final String msg;
 
         public Memo(String msg) {
-            super(new Temp[]{}, new Temp[]{}, msg);
+            super(new Temp[]{}, new Temp[]{});
             this.msg = msg;
         }
 
         @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitMemo(this);
         }
 
         @Override
-        public String getFormat() {
-            return "memo '%s'";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{msg};
+        public String toString() {
+            return String.format("memo '%s'", msg);
         }
     }
 
+    /**
+     * Label.
+     * <pre>
+     * label:
+     * </pre>
+     */
     public static class Mark extends TacInstr {
-        public final Label label;
-
         public Mark(Label label) {
             super(label);
-            this.label = label;
         }
 
         @Override
-        public String getFormat() {
-            return "%s:";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{label};
-        }
-
-        @Override
-        public void accept(InstrVisitor v) {
+        public void accept(Visitor v) {
             v.visitMark(this);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s:", label);
         }
     }
 }

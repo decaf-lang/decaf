@@ -1,7 +1,9 @@
 package decaf.lowlevel.tac;
 
-import decaf.lowlevel.TacInstr;
-import decaf.lowlevel.Temp;
+import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.label.FuncLabel;
+import decaf.lowlevel.label.IntrinsicLabel;
+import decaf.lowlevel.label.Label;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,25 +15,33 @@ import java.util.*;
  */
 public final class Simulator {
 
+    /**
+     * Constructor.
+     *
+     * @param in  simulator's stdin
+     * @param out simulator's stdout
+     */
     public Simulator(InputStream in, OutputStream out) {
         _in = in;
         _out = new PrintWriter(out);
     }
 
+    /**
+     * Execute a TAC program.
+     *
+     * @param program TAC program
+     */
     public void execute(TAC.Prog program) {
         // Initialize
         _memory = new Memory();
         _string_pool = new StringPool();
-        _vtable_to_addr = new HashMap<>();
+        _vtable_to_addr = new TreeMap<>();
         _instrs = new Vector<>();
-        _label_to_addr = new HashMap<>();
-        _addr_to_function = new HashMap<>();
+        _label_to_addr = new TreeMap<>();
+        _addr_to_function = new TreeMap<>();
         _call_stack = new Stack<>();
         _actual_args = new Vector<>();
-        _label_to_function = new HashMap<>();
-        for (var func : Intrinsic.ALL) {
-            _label_to_function.put(func.entry.name, func);
-        }
+        _label_to_function = new TreeMap<>();
 
         // Allocate vtables
         for (TAC.VTable vtbl : program.vtables) {
@@ -49,16 +59,16 @@ public final class Simulator {
             // Add every non-pseudo instruction, and record labels if necessary
             for (var instr : func.getInstrSeq()) {
                 if (instr.isLabel()) { // meet a label
-                    var lbl = instr.jumpTo;
+                    var lbl = instr.label;
                     _label_to_addr.put(lbl.name, addr);
                 } else {
-                    var ins = (TacInstr) instr;
-                    _instrs.add(ins);
+                    _instrs.add(instr);
                     addr++;
                 } // else: memo, ignore
             }
 
             // Force this function to return if the last instruction is not RETURN
+            // TODO: let code generator ensure this!
             if (!_instrs.lastElement().isReturn()) {
                 _instrs.add(new TacInstr.Return());
                 addr++;
@@ -85,19 +95,32 @@ public final class Simulator {
         }
 
         // Initialize call stack and push the frame of main function
-        if (!_label_to_function.containsKey(TAC.MAIN_LABEL.name)) {
+        if (!_label_to_function.containsKey(FuncLabel.MAIN_LABEL.name)) {
             System.err.println("Main function not found.");
             return;
         }
 
-        var frame = new Frame(_label_to_function.get(TAC.MAIN_LABEL.name));
+        var frame = new Frame(_label_to_function.get(FuncLabel.MAIN_LABEL.name));
         _call_stack.push(frame);
-        _pc = _label_to_addr.get(TAC.MAIN_LABEL.name);
+        _pc = _label_to_addr.get(FuncLabel.MAIN_LABEL.name);
 
         // Execute
         var executor = new InstrExecutor();
+        var count = 0;
+        _halt = false;
+
         while (!_call_stack.isEmpty()) {
+            if (count >= 100000) {
+                System.err.println("Max instruction limitation 10,0000 exceeds, maybe your program cannot terminate?");
+                return;
+            }
+
+            if (_halt) {
+                return;
+            }
+
             _instrs.get(_pc).accept(executor);
+            count++;
         }
     }
 
@@ -120,7 +143,7 @@ public final class Simulator {
     /**
      * Look up a vtable's address in memory by its name.
      */
-    private HashMap<String, Integer> _vtable_to_addr;
+    private Map<String, Integer> _vtable_to_addr;
 
     /**
      * Simulate instruction memory. The "address" is simply the index of this vector.
@@ -130,17 +153,17 @@ public final class Simulator {
     /**
      * Look up a label's address in instruction memory by its name.
      */
-    private HashMap<String, Integer> _label_to_addr;
+    private Map<String, Integer> _label_to_addr;
 
     /**
      * Look up a function by its entry label.
      */
-    private HashMap<String, TAC.Func> _label_to_function;
+    private Map<String, TAC.Func> _label_to_function;
 
     /**
      * Look up a function by the address of its entry instruction.
      */
-    private HashMap<Integer, TAC.Func> _addr_to_function;
+    private Map<Integer, TAC.Func> _addr_to_function;
 
     /**
      * Call stack, consists of frames.
@@ -159,13 +182,18 @@ public final class Simulator {
     private int _pc;
 
     /**
+     * Halt signal.
+     */
+    private boolean _halt;
+
+    /**
      * Stack frame.
      */
     private class Frame {
         /**
-         * The function we call.
+         * The function entry.
          */
-        final TAC.Func func;
+        final Label entry;
 
         /**
          * An array to store values of local temps.
@@ -182,9 +210,9 @@ public final class Simulator {
          */
         int pcNext;
 
-        Frame(TAC.Func func) {
-            this.func = func;
-            this.array = new int[func.getUsedTempCount()];
+        Frame(Label entry, int arraySize) {
+            this.entry = entry;
+            this.array = new int[arraySize];
             var i = 0;
             for (var arg : _actual_args) { // copy actual arguments
                 this.array[i] = arg;
@@ -192,12 +220,16 @@ public final class Simulator {
             }
             _actual_args.clear(); // it will save args for future calls
         }
+
+        Frame(TAC.Func func) {
+            this(func.entry, func.getUsedTempCount());
+        }
     }
 
     /**
      * Instruction executor.
      */
-    private class InstrExecutor implements TacInstr.InstrVisitor {
+    private class InstrExecutor implements TacInstr.Visitor {
         @Override
         public void visitAssign(TacInstr.Assign instr) {
             var frame = _call_stack.peek();
@@ -235,7 +267,7 @@ public final class Simulator {
         public void visitUnary(TacInstr.Unary instr) {
             var frame = _call_stack.peek();
             int operand = frame.array[instr.operand.index];
-            frame.array[instr.dst.index] = switch (instr.kind) {
+            frame.array[instr.dst.index] = switch (instr.op) {
                 case NEG -> -operand;
                 case LNOT -> (operand == 0) ? 1 : 0;
             };
@@ -248,7 +280,7 @@ public final class Simulator {
             var frame = _call_stack.peek();
             var lhs = frame.array[instr.lhs.index];
             var rhs = frame.array[instr.rhs.index];
-            frame.array[instr.dst.index] = switch (instr.kind) {
+            frame.array[instr.dst.index] = switch (instr.op) {
                 case ADD -> lhs + rhs;
                 case SUB -> lhs - rhs;
                 case MUL -> lhs * rhs;
@@ -275,7 +307,7 @@ public final class Simulator {
         @Override
         public void visitCondBranch(TacInstr.CondBranch instr) {
             var frame = _call_stack.peek();
-            var jump = switch (instr.kind) {
+            var jump = switch (instr.op) {
                 case BEQZ -> frame.array[instr.cond.index] == 0;
                 case BNEZ -> frame.array[instr.cond.index] != 0;
             };
@@ -335,20 +367,22 @@ public final class Simulator {
             frame.retValDst = instr.dst.orElse(null);
 
             // Create callee's frame and invoke
-            var func = _label_to_function.get(instr.entry.name);
-            _call_stack.push(new Frame(func));
-            if (func.isIntrinsic()) {
-                callIntrinsic((Intrinsic) func);
+            if (instr.entry.isIntrinsic()) { // special: call intrinsic
+                var il = (IntrinsicLabel) instr.entry;
+                _call_stack.push(new Frame(il, 2));
+                callIntrinsic(il.opcode);
             } else {
+                var func = _label_to_function.get(instr.entry.name);
+                _call_stack.push(new Frame(func));
                 _pc = _label_to_addr.get(instr.entry.name);
             }
         }
 
-        private void callIntrinsic(Intrinsic func) {
+        private void callIntrinsic(Intrinsic.Opcode opcode) {
             var frame = _call_stack.peek();
             Optional<Integer> retVal = Optional.empty();
 
-            switch (func.kind) {
+            switch (opcode) {
                 case ALLOCATE -> retVal = Optional.of(_memory.alloc(frame.array[0]));
                 case READ_LINE -> {
                     var scanner = new Scanner(_in);
@@ -367,14 +401,14 @@ public final class Simulator {
                     _out.flush();
                 }
                 case PRINT_STRING -> {
-                    _out.write(_string_pool.get(frame.array[0]));
+                    _out.print(_string_pool.get(frame.array[0]));
                     _out.flush();
                 }
                 case PRINT_BOOL -> {
-                    _out.write(frame.array[0] == 0 ? "false" : "true");
+                    _out.print(frame.array[0] == 0 ? "false" : "true");
                     _out.flush();
                 }
-                case HALT -> System.exit(0); // TODO: just stop the execution of the simulator
+                case HALT -> _halt = true;
             }
 
             returnWith(retVal);
@@ -385,7 +419,7 @@ public final class Simulator {
             var frame = _call_stack.peek();
             int base = frame.array[instr.base.index];
             int offset = instr.offset;
-            switch (instr.kind) {
+            switch (instr.op) {
                 case LOAD -> frame.array[instr.dst.index] = _memory.load(base, offset);
                 case STORE -> _memory.store(frame.array[instr.dst.index], base, offset);
             }

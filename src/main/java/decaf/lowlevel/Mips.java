@@ -1,8 +1,15 @@
-package decaf.backend.asm.mips;
+package decaf.lowlevel;
 
-import decaf.lowlevel.*;
+import decaf.lowlevel.instr.NativeInstr;
+import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.instr.Reg;
+import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.label.Label;
 import org.apache.commons.lang3.ArrayUtils;
 
+/**
+ * Utility registers and instructions of MIPS 32.
+ */
 public class Mips {
 
     // Registers
@@ -56,25 +63,27 @@ public class Mips {
 
     // Instructions
 
-    static final String FMT1 = "%s";
-    static final String FMT2 = "%s, %s";
-    static final String FMT3 = "%s, %s, %s";
-    static final String FMT_OFFSET = "%s, %d(%s)";
+    private static final String FMT1 = "%s";
+    private static final String FMT2 = "%s, %s";
+    private static final String FMT3 = "%s, %s, %s";
+    private static final String FMT_OFFSET = "%s, %d(%s)";
+
+    private static String format(String op, String fmt, Object... args) {
+        var sb = new StringBuilder();
+        sb.append(op);
+        sb.append(String.format(fmt, args));
+        return sb.toString();
+    }
 
     public static class Move extends PseudoInstr {
 
         public Move(Temp dst, Temp src) {
-            super("move", new Temp[]{dst}, new Temp[]{src});
+            super(new Temp[]{dst}, new Temp[]{src});
         }
 
         @Override
-        public String getFormat() {
-            return FMT2;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], srcs[0]};
+        public String toString() {
+            return format("move", FMT2, dsts[0], srcs[0]);
         }
     }
 
@@ -85,17 +94,15 @@ public class Mips {
     public static class Unary extends PseudoInstr {
 
         public Unary(UnaryOp op, Temp dst, Temp src) {
-            super(op.toString().toLowerCase(), new Temp[]{dst}, new Temp[]{src});
+            super(new Temp[]{dst}, new Temp[]{src});
+            this.op = op.toString().toLowerCase();
         }
 
-        @Override
-        public String getFormat() {
-            return FMT2;
-        }
+        private String op;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], srcs[0]};
+        public String toString() {
+            return format(op, FMT2, dsts[0], srcs[0]);
         }
     }
 
@@ -108,17 +115,15 @@ public class Mips {
     public static class Binary extends PseudoInstr {
 
         public Binary(BinaryOp op, Temp dst, Temp src0, Temp src1) {
-            super(op.toString().toLowerCase(), new Temp[]{dst}, new Temp[]{src0, src1});
+            super(new Temp[]{dst}, new Temp[]{src0, src1});
+            this.op = op.toString().toLowerCase();
         }
 
-        @Override
-        public String getFormat() {
-            return FMT3;
-        }
+        private String op;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], srcs[0], srcs[1]};
+        public String toString() {
+            return format(op, FMT3, dsts[0], srcs[0], srcs[1]);
         }
     }
 
@@ -129,158 +134,123 @@ public class Mips {
     public static class Branch extends PseudoInstr {
 
         public Branch(BranchOp op, Temp src, Label to) {
-            super(Kind.COND_JMP, op.toString().toLowerCase(), new Temp[]{}, new Temp[]{src}, to);
+            super(Kind.COND_JMP, new Temp[]{}, new Temp[]{src}, to);
+            this.op = op.toString().toLowerCase();
         }
 
-        @Override
-        public String getFormat() {
-            return FMT2;
-        }
+        private String op;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{srcs[0], jumpTo};
+        public String toString() {
+            return format(op, FMT2, srcs[0], label);
         }
     }
 
     public static class Jump extends PseudoInstr {
 
         public Jump(Label to) {
-            super(Kind.JMP, "j", new Temp[]{}, new Temp[]{}, to);
+            super(Kind.JMP, new Temp[]{}, new Temp[]{}, to);
         }
 
         @Override
-        public String getFormat() {
-            return FMT1;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{jumpTo};
+        public String toString() {
+            return format("j", FMT1, label);
         }
     }
 
     /**
-     * The special jump-to-return instruction:
-     * J epilogue
-     * is regarded as a return statement.
+     * The special jump-to-epilogue instruction {@code j epilogue} is regarded as a return statement.
      */
     public static class JumpToEpilogue extends PseudoInstr {
 
         public JumpToEpilogue(Label label) {
-            super(Kind.RET, "j", new Temp[]{}, new Temp[]{}, new Label(label + EPILOGUE_SUFFIX));
+            super(Kind.RET, new Temp[]{}, new Temp[]{}, new Label(label + EPILOGUE_SUFFIX));
         }
 
         @Override
-        public String getFormat() {
-            return FMT1;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{jumpTo};
+        public String toString() {
+            return format("j", FMT1, label);
         }
     }
 
     public static class JumpAndLink extends PseudoInstr {
 
         public JumpAndLink(Label to) {
-            super(Kind.SEQ, "jal", new Temp[]{}, new Temp[]{}, to);
+            super(Kind.SEQ, new Temp[]{}, new Temp[]{}, to);
         }
 
         @Override
-        public String getFormat() {
-            return FMT1;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{jumpTo};
+        public String toString() {
+            return format("jal", FMT1, label);
         }
     }
 
     public static class JumpAndLinkReg extends PseudoInstr {
 
         public JumpAndLinkReg(Temp src) {
-            super("jalr", new Temp[]{}, new Temp[]{src});
+            super(new Temp[]{}, new Temp[]{src});
         }
 
         @Override
-        public String getFormat() {
-            return FMT1;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return srcs;
+        public String toString() {
+            return format("jalr", FMT1, srcs[0]);
         }
     }
 
     public static class LoadWord extends PseudoInstr {
 
         public LoadWord(Temp dst, Temp base, int offset) {
-            super("lw", new Temp[]{dst}, new Temp[]{base}, offset);
+            super(new Temp[]{dst}, new Temp[]{base});
+            this.offset = offset;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT_OFFSET;
-        }
+        private int offset;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], imms[0], srcs[0]};
+        public String toString() {
+            return format("lw", FMT_OFFSET, dsts[0], offset, srcs[0]);
         }
     }
 
     public static class StoreWord extends PseudoInstr {
 
         public StoreWord(Temp src, Temp base, int offset) {
-            super("sw", new Temp[]{}, new Temp[]{src, base}, offset);
+            super(new Temp[]{}, new Temp[]{src, base});
+            this.offset = offset;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT_OFFSET;
-        }
+        private int offset;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{srcs[0], imms[0], srcs[1]};
+        public String toString() {
+            return format("sw", FMT_OFFSET, srcs[0], offset, srcs[1]);
         }
     }
 
     public static class LoadImm extends PseudoInstr {
 
         public LoadImm(Temp dst, int value) {
-            super("li", new Temp[]{dst}, new Temp[]{}, value);
+            super(new Temp[]{dst}, new Temp[]{});
+            this.value = value;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT2;
-        }
+        private int value;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], imms[0]};
+        public String toString() {
+            return format("li", FMT2, dsts[0], value);
         }
     }
 
     public static class LoadAddr extends PseudoInstr {
 
         public LoadAddr(Temp dst, Label label) {
-            super("la", new Temp[]{dst}, new Temp[]{}, label);
+            super(Kind.SEQ, new Temp[]{dst}, new Temp[]{}, label);
         }
 
         @Override
-        public String getFormat() {
-            return FMT2;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], imms[0]};
+        public String toString() {
+            return format("la", FMT2, dsts[0], label);
         }
     }
 
@@ -291,128 +261,95 @@ public class Mips {
         }
 
         @Override
-        public String getFormat() {
-            return null;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[0];
-        }
-
-        @Override
         public String toString() {
-            return jumpTo + ":";
+            return String.format("%s:", label);
         }
     }
 
     public static class Syscall extends NativeInstr {
 
         public Syscall() {
-            super("syscall", new Reg[]{}, new Reg[]{});
+            super(new Reg[]{}, new Reg[]{});
         }
 
         @Override
-        public String getFormat() {
-            return "";
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{};
+        public String toString() {
+            return "syscall";
         }
     }
 
     public static class NativeMove extends NativeInstr {
 
         public NativeMove(Reg dst, Reg src) {
-            super("move", new Reg[]{dst}, new Reg[]{src});
+            super(new Reg[]{dst}, new Reg[]{src});
         }
 
         @Override
-        public String getFormat() {
-            return FMT2;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], srcs[0]};
+        public String toString() {
+            return format("move", FMT2, dsts[0], srcs[0]);
         }
     }
 
     public static class NativeLoadWord extends NativeInstr {
 
         public NativeLoadWord(Reg dst, Reg base, int offset) {
-            super("lw", new Reg[]{dst}, new Reg[]{base}, offset);
+            super(new Reg[]{dst}, new Reg[]{base});
+            this.offset = offset;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT_OFFSET;
-        }
+        private int offset;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], imms[0], srcs[0]};
+        public String toString() {
+            return format("lw", FMT_OFFSET, dsts[0], offset, srcs[0]);
         }
     }
 
     public static class NativeStoreWord extends NativeInstr {
 
         public NativeStoreWord(Reg src, Reg base, int offset) {
-            super("sw", new Reg[]{}, new Reg[]{src, base}, offset);
+            super(new Reg[]{}, new Reg[]{src, base});
+            this.offset = offset;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT_OFFSET;
-        }
+        private int offset;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{srcs[0], imms[0], srcs[1]};
+        public String toString() {
+            return format("sw", FMT_OFFSET, srcs[0], offset, srcs[1]);
         }
     }
 
     /**
-     * Since the only possible usage of the JR instrction is to return a subroutine with
-     * JR $ra
+     * Since the only possible usage of the {@code jr} is to return a subroutine with {@code jr $ra}.
      * Why not simply call this "Return"?
      */
     public static class NativeReturn extends NativeInstr {
 
         public NativeReturn() {
-            super(Kind.RET, "jr", new Reg[]{Mips.RA}, new Reg[]{}, null);
+            super(Kind.RET, new Reg[]{RA}, new Reg[]{}, null);
         }
 
         @Override
-        public String getFormat() {
-            return FMT1;
-        }
-
-        @Override
-        public Object[] getArgs() {
-            return dsts;
+        public String toString() {
+            return format("jr", FMT1, RA);
         }
     }
 
-    public static class NativeSPAdd extends NativeInstr {
+    public static class SPAdd extends NativeInstr {
 
-        public NativeSPAdd(int offset) {
-            super("addiu", new Reg[]{Mips.SP}, new Reg[]{Mips.SP}, offset);
+        public SPAdd(int offset) {
+            super(new Reg[]{SP}, new Reg[]{SP});
+            this.offset = offset;
         }
 
-        @Override
-        public String getFormat() {
-            return FMT3;
-        }
+        private int offset;
 
         @Override
-        public Object[] getArgs() {
-            return new Object[]{dsts[0], srcs[0], imms[0]};
+        public String toString() {
+            return format("addiu", FMT3, dsts[0], srcs[0], offset);
         }
     }
-
 
     public static final String STR_PREFIX = "_S";
 

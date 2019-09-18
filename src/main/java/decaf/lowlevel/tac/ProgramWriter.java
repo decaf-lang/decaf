@@ -1,55 +1,81 @@
 package decaf.lowlevel.tac;
 
-import decaf.lowlevel.Label;
+import decaf.lowlevel.label.FuncLabel;
+import decaf.lowlevel.label.Label;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
+/**
+ * High-level helper methods which can guide you to generate a TAC program, without knowing the underlying instruction
+ * encoding.
+ */
 public class ProgramWriter {
+    /**
+     * Constructor.
+     *
+     * @param classes basic info of classes declared in the program (warning: the arg will be modified by this method).
+     */
     public ProgramWriter(List<ClassInfo> classes) {
         for (var clazz : classes) {
-            _classes.put(clazz.name, clazz); // TODO copy clazz
+            this.classes.put(clazz.name, clazz);
         }
     }
 
+    /**
+     * Generate TAC code for virtual tables.
+     */
     public void visitVTables() {
         // Allocate labels for every method, including the constructor <init>, which initializes an object.
-        for (var clazz : _classes.values()) {
-            _ctx.putConstructorLabel(clazz.name);
+        for (var clazz : classes.values()) {
+            ctx.putConstructorLabel(clazz.name);
             for (var method : clazz.methods) {
-                _ctx.putMethodLabel(clazz.name, method);
+                ctx.putFuncLabel(clazz.name, method);
             }
         }
 
         // Build virtual tables.
-        for (var clazz : _classes.values()) {
+        for (var clazz : classes.values()) {
             buildVTableFor(clazz);
         }
 
-        // Create the _NEW method for every class.
-        for (var clazz : _classes.values()) {
+        // Create the `new` method for every class.
+        for (var clazz : classes.values()) {
             createConstructorFor(clazz.name);
         }
     }
 
-    public MethodVisitor visitMainMethod() {
-        var entry = TAC.MAIN_LABEL;
-        return new MethodVisitor(entry, 0, _ctx);
+    /**
+     * Generate TAC code for the main method.
+     */
+    public FuncVisitor visitMainMethod() {
+        var entry = FuncLabel.MAIN_LABEL;
+        return new FuncVisitor(entry, 0, ctx);
     }
 
-    public MethodVisitor visitMethod(String className, String methodName, int numArgs) {
-        var entry = _ctx.getMethodLabel(className, methodName);
-        return new MethodVisitor(entry, numArgs, _ctx);
+    /**
+     * Generate TAC code for a normal function.
+     *
+     * @param className class name
+     * @param funcName  function name
+     * @param numArgs   number of arguments
+     */
+    public FuncVisitor visitFunc(String className, String funcName, int numArgs) {
+        var entry = ctx.getFuncLabel(className, funcName);
+        return new FuncVisitor(entry, numArgs, ctx);
     }
 
+    /**
+     * Call this when all functions are done.
+     *
+     * @return TAC program
+     */
     public TAC.Prog visitEnd() {
-        return new TAC.Prog(_ctx.getVTables(), _ctx.funcs);
+        return new TAC.Prog(ctx.getVTables(), ctx.funcs);
     }
 
-    private HashMap<String, ClassInfo> _classes = new HashMap<>();
+    private HashMap<String, ClassInfo> classes = new HashMap<>();
 
-    private Context _ctx = new Context();
+    private Context ctx = new Context();
 
     /**
      * Emit code for initializing a new object. In memory, an object takes 4 * (1 + number of member variables) bytes,
@@ -57,15 +83,15 @@ public class ProgramWriter {
      * - the first 4 bytes: address of its virtual table
      * - next bytes: values/references of every member variables
      *
-     * @param clazz
+     * @param clazz class name
      */
     private void createConstructorFor(String clazz) {
-        var entry = _ctx.getConstructorLabel(clazz);
-        var mv = new MethodVisitor(entry, 0, _ctx);
+        var entry = ctx.getConstructorLabel(clazz);
+        var mv = new FuncVisitor(entry, 0, ctx);
 
-        var vtbl = _ctx.getVTable(clazz);
+        var vtbl = ctx.getVTable(clazz);
         var size = mv.visitLoad(vtbl.getObjectSize());
-        var object = mv.visitIntrinsicCall(Intrinsic.ALLOCATE, size);
+        var object = mv.visitIntrinsicCall(Intrinsic.ALLOCATE, true, size);
         var addr = mv.visitLoadVTable(clazz);
         mv.visitStoreTo(object, addr); // the first 4 bytes: address of its virtual table
         mv.visitReturn(object);
@@ -73,11 +99,11 @@ public class ProgramWriter {
     }
 
     private void buildVTableFor(ClassInfo clazz) {
-        if (_ctx.hasVTable(clazz.name)) return;
+        if (ctx.hasVTable(clazz.name)) return;
 
         var parent = clazz.parent.map(c -> {
-            buildVTableFor(_classes.get(c));
-            return _ctx.getVTable(c);
+            buildVTableFor(classes.get(c));
+            return ctx.getVTable(c);
         });
         var vtbl = new TAC.VTable(clazz.name, parent);
 
@@ -87,9 +113,9 @@ public class ProgramWriter {
 
         if (parent.isPresent()) {
             for (var lbl : parent.get().memberMethods) {
-                var method = _ctx.getMethodName(lbl);
+                var method = lbl.method;
                 if (clazz.memberMethods.contains(method)) {
-                    vtbl.memberMethods.add(_ctx.getMethodLabel(clazz.name, method));
+                    vtbl.memberMethods.add(ctx.getFuncLabel(clazz.name, method));
                     clazz.memberMethods.remove(method);
                 } else {
                     vtbl.memberMethods.add(lbl);
@@ -99,7 +125,7 @@ public class ProgramWriter {
 
         // 3. newly declared in this class
         for (var method : clazz.memberMethods) {
-            vtbl.memberMethods.add(_ctx.getMethodLabel(clazz.name, method));
+            vtbl.memberMethods.add(ctx.getFuncLabel(clazz.name, method));
         }
 
         // Similarly, member variables consist of ones that are:
@@ -116,95 +142,79 @@ public class ProgramWriter {
         // 3. newly declared in this class
         vtbl.memberVariables.addAll(clazz.memberVariables);
 
-        _ctx.putVTable(vtbl);
-        _ctx.putOffsets(vtbl);
+        ctx.putVTable(vtbl);
+        ctx.putOffsets(vtbl);
     }
 
     class Context {
 
         void putConstructorLabel(String clazz) {
-            putLabel("_L_" + clazz + "_new");
+            putFuncLabel(clazz, "new");
         }
 
-        Label getConstructorLabel(String clazz) {
-            return getLabel("_L_" + clazz + "_new");
+        FuncLabel getConstructorLabel(String clazz) {
+            return getFuncLabel(clazz, "new");
         }
 
-        void putMethodLabel(String clazz, String method) {
-            putLabel("_L_" + clazz + "_" + method);
+        void putFuncLabel(String clazz, String method) {
+            labels.put(clazz + "." + method, new FuncLabel(clazz, method));
         }
 
-        Label getMethodLabel(String clazz, String method) {
-            return getLabel("_L_" + clazz + "_" + method);
-        }
-
-        String getMethodName(Label method) {
-            // TODO check if it is always suitable
-            var index = method.name.lastIndexOf("_");
-            assert index >= 0;
-            return method.name.substring(index + 1);
-        }
-
-        void putLabel(String name) {
-            _labels.put(name, new Label( name));
-        }
-
-        Label getLabel(String name) {
-            return _labels.get(name);
+        FuncLabel getFuncLabel(String clazz, String method) {
+            return labels.get(clazz + "." + method);
         }
 
         Label freshLabel() {
-            var name = "_L" + _next_unnamed_label_id;
-            _next_unnamed_label_id++;
-            var lbl = new Label(name);
-            _labels.put(name, lbl);
-            return lbl;
+            var name = "_L" + nextTempLabelId;
+            nextTempLabelId++;
+            return new Label(name);
         }
 
         TAC.VTable getVTable(String clazz) {
-            return _vtables.get(clazz);
+            return vtables.get(clazz);
         }
 
         boolean hasVTable(String clazz) {
-            return _vtables.containsKey(clazz);
+            return vtables.containsKey(clazz);
         }
 
         void putVTable(TAC.VTable vtbl) {
-            _vtables.put(vtbl.className, vtbl);
+            vtables.put(vtbl.className, vtbl);
         }
 
         List<TAC.VTable> getVTables() {
-            return new ArrayList<>(_vtables.values());
+            return new ArrayList<>(vtables.values());
         }
 
         int getOffset(String clazz, String member) {
-            return _offsets.get("_L_" + clazz + "_" + member);
+            return offsets.get(clazz + "." + member);
         }
 
         void putOffsets(TAC.VTable vtbl) {
+            var prefix = vtbl.className + ".";
+
             var offset = 8;
-            for (var method : vtbl.memberMethods) {
-                _offsets.put(method.name, offset);
+            for (var l : vtbl.memberMethods) {
+                offsets.put(prefix + l.method, offset);
                 offset += 4;
             }
 
-            var prefix = "_L_" + vtbl.className + "_";
             offset = 4;
             for (var variable : vtbl.memberVariables) {
-                _offsets.put(prefix + variable, offset);
+                offsets.put(prefix + variable, offset);
                 offset += 4;
             }
         }
 
-        private HashMap<String, Label> _labels = new HashMap<>();
+        private Map<String, FuncLabel> labels = new TreeMap<>();
 
-        private HashMap<String, TAC.VTable> _vtables = new HashMap<>();
+        private Map<String, TAC.VTable> vtables = new TreeMap<>();
 
-        private HashMap<String, Integer> _offsets = new HashMap<>();
+        private Map<String, Integer> offsets = new TreeMap<>();
 
         List<TAC.Func> funcs = new ArrayList<>();
 
-        private int _next_unnamed_label_id = 1;
+        private int nextTempLabelId = 1;
     }
 
 }
