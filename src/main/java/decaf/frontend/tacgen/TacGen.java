@@ -2,13 +2,16 @@ package decaf.frontend.tacgen;
 
 import decaf.driver.Config;
 import decaf.driver.Phase;
-import decaf.lowlevel.tac.*;
 import decaf.frontend.tree.Tree;
+import decaf.lowlevel.tac.*;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
+/**
+ * The tacgen phase: translate an abstract syntax tree to TAC IR.
+ */
 public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter {
 
     public TacGen(Config config) {

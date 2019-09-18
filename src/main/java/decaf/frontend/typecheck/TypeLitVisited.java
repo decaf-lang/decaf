@@ -1,13 +1,18 @@
 package decaf.frontend.typecheck;
 
+import decaf.driver.ErrorIssuer;
 import decaf.driver.error.BadArrElementError;
 import decaf.driver.error.ClassNotFoundError;
-import decaf.driver.ErrorIssuer;
 import decaf.frontend.scope.ScopeStack;
 import decaf.frontend.tree.Tree;
 import decaf.frontend.tree.Visitor;
 import decaf.frontend.type.BuiltInType;
 
+/**
+ * Infer the types of type literals in the abstract syntax tree.
+ * <p>
+ * These visitor methods are shared by {@link Namer} and {@link Typer}.
+ */
 public interface TypeLitVisited extends Visitor<ScopeStack>, ErrorIssuer {
 
     // visiting types

@@ -1,23 +1,37 @@
 package decaf.frontend.tacgen;
 
-import decaf.driver.error.RuntimeError;
+import decaf.frontend.tree.Tree;
+import decaf.frontend.tree.Visitor;
+import decaf.frontend.type.BuiltInType;
 import decaf.lowlevel.Label;
 import decaf.lowlevel.TacInstr;
 import decaf.lowlevel.Temp;
 import decaf.lowlevel.tac.Intrinsic;
 import decaf.lowlevel.tac.MethodVisitor;
-import decaf.frontend.tree.Tree;
-import decaf.frontend.tree.Visitor;
-import decaf.frontend.type.BuiltInType;
+import decaf.lowlevel.tac.RuntimeError;
 
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * TAC emitter. Traverse the tree and emit TAC.
+ * <p>
+ * When emitting TAC, we use utility methods from {@link decaf.lowlevel.tac.MethodVisitor}, so that we don't bother
+ * ourselves understanding the underlying format of TAC instructions.
+ * <p>
+ * See {@link #emitIfThen} for the usage of {@link Consumer}.
+ */
 public interface TacEmitter extends Visitor<MethodVisitor> {
 
-    Stack<Label> _loop_exits = new Stack<>();
+    /**
+     * Record the exit labels of loops entered so far. In this way, when we encounter a break statement, we know the
+     * exact label we will jump to.
+     * <p>
+     * Push a label when entering a loop, and pop when leaving a loop.
+     */
+    Stack<Label> loopExits = new Stack<>();
 
     @Override
     default void visitBlock(Tree.Block block, MethodVisitor mv) {
@@ -29,7 +43,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     @Override
     default void visitLocalVarDef(Tree.LocalVarDef def, MethodVisitor mv) {
         def.symbol.temp = mv.freshTemp();
-        if (!def.initVal.isPresent()) return;
+        if (def.initVal.isEmpty()) return;
         var initVal = def.initVal.get();
 
         initVal.accept(this, mv);
@@ -85,9 +99,9 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
             return loop.cond.val;
         };
         Consumer<MethodVisitor> body = v -> {
-            _loop_exits.push(exit);
+            loopExits.push(exit);
             loop.body.accept(this, v);
-            _loop_exits.pop();
+            loopExits.pop();
         };
         emitWhile(test, body, exit, mv);
     }
@@ -101,9 +115,9 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
             return loop.cond.val;
         };
         Consumer<MethodVisitor> body = v -> {
-            _loop_exits.push(exit);
+            loopExits.push(exit);
             loop.body.accept(this, v);
-            _loop_exits.pop();
+            loopExits.pop();
             loop.update.accept(this, v);
         };
         emitWhile(test, body, exit, mv);
@@ -111,7 +125,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
 
     @Override
     default void visitBreak(Tree.Break stmt, MethodVisitor mv) {
-        mv.visitBranch(_loop_exits.peek());
+        mv.visitBranch(loopExits.peek());
     }
 
     @Override
@@ -281,7 +295,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
 
     @Override
     default void visitClassTest(Tree.ClassTest expr, MethodVisitor mv) {
-        // Accelerate: when obj.type <: class.type, then the test must success!
+        // Accelerate: when obj.type <: class.type, then the test must be successful!
         if (expr.obj.type.subtypeOf(expr.symbol.type)) {
             expr.val = mv.visitLoad(1);
             return;
@@ -302,7 +316,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
         }
         var result = emitClassTest(expr.obj.val, expr.symbol.name, mv);
 
-        /**
+        /* Pseudo code:
          * <pre>
          *     if (result != 0) branch exit  // cast success
          *     print "Decaf runtime error: " // RuntimeError.CLASS_CAST_ERROR1
@@ -340,13 +354,23 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *         action
      *     }
      * </pre>
-     *
+     * <p>
      * Implementation in pseudo code:
      * <pre>
      *     if (cond == 0) branch skip;
      *     action
      * skip:
      * </pre>
+     * <p>
+     * Why {@link Consumer} for the true branch? Because the method visitor will append TAC code <em>in order</em>.
+     * Since the instructions of the true branch go AFTER the conditional branch instruction, we must first append the
+     * conditional branch, and then the true branch. So instead of appending the code first, which is wrong, we must
+     * wrap the <em>process</em> which emits the actual code as a function {@link MethodVisitor} {@literal ->} void,
+     * expressed by {@link Consumer} in Java. Same story for the helper methods below.
+     *
+     * @param cond   temp of condition
+     * @param action code (to be generated) of the true branch
+     * @param mv     current method visitor
      */
     private void emitIfThen(Temp cond, Consumer<MethodVisitor> action, MethodVisitor mv) {
         var skip = mv.freshLabel();
@@ -364,7 +388,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *         falseBranch
      *     }
      * </pre>
-     *
+     * <p>
      * Implementation in pseudo code:
      * <pre>
      *     if (cond == 0) branch skip
@@ -374,6 +398,11 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *     falseBranch
      * exit:
      * </pre>
+     *
+     * @param cond        temp of condition
+     * @param trueBranch  code (to be generated) of the true branch
+     * @param falseBranch code (to be generated) of the false branch
+     * @param mv          current method visitor
      */
     private void emitIfThenElse(Temp cond, Consumer<MethodVisitor> trueBranch, Consumer<MethodVisitor> falseBranch,
                                 MethodVisitor mv) {
@@ -394,7 +423,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *         block
      *     }
      * </pre>
-     *
+     * <p>
      * Implementation in pseudo code:
      * <pre>
      * entry:
@@ -404,6 +433,11 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *     branch entry
      * exit:
      * </pre>
+     *
+     * @param test  code (to be generated) of the loop condition
+     * @param block code (to be generated) of the loop body
+     * @param exit  label of loop exit
+     * @param mv    current method visitor
      */
     private void emitWhile(Function<MethodVisitor, Temp> test, Consumer<MethodVisitor> block,
                            Label exit, MethodVisitor mv) {
@@ -417,13 +451,15 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
     }
 
     /**
-     * Emit code for initializing a new array. In memory, an array of length n takes (n + 1) * 4 bytes:
+     * Emit code for initializing a new array.
+     * <p>
+     * In memory, an array of length {@code n} takes {@code (n + 1) * 4} bytes:
      * - the first 4 bytes: length
      * - the rest bytes: data
-     *
+     * <p>
      * Pseudo code:
      * <pre>
-     *     error = length &lt; 0
+     *     error = length {@literal <} 0
      *     if (error) {
      *         throw RuntimeError.NEGATIVE_ARR_SIZE
      *     }
@@ -441,6 +477,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *     ret = (a + 4)
      * </pre>
      *
+     * @param length temp of array length
+     * @param mv     current method visitor
      * @return a temp storing the address of the first element of the array
      */
     private Temp emitArrayInit(Temp length, MethodVisitor mv) {
@@ -476,12 +514,12 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
 
     /**
      * Emit code for computing the address of an array element.
-     *
+     * <p>
      * Pseudo code:
      * <pre>
      *     length = *(array - 4)
-     *     error1 = index lt 0
-     *     error2 = index ge length
+     *     error1 = index {@literal <} 0
+     *     error2 = index {@literal >=} length
      *     error = error1 || error2
      *     if (error) {
      *         throw RuntimeError.ARRAY_INDEX_OUT_OF_BOUND
@@ -491,8 +529,8 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      *     ret = array + offset
      * </pre>
      *
-     * @param array
-     * @param index
+     * @param array temp of the array
+     * @param index temp of the index
      * @return a temp storing the address of the element
      */
     private Temp emitArrayElementAddress(Temp array, Temp index, MethodVisitor mv) {
@@ -517,7 +555,7 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
 
     /**
      * Emit code for testing if an object is an instance of class.
-     *
+     * <p>
      * Pseudo code:
      * <pre>
      *     target = LoadVtbl(clazz)
@@ -531,9 +569,9 @@ public interface TacEmitter extends Visitor<MethodVisitor> {
      * exit:
      * </pre>
      *
-     * @param object
-     * @param clazz
-     * @return
+     * @param object temp of the object/instance
+     * @param clazz  name of the class
+     * @return a temp storing the result (1 for true, and 0 for false)
      */
     private Temp emitClassTest(Temp object, String clazz, MethodVisitor mv) {
         var target = mv.visitLoadVTable(clazz);

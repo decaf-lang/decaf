@@ -18,6 +18,9 @@ import decaf.printing.PrettyScope;
 
 import java.util.Optional;
 
+/**
+ * The typer phase: type check abstract syntax tree and annotate nodes with inferred (and checked) types.
+ */
 public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLitVisited {
 
     public Typer(Config config) {
@@ -66,11 +69,13 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         ctx.close();
     }
 
-    // Statements, need to record
-    // - whether inside loop? i.e. loopLevel > 1?
-    // - does this statement returns value?
-
-    private int _loop_level = 0;
+    /**
+     * To determine if a break statement is legal or not, we need to know if we are inside a loop, i.e.
+     * loopLevel {@literal >} 1?
+     * <p>
+     * Increase this counter when entering a loop, and decrease it when leaving a loop.
+     */
+    private int loopLevel = 0;
 
     @Override
     public void visitBlock(Tree.Block block, ScopeStack ctx) {
@@ -105,16 +110,16 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         checkTestExpr(stmt.cond, ctx);
         stmt.trueBranch.accept(this, ctx);
         stmt.falseBranch.ifPresent(b -> b.accept(this, ctx));
-        // if-stmt returns a value if both branches return
+        // if-stmt returns a value iff both branches return
         stmt.returns = stmt.trueBranch.returns && stmt.falseBranch.isPresent() && stmt.falseBranch.get().returns;
     }
 
     @Override
     public void visitWhile(Tree.While loop, ScopeStack ctx) {
         checkTestExpr(loop.cond, ctx);
-        _loop_level++;
+        loopLevel++;
         loop.body.accept(this, ctx);
-        _loop_level--;
+        loopLevel--;
     }
 
     @Override
@@ -123,17 +128,17 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         loop.init.accept(this, ctx);
         checkTestExpr(loop.cond, ctx);
         loop.update.accept(this, ctx);
-        _loop_level++;
+        loopLevel++;
         for (var stmt : loop.body.stmts) {
             stmt.accept(this, ctx);
         }
-        _loop_level--;
+        loopLevel--;
         ctx.close();
     }
 
     @Override
     public void visitBreak(Tree.Break stmt, ScopeStack ctx) {
-        if (_loop_level == 0) {
+        if (loopLevel == 0) {
             issue(new BreakOutOfLoopError(stmt.pos));
         }
     }
@@ -309,14 +314,14 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         expr.type = ctx.currentClass().type;
     }
 
-    private boolean _allow_class_name_var = false;
+    private boolean allowClassNameVar = false;
 
     @Override
     public void visitVarSel(Tree.VarSel expr, ScopeStack ctx) {
         if (expr.receiver.isEmpty()) {
             // Variable, which should be complicated since a legal variable could refer to a local var,
             // a visible member var, and a class name.
-            var symbol = ctx.lookupBefore(expr.name, localVarDefsPos.orElse(expr.pos));
+            var symbol = ctx.lookupBefore(expr.name, localVarDefPos.orElse(expr.pos));
             if (symbol.isPresent()) {
                 if (symbol.get().isVarSymbol()) {
                     var var = (VarSymbol) symbol.get();
@@ -332,7 +337,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     return;
                 }
 
-                if (symbol.get().isClassSymbol() && _allow_class_name_var) { // special case: a class name
+                if (symbol.get().isClassSymbol() && allowClassNameVar) { // special case: a class name
                     var clazz = (ClassSymbol) symbol.get();
                     expr.type = clazz.type;
                     expr.isClassName = true;
@@ -347,9 +352,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
         // has receiver
         var receiver = expr.receiver.get();
-        _allow_class_name_var = true;
+        allowClassNameVar = true;
         receiver.accept(this, ctx);
-        _allow_class_name_var = false;
+        allowClassNameVar = false;
         var rt = receiver.type;
         expr.type = BuiltInType.ERROR;
 
@@ -413,9 +418,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
         if (expr.receiver.isPresent()) {
             var receiver = expr.receiver.get();
-            _allow_class_name_var = true;
+            allowClassNameVar = true;
             receiver.accept(this, ctx);
-            _allow_class_name_var = false;
+            allowClassNameVar = false;
             rt = receiver.type;
 
             if (receiver instanceof Tree.VarSel) {
@@ -535,9 +540,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         if (stmt.initVal.isEmpty()) return;
 
         var initVal = stmt.initVal.get();
-        localVarDefsPos = Optional.ofNullable(stmt.id.pos);
+        localVarDefPos = Optional.ofNullable(stmt.id.pos);
         initVal.accept(this, ctx);
-        localVarDefsPos = Optional.empty();
+        localVarDefPos = Optional.empty();
         var lt = stmt.symbol.type;
         var rt = initVal.type;
 
@@ -546,6 +551,6 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         }
     }
 
-    // Only usage: check initializers must not use variables being declared
-    private Optional<Pos> localVarDefsPos = Optional.empty();
+    // Only usage: check if an initializer cyclically refers to the declared variable, e.g. var x = x + 1
+    private Optional<Pos> localVarDefPos = Optional.empty();
 }

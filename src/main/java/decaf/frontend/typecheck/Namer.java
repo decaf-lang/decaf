@@ -14,9 +14,14 @@ import decaf.frontend.type.FunType;
 import decaf.frontend.type.Type;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
+/**
+ * The namer phase: resolve all symbols defined in the abstract syntax tree and store them in symbol tables (i.e.
+ * scopes).
+ */
 public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLitVisited {
 
     public Namer(Config config) {
@@ -33,7 +38,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitTopLevel(Tree.TopLevel program, ScopeStack ctx) {
-        var classes = new HashMap<String, Tree.ClassDef>();
+        var classes = new TreeMap<String, Tree.ClassDef>();
 
         // Check conflicting definitions. If any, ignore the redefined ones.
         for (var clazz : program.classes) {
@@ -65,9 +70,9 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         // So far, class inheritance is well-formed, i.e. inheritance relations form a forest of trees. Now we need to
         // resolve every class definition, make sure that every member (variable/method) is well-typed.
         // Realizing that a class type can be used in the definition of a class member, either a variable or a method,
-        // we shall first know all the accessible class types in the program. These types are wrapped into `ClassSymbol`s.
-        // Note that currently, the associated `scope` is empty because member resolving has not started
-        // yet. All class symbols are stored in the global scope.
+        // we shall first know all the accessible class types in the program. These types are wrapped into
+        // `ClassSymbol`s. Note that currently, the associated `scope` is empty because member resolving has not
+        // started yet. All class symbols are stored in the global scope.
         for (var clazz : classes.values()) {
             createClassSymbol(clazz, ctx.global);
         }
@@ -100,8 +105,13 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         }
     }
 
-    private void checkCycles(HashMap<String, Tree.ClassDef> classes) {
-        var visitedTime = new HashMap<String, Integer>();
+    /**
+     * Check if class inheritance form cycle(s).
+     *
+     * @param classes a map between class names to their definitions
+     */
+    private void checkCycles(Map<String, Tree.ClassDef> classes) {
+        var visitedTime = new TreeMap<String, Integer>();
         for (var clazz : classes.values()) {
             visitedTime.put(clazz.name, 0);
         }
@@ -134,6 +144,12 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         }
     }
 
+    /**
+     * Create a class symbol and declare in the global scope.
+     *
+     * @param clazz  class definition
+     * @param global global scope
+     */
     private void createClassSymbol(Tree.ClassDef clazz, GlobalScope global) {
         if (global.containsKey(clazz.name)) return;
 
@@ -265,7 +281,6 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitLocalVarDef(Tree.LocalVarDef def, ScopeStack ctx) {
-        // TODO merge with VarDef, but local should cannot report OverridingVarError!
         var earlier = ctx.findConflict(def.name);
         if (earlier.isPresent()) {
             issue(new DeclConflictError(def.pos, def.name, earlier.get().pos));
