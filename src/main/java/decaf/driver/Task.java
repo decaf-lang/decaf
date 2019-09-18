@@ -4,15 +4,18 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Represents a "task" function that accepts one argument and may produce a result.
+ * Represents a "task" function that accepts one argument and may produce a result. Can be regarded as a "partial"
+ * function.
  */
 public interface Task<T, R> extends Function<T, Optional<R>> {
     /**
-     * Kleisli composition.
+     * Pipe two tasks. This will return a function which does "this" first, if succeeds, continue do {@code next} with
+     * the previous result as input; or else exits and returns {@link Optional#empty}.
+     * <p>
+     * In terms of monad, this is just a Kleisli composition.
      *
      * @param next the next function
-     * @return a function which does `this` function first, if succeeds, continue do `next` with the result;
-     * or else exits and returns failure.
+     * @return the piped (Kleisli-composed) function
      */
     default <V> Task<T, V> then(Task<R, V> next) {
         return t -> this.apply(t).flatMap(next);

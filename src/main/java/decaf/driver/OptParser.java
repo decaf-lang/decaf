@@ -5,6 +5,9 @@ import org.apache.commons.cli.*;
 import java.io.FileNotFoundException;
 import java.util.Optional;
 
+/**
+ * Command line option parser.
+ */
 public class OptParser {
     static final String OUTPUT = "o";
     final Option output = Option

@@ -3,15 +3,18 @@ package decaf.driver;
 import decaf.backend.asm.Asm;
 import decaf.backend.asm.mips.MipsAsmEmitter;
 import decaf.backend.reg.BruteRegAlloc;
-import decaf.lowlevel.tac.TAC;
 import decaf.frontend.parsing.Parser;
 import decaf.frontend.tacgen.TacGen;
 import decaf.frontend.tree.Tree;
 import decaf.frontend.typecheck.Namer;
 import decaf.frontend.typecheck.Typer;
+import decaf.lowlevel.tac.TAC;
 
 import java.io.InputStream;
 
+/**
+ * Supported tasks of Decaf compiler.
+ */
 public class TaskFactory {
     private final Config config;
 

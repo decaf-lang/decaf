@@ -7,20 +7,43 @@ import org.apache.commons.io.FilenameUtils;
 import java.io.*;
 import java.nio.file.Path;
 
+/**
+ * Compiler configuration.
+ */
 public class Config {
+
+    /**
+     * Target/task. Options: PA1, PA2, PA3, PA4, PA5.
+     */
     public enum Target {
         PA1, PA2, PA3, PA4, PA5
     }
 
+    /**
+     * Input Decaf source.
+     */
     public final FileInputStream source;
 
+    /**
+     * Input Decaf source file path.
+     */
     public final Path sourcePath;
 
-    // Warning: never close this since it could be stdout.
+    /**
+     * Output (PA1, PA2, PA3).
+     * <p>
+     * Warning: NEVER close this because it could be stdout.
+     */
     public final OutputStream output;
 
+    /**
+     * Output folder for TAC and assembly code (PA3, PA4, PA5).
+     */
     public final Path dstPath;
 
+    /**
+     * Target/task.
+     */
     public final Target target;
 
     private Config(FileInputStream source, Path sourcePath, OutputStream output, Path dstPath, Target target) {
@@ -31,9 +54,24 @@ public class Config {
         this.target = target;
     }
 
+    /**
+     * Path of present working directory.
+     */
     public static Path PWD = new File(System.getProperty("user.dir")).toPath();
+
+    /**
+     * Stdout.
+     */
     public static OutputStream STDOUT = System.out;
 
+    /**
+     * Parse configuration from command line.
+     *
+     * @param cli command line
+     * @return configuration
+     * @throws ParseException        if parse or validation fails
+     * @throws FileNotFoundException if cannot locate a file
+     */
     public static Config fromCLI(CommandLine cli) throws ParseException, FileNotFoundException {
         if (cli.getArgList().isEmpty()) {
             throw new ParseException("No input files");
@@ -65,10 +103,24 @@ public class Config {
         return new Config(source, sourcePath, output, dstPath, target);
     }
 
+    /**
+     * Get just the base name, without extension, of the input Decaf source.
+     * <p>
+     * Example: the base name of {@code myFolder/blackjack.decaf} is {@code blackjack}.
+     *
+     * @return base name
+     */
     public String getSourceBaseName() {
         return FilenameUtils.getBaseName(sourcePath.getFileName().toString());
     }
 
+    /**
+     * Parse target from string.
+     *
+     * @param target string representation of the target
+     * @return target
+     * @throws ParseException if input is invalid
+     */
     private static Target parseTarget(String target) throws ParseException {
         return switch (target) {
             case "PA1" -> Target.PA1;
