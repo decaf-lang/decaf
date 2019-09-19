@@ -1,6 +1,5 @@
 package decaf.printing;
 
-import decaf.frontend.tree.Tree;
 import decaf.frontend.tree.TreeNode;
 
 import java.util.List;
@@ -15,9 +14,6 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
     private void prettyElement(Object element) {
         if (element == null) {
             printer.println("<null: here is a bug>");
-        } else if (element instanceof Tree.Id || element instanceof Tree.Modifiers) {
-            var str = element.toString();
-            if (!str.isEmpty()) printer.println(str);
         } else if (element instanceof TreeNode) {
             pretty((TreeNode) element);
         } else if (element instanceof Optional) {

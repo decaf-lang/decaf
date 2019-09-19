@@ -8,8 +8,6 @@ import decaf.frontend.type.FunType;
 
 /**
  * Method symbol, representing a method definition.
- * <p>
- * TODO: change to FunSymbol in future?
  */
 public final class MethodSymbol extends Symbol {
 

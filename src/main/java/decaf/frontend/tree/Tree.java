@@ -25,7 +25,7 @@ public abstract class Tree {
         T_INT, T_BOOL, T_STRING, T_VOID, T_CLASS, T_ARRAY,
         LOCAL_VAR_DEF, BLOCK, ASSIGN, EXPR_EVAL, SKIP, IF, WHILE, FOR, BREAK, RETURN, PRINT,
         INT_LIT, BOOL_LIT, STRING_LIT, NULL_LIT, VAR_SEL, INDEX_SEL, CALL,
-        THIS, UNARY_EXPR, BINARY_EXPR, READ_INT, READ_LINE, NEW_CLASS, NEW_ARRAY, CLASS_TEST, CLASS_CAST, ID, MODIFIERS
+        THIS, UNARY_EXPR, BINARY_EXPR, READ_INT, READ_LINE, NEW_CLASS, NEW_ARRAY, CLASS_TEST, CLASS_CAST
     }
 
     /**
@@ -1511,36 +1511,16 @@ public abstract class Tree {
 
     /**
      * An identifier.
-     * <p>
-     * TODO it seems not necessary to have Id extends TreeNode?
      */
-    public static class Id extends TreeNode {
-        // Tree element
+    public static class Id {
         public final String name;
 
+        public final Pos pos;
+
         public Id(String name, Pos pos) {
-            super(Kind.ID, "Id", pos);
             this.name = name;
+            this.pos = pos;
         }
-
-        @Override
-        public Object treeElementAt(int index) {
-            return switch (index) {
-                case 0 -> name;
-                default -> throw new IndexOutOfBoundsException(index);
-            };
-        }
-
-        @Override
-        public int treeArity() {
-            return 1;
-        }
-
-        @Override
-        public <C> void accept(Visitor<C> v, C ctx) {
-            v.visitId(this, ctx);
-        }
-
 
         @Override
         public String toString() {
@@ -1556,11 +1536,11 @@ public abstract class Tree {
      * <p>
      * In particular, the original Decaf language only has one modifier -- static. If a method is static, then the
      * lowest bit is set.
-     * <p>
-     * TODO it seems not necessary to have Modifiers extends TreeNode?
      */
-    public static class Modifiers extends TreeNode {
+    public static class Modifiers {
         public final int code;
+
+        public final Pos pos;
 
         private List<String> flags;
 
@@ -1568,8 +1548,8 @@ public abstract class Tree {
         public static final int STATIC = 1;
 
         public Modifiers(int code, Pos pos) {
-            super(Kind.MODIFIERS, "Modifiers", pos);
             this.code = code;
+            this.pos = pos;
             flags = new ArrayList<>();
             if (isStatic()) flags.add("STATIC");
         }
@@ -1580,21 +1560,6 @@ public abstract class Tree {
 
         public boolean isStatic() {
             return (code & 1) == 1;
-        }
-
-        @Override
-        public Object treeElementAt(int index) {
-            return toString();
-        }
-
-        @Override
-        public int treeArity() {
-            return 1;
-        }
-
-        @Override
-        public <C> void accept(Visitor<C> v, C ctx) {
-            v.visitModifiers(this, ctx);
         }
 
         @Override
