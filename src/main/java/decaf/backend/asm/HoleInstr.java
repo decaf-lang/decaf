@@ -11,7 +11,7 @@ import decaf.lowlevel.instr.Temp;
  */
 public class HoleInstr extends PseudoInstr {
     private HoleInstr(String str) {
-        super(Kind.SPECIAL, new Temp[]{}, new Temp[]{}, null);
+        super(new Temp[]{}, new Temp[]{});
         this.str = str;
     }
 

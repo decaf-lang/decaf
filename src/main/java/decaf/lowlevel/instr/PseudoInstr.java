@@ -20,11 +20,10 @@ public abstract class PseudoInstr {
      *     <li>{@code JMP:} a jump instruction</li>
      *     <li>{@code COND_JMP:} a conditional jump instruction</li>
      *     <li>{@code RET:} a return instruction</li>
-     *     <li>{@code SPECIAL:} a special instruction</li>
      * </ul>
      */
     public enum Kind {
-        LABEL, SEQ, JMP, COND_JMP, RET, SPECIAL
+        LABEL, SEQ, JMP, COND_JMP, RET
     }
 
     public final Kind kind;
@@ -121,17 +120,12 @@ public abstract class PseudoInstr {
         return kind.equals(Kind.LABEL);
     }
 
-    // TODO: not very consistent design
     public boolean isSequential() {
-        return kind.equals(Kind.SEQ) || kind.equals(Kind.SPECIAL);
+        return kind.equals(Kind.SEQ);
     }
 
     public boolean isReturn() {
         return kind.equals(Kind.RET);
-    }
-
-    public boolean isSpecial() {
-        return kind.equals(Kind.SPECIAL);
     }
 
     public abstract String toString();

@@ -176,8 +176,6 @@ abstract class AbstractParser {
 
     /**
      * Helper method used by the concrete parser: report error.
-     * <p>
-     * TODO: since the msg can only be "syntax error" (?), why not remove this arg?
      *
      * @param msg the error message
      */

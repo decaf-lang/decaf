@@ -86,7 +86,7 @@ public final class BruteRegAlloc extends RegAlloc {
         for (var loc : bb.seqLocs()) {
             // Handle special instructions on caller save/restore.
 
-            if (loc.instr.isSpecial()) {
+            if (loc.instr instanceof HoleInstr) {
                 if (loc.instr.equals(HoleInstr.CallerSave)) {
                     for (var reg : emitter.callerSaveRegs) {
                         if (reg.occupied && loc.liveOut.contains(reg.temp)) {
