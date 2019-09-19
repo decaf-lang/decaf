@@ -67,11 +67,10 @@ public final class Simulator {
                 } // else: memo, ignore
             }
 
-            // Force this function to return if the last instruction is not RETURN
-            // TODO: let code generator ensure this!
+            // Check if the last instruction is RETURN
             if (!_instrs.lastElement().isReturn()) {
-                _instrs.add(new TacInstr.Return());
-                addr++;
+                throw new Error(String.format("In TAC function %s: the last instruction must be return",
+                        func.entry.prettyString()));
             }
         }
 
@@ -96,8 +95,7 @@ public final class Simulator {
 
         // Initialize call stack and push the frame of main function
         if (!_label_to_function.containsKey(FuncLabel.MAIN_LABEL.name)) {
-            System.err.println("Main function not found.");
-            return;
+            throw new Error("No legal main function found");
         }
 
         var frame = new Frame(_label_to_function.get(FuncLabel.MAIN_LABEL.name));
@@ -111,8 +109,7 @@ public final class Simulator {
 
         while (!_call_stack.isEmpty()) {
             if (count >= 100000) {
-                System.err.println("Max instruction limitation 10,0000 exceeds, maybe your program cannot terminate?");
-                return;
+                throw new Error("Max instruction limitation 10,0000 exceeds, maybe your program cannot terminate?");
             }
 
             if (_halt) {
@@ -461,9 +458,14 @@ public final class Simulator {
          * @return the starting address of the allocated memory block
          */
         public int alloc(int size) {
-            if (size < 0 || size % 4 != 0) {
-                throw new Error("bad alloc size = " + size);
+            if (size < 0) {
+                throw new Error("Memory allocation error: negative size " + size);
             }
+
+            if (size % 4 != 0) {
+                size += 4 - (size % 4);
+            }
+
             size /= 4;
             Block block = new Block();
             block.start = currentSize;
@@ -474,15 +476,22 @@ public final class Simulator {
         }
 
         private Block checkHeapAccess(int base, int offset) {
-            if (base < 0 || base % 4 != 0 || offset % 4 != 0) {
-                throw new Error("bad memory access base = " + base
-                        + " offset = " + offset);
+            if (base <= 0) {
+                throw new Error("Null pointer exception");
             }
+
+            if (base % 4 != 0) {
+                throw new Error("Base address not aligned: " + base);
+            }
+
+            if (offset % 4 != 0) {
+                throw new Error("Offset not aligned: " + base);
+            }
+
             base /= 4;
             offset /= 4;
             if (base >= currentSize) {
-                throw new Error("memory access base = " + base * 4
-                        + " out of bounds");
+                throw new Error(String.format("Memory access out of bound %d", base * 4));
             }
             Block temp = new Block();
             temp.start = base;
@@ -490,8 +499,7 @@ public final class Simulator {
             Block block = index >= 0 ? heap.get(index) : heap.get(-index - 2);
             int accessIndex = base - block.start + offset;
             if (accessIndex < 0 || accessIndex >= block.mem.length) {
-                throw new Error("memory access base = " + base * 4
-                        + " offset = " + offset * 4 + " out of bounds");
+                throw new Error(String.format("Memory access out of bound %d", base * 4 + offset * 4));
             }
             return block;
         }
@@ -507,9 +515,9 @@ public final class Simulator {
         }
     }
 
-    class Error extends RuntimeException {
-        public Error(String msg) {
-
+    private static class Error extends RuntimeException {
+        Error(String msg) {
+            super("In simulator: " + msg);
         }
     }
 }
