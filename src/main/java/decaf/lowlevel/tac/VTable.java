@@ -60,17 +60,16 @@ public class VTable {
     }
 
     public void printTo(PrintWriter pw) {
-        pw.println("VTABLE(" + label.prettyString() + ") {");
+        pw.println(label.prettyString() + ":");
         if (parent.isPresent()) {
             pw.println("    " + parent.get().label.prettyString());
         } else {
-            pw.println("    null");
+            pw.println("    NULL");
         }
         pw.println("    \"" + className + "\"");
         for (var l : memberMethods) {
             pw.println("    " + l.prettyString());
         }
-        pw.println("}");
         pw.println();
     }
 }

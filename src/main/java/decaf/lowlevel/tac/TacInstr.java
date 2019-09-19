@@ -1,5 +1,6 @@
 package decaf.lowlevel.tac;
 
+import decaf.lowlevel.StringUtils;
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.instr.Temp;
 import decaf.lowlevel.label.Label;
@@ -207,7 +208,7 @@ public abstract class TacInstr extends PseudoInstr {
 
         @Override
         public String toString() {
-            return String.format("%s = %s", dst, value);
+            return String.format("%s = %s", dst, StringUtils.quote(value));
         }
     }
 
@@ -319,7 +320,7 @@ public abstract class TacInstr extends PseudoInstr {
 
         @Override
         public String toString() {
-            return String.format("branch %s", target);
+            return String.format("branch %s", target.prettyString());
         }
     }
 
@@ -357,7 +358,7 @@ public abstract class TacInstr extends PseudoInstr {
                 case BEQZ -> "== 0";
                 case BNEZ -> "!= 0";
             };
-            return String.format("if (%s %s) branch %s", cond, opStr, target);
+            return String.format("if (%s %s) branch %s", cond, opStr, target.prettyString());
         }
     }
 
@@ -387,7 +388,10 @@ public abstract class TacInstr extends PseudoInstr {
 
         @Override
         public String toString() {
-            return String.format("return %s", value.map(Temp::toString).orElse("<empty>"));
+            var sb = new StringBuilder();
+            sb.append("return");
+            value.ifPresent(v -> sb.append(" ").append(v));
+            return sb.toString();
         }
     }
 
@@ -446,11 +450,8 @@ public abstract class TacInstr extends PseudoInstr {
         @Override
         public String toString() {
             var sb = new StringBuffer();
-            dst.ifPresent(d -> {
-                sb.append(d);
-                sb.append(" = ");
-            });
-            sb.append(entry);
+            dst.ifPresent(d -> sb.append(d).append(" = "));
+            sb.append("call ").append(entry);
             return sb.toString();
         }
     }
@@ -497,11 +498,8 @@ public abstract class TacInstr extends PseudoInstr {
         @Override
         public String toString() {
             var sb = new StringBuffer();
-            dst.ifPresent(d -> {
-                sb.append(d);
-                sb.append(" = ");
-            });
-            sb.append(entry);
+            dst.ifPresent(d -> sb.append(d).append(" = "));
+            sb.append("call ").append(entry.prettyString());
             return sb.toString();
         }
     }
@@ -591,7 +589,7 @@ public abstract class TacInstr extends PseudoInstr {
 
         @Override
         public String toString() {
-            return String.format("%s:", label);
+            return String.format("%s:", label.prettyString());
         }
     }
 }

@@ -4,7 +4,7 @@ package decaf.frontend.parsing;
 
 import decaf.frontend.tree.Pos;
 import decaf.driver.error.*;
-import decaf.utils.MiscUtils;
+import decaf.lowlevel.StringUtils;
 
 %%
 %public

@@ -9,7 +9,7 @@ import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.label.IntrinsicLabel;
 import decaf.lowlevel.label.Label;
 import decaf.lowlevel.tac.*;
-import decaf.utils.MiscUtils;
+import decaf.lowlevel.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -103,7 +103,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
         var i = 0;
         for (var str : pool) {
             printer.printLabel(new Label(STR_PREFIX + i));
-            printer.println(".asciiz %s", MiscUtils.quote(str));
+            printer.println(".asciiz %s", StringUtils.quote(str));
             i++;
         }
         printer.println("# end of constant strings");

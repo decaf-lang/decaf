@@ -1,11 +1,11 @@
-package decaf.utils;
+package decaf.lowlevel;
 
-public final class MiscUtils {
+public final class StringUtils {
     /**
-     * 返回带转义符格式的字符串
+     * Quote a unquoted string.
      *
-     * @param str 不带转义符的字符串（即内部表示）
-     * @return 带转义符的字符串（并加上双引号）
+     * @param str unquoted string
+     * @return quoted string
      */
     public static String quote(String str) {
         StringBuilder sb = new StringBuilder();

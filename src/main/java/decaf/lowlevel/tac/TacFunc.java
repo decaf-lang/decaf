@@ -33,7 +33,6 @@ public class TacFunc implements Comparable<TacFunc> {
     }
 
     public void printTo(PrintWriter pw) {
-        pw.println("FUNCTION(" + entry.prettyString() + ") {");
         for (var instr : instrSeq) {
             if (instr.isLabel()) {
                 pw.println(instr);
@@ -41,7 +40,6 @@ public class TacFunc implements Comparable<TacFunc> {
                 pw.println("    " + instr);
             }
         }
-        pw.println("}");
         pw.println();
     }
 

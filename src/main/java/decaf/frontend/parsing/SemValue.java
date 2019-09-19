@@ -2,7 +2,7 @@ package decaf.frontend.parsing;
 
 import decaf.frontend.tree.Pos;
 import decaf.frontend.tree.Tree;
-import decaf.utils.MiscUtils;
+import decaf.lowlevel.StringUtils;
 
 import java.util.List;
 
@@ -113,7 +113,7 @@ class SemValue {
                 case Tokens.STATIC -> "keyword : static";
                 case Tokens.INT_LIT -> "int literal : " + intVal;
                 case Tokens.BOOL_LIT -> "bool literal : " + boolVal;
-                case Tokens.STRING_LIT -> "string literal : " + MiscUtils.quote(strVal);
+                case Tokens.STRING_LIT -> "string literal : " + StringUtils.quote(strVal);
                 case Tokens.IDENTIFIER -> "identifier: " + strVal;
                 case Tokens.AND -> "operator : &&";
                 case Tokens.EQUAL -> "operator : ==";
