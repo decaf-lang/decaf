@@ -1,7 +1,7 @@
 package decaf.lowlevel;
 
-import decaf.lowlevel.label.Label;
 import decaf.lowlevel.instr.NativeInstr;
+import decaf.lowlevel.label.Label;
 
 /**
  * Assembly code pretty printer.

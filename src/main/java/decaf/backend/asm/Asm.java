@@ -5,7 +5,7 @@ import decaf.backend.dataflow.LivenessAnalyzer;
 import decaf.backend.reg.RegAlloc;
 import decaf.driver.Config;
 import decaf.driver.Phase;
-import decaf.lowlevel.tac.TAC;
+import decaf.lowlevel.tac.TacProg;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -13,7 +13,7 @@ import java.io.PrintWriter;
 /**
  * The assembly code generation phase: translate a TAC program to assembly code.
  */
-public class Asm extends Phase<TAC.Prog, String> {
+public class Asm extends Phase<TacProg, String> {
     /**
      * Helper assembly code emitter.
      */
@@ -31,7 +31,7 @@ public class Asm extends Phase<TAC.Prog, String> {
     }
 
     @Override
-    public String transform(TAC.Prog prog) {
+    public String transform(TacProg prog) {
         var analyzer = new LivenessAnalyzer<>();
 
         for (var vtbl : prog.vtables) {

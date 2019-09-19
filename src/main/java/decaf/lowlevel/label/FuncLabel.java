@@ -20,20 +20,29 @@ public class FuncLabel extends Label {
         this.method = method;
     }
 
-    private FuncLabel() {
-        super(Kind.FUNC, "main");
-        this.clazz = "Main";
-        this.method = "main";
-    }
-
-    public static FuncLabel MAIN_LABEL = new FuncLabel();
-
+    @Override
     public String prettyString() {
-        return clazz + "." + method;
+        return String.format("FUNCTION<%s.%s>", clazz, method);
     }
 
     @Override
     public boolean isFunc() {
         return true;
     }
+
+    private FuncLabel() {
+        super(Kind.FUNC, "main");
+        this.clazz = "Main";
+        this.method = "main";
+    }
+
+    /**
+     * Special function label: main entry.
+     */
+    public static FuncLabel MAIN_LABEL = new FuncLabel() {
+        @Override
+        public String prettyString() {
+            return name;
+        }
+    };
 }

@@ -4,9 +4,9 @@ import decaf.frontend.tree.Pos;
 
 /**
  * Lexer error.
- *
+ * <p>
  * Decaf only support the following escape characters: \n, \t, \r, \", and \\. Others like \a are illegal.
- *
+ * <p>
  * Example:
  * <pre>
  *   illegal escape character

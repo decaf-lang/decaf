@@ -18,4 +18,9 @@ public class VTableLabel extends Label {
     public boolean isVTable() {
         return true;
     }
+
+    @Override
+    public String prettyString() {
+        return String.format("VTABLE<%s>", clazz);
+    }
 }

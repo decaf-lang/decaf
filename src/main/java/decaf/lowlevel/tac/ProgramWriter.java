@@ -69,8 +69,8 @@ public class ProgramWriter {
      *
      * @return TAC program
      */
-    public TAC.Prog visitEnd() {
-        return new TAC.Prog(ctx.getVTables(), ctx.funcs);
+    public TacProg visitEnd() {
+        return new TacProg(ctx.getVTables(), ctx.funcs);
     }
 
     private HashMap<String, ClassInfo> classes = new HashMap<>();
@@ -105,7 +105,7 @@ public class ProgramWriter {
             buildVTableFor(classes.get(c));
             return ctx.getVTable(c);
         });
-        var vtbl = new TAC.VTable(clazz.name, parent);
+        var vtbl = new VTable(clazz.name, parent);
 
         // Member methods consist of ones that are:
         // 1. inherited from super class
@@ -170,7 +170,7 @@ public class ProgramWriter {
             return new Label(name);
         }
 
-        TAC.VTable getVTable(String clazz) {
+        VTable getVTable(String clazz) {
             return vtables.get(clazz);
         }
 
@@ -178,11 +178,11 @@ public class ProgramWriter {
             return vtables.containsKey(clazz);
         }
 
-        void putVTable(TAC.VTable vtbl) {
+        void putVTable(VTable vtbl) {
             vtables.put(vtbl.className, vtbl);
         }
 
-        List<TAC.VTable> getVTables() {
+        List<VTable> getVTables() {
             return new ArrayList<>(vtables.values());
         }
 
@@ -190,7 +190,7 @@ public class ProgramWriter {
             return offsets.get(clazz + "." + member);
         }
 
-        void putOffsets(TAC.VTable vtbl) {
+        void putOffsets(VTable vtbl) {
             var prefix = vtbl.className + ".";
 
             var offset = 8;
@@ -208,11 +208,11 @@ public class ProgramWriter {
 
         private Map<String, FuncLabel> labels = new TreeMap<>();
 
-        private Map<String, TAC.VTable> vtables = new TreeMap<>();
+        private Map<String, VTable> vtables = new TreeMap<>();
 
         private Map<String, Integer> offsets = new TreeMap<>();
 
-        List<TAC.Func> funcs = new ArrayList<>();
+        List<TacFunc> funcs = new ArrayList<>();
 
         private int nextTempLabelId = 1;
     }

@@ -8,10 +8,7 @@ import decaf.lowlevel.Mips;
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.label.IntrinsicLabel;
 import decaf.lowlevel.label.Label;
-import decaf.lowlevel.tac.Intrinsic;
-import decaf.lowlevel.tac.StringPool;
-import decaf.lowlevel.tac.TAC;
-import decaf.lowlevel.tac.TacInstr;
+import decaf.lowlevel.tac.*;
 import decaf.utils.MiscUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -38,7 +35,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
     }
 
     @Override
-    public void emitVTable(TAC.VTable vtbl) {
+    public void emitVTable(VTable vtbl) {
         // vtable begin
         printer.println(".data");
         printer.println(".align 2");
@@ -64,7 +61,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
     }
 
     @Override
-    public Pair<List<PseudoInstr>, SubroutineInfo> selectInstr(TAC.Func func) {
+    public Pair<List<PseudoInstr>, SubroutineInfo> selectInstr(TacFunc func) {
         var selector = new MipsInstrSelector(func.entry);
         for (var instr : func.getInstrSeq()) {
             instr.accept(selector);

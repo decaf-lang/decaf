@@ -31,7 +31,7 @@ public final class Simulator {
      *
      * @param program TAC program
      */
-    public void execute(TAC.Prog program) {
+    public void execute(TacProg program) {
         // Initialize
         _memory = new Memory();
         _string_pool = new StringPool();
@@ -44,7 +44,7 @@ public final class Simulator {
         _label_to_function = new TreeMap<>();
 
         // Allocate vtables
-        for (TAC.VTable vtbl : program.vtables) {
+        for (VTable vtbl : program.vtables) {
             var addr = _memory.alloc(vtbl.getSize());
             _vtable_to_addr.put(vtbl.label.name, addr);
         }
@@ -76,7 +76,7 @@ public final class Simulator {
         }
 
         // Fill in vtables
-        for (TAC.VTable vtbl : program.vtables) {
+        for (VTable vtbl : program.vtables) {
             addr = _vtable_to_addr.get(vtbl.label.name);
             var offset = 0;
 
@@ -158,12 +158,12 @@ public final class Simulator {
     /**
      * Look up a function by its entry label.
      */
-    private Map<String, TAC.Func> _label_to_function;
+    private Map<String, TacFunc> _label_to_function;
 
     /**
      * Look up a function by the address of its entry instruction.
      */
-    private Map<Integer, TAC.Func> _addr_to_function;
+    private Map<Integer, TacFunc> _addr_to_function;
 
     /**
      * Call stack, consists of frames.
@@ -221,7 +221,7 @@ public final class Simulator {
             _actual_args.clear(); // it will save args for future calls
         }
 
-        Frame(TAC.Func func) {
+        Frame(TacFunc func) {
             this(func.entry, func.getUsedTempCount());
         }
     }
@@ -462,7 +462,7 @@ public final class Simulator {
          */
         public int alloc(int size) {
             if (size < 0 || size % 4 != 0) {
-                throw new ExecError("bad alloc size = " + size);
+                throw new Error("bad alloc size = " + size);
             }
             size /= 4;
             Block block = new Block();
@@ -475,13 +475,13 @@ public final class Simulator {
 
         private Block checkHeapAccess(int base, int offset) {
             if (base < 0 || base % 4 != 0 || offset % 4 != 0) {
-                throw new ExecError("bad memory access base = " + base
+                throw new Error("bad memory access base = " + base
                         + " offset = " + offset);
             }
             base /= 4;
             offset /= 4;
             if (base >= currentSize) {
-                throw new ExecError("memory access base = " + base * 4
+                throw new Error("memory access base = " + base * 4
                         + " out of bounds");
             }
             Block temp = new Block();
@@ -490,7 +490,7 @@ public final class Simulator {
             Block block = index >= 0 ? heap.get(index) : heap.get(-index - 2);
             int accessIndex = base - block.start + offset;
             if (accessIndex < 0 || accessIndex >= block.mem.length) {
-                throw new ExecError("memory access base = " + base * 4
+                throw new Error("memory access base = " + base * 4
                         + " offset = " + offset * 4 + " out of bounds");
             }
             return block;
@@ -504,6 +504,12 @@ public final class Simulator {
         public void store(int value, int base, int offset) {
             Block block = checkHeapAccess(base, offset);
             block.mem[base / 4 - block.start + offset / 4] = value;
+        }
+    }
+
+    class Error extends RuntimeException {
+        public Error(String msg) {
+
         }
     }
 }

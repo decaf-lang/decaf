@@ -12,14 +12,14 @@ import java.util.ArrayList;
 /**
  * The tacgen phase: translate an abstract syntax tree to TAC IR.
  */
-public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter {
+public class TacGen extends Phase<Tree.TopLevel, TacProg> implements TacEmitter {
 
     public TacGen(Config config) {
         super("tacgen", config);
     }
 
     @Override
-    public TAC.Prog transform(Tree.TopLevel tree) {
+    public TacProg transform(Tree.TopLevel tree) {
         // Create class info.
         var info = new ArrayList<ClassInfo>();
         for (var clazz : tree.classes) {
@@ -61,7 +61,7 @@ public class TacGen extends Phase<Tree.TopLevel, TAC.Prog> implements TacEmitter
     }
 
     @Override
-    public void onSucceed(TAC.Prog program) {
+    public void onSucceed(TacProg program) {
         if (config.target.equals(Config.Target.PA3)) {
             // First dump the tac program to file,
             var path = config.dstPath.resolve(config.getSourceBaseName() + ".tac");

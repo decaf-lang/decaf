@@ -138,9 +138,9 @@ public abstract class TacInstr extends PseudoInstr {
      */
     public static class LoadVTbl extends TacInstr {
         public final Temp dst;
-        public final TAC.VTable vtbl;
+        public final VTable vtbl;
 
-        public LoadVTbl(Temp dst, TAC.VTable vtbl) {
+        public LoadVTbl(Temp dst, VTable vtbl) {
             super(new Temp[]{dst}, new Temp[]{});
             this.dst = dst;
             this.vtbl = vtbl;

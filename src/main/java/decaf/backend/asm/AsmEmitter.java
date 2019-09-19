@@ -3,7 +3,8 @@ package decaf.backend.asm;
 import decaf.lowlevel.AsmCodePrinter;
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.instr.Reg;
-import decaf.lowlevel.tac.TAC;
+import decaf.lowlevel.tac.TacFunc;
+import decaf.lowlevel.tac.VTable;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public abstract class AsmEmitter {
      *
      * @param vtbl virtual table
      */
-    public abstract void emitVTable(TAC.VTable vtbl);
+    public abstract void emitVTable(VTable vtbl);
 
     /**
      * Instruction selection for a TAC function.
@@ -49,7 +50,7 @@ public abstract class AsmEmitter {
      * @param func TAC function
      * @return a pair of the instruction sequence, and the basic info of the function
      */
-    public abstract Pair<List<PseudoInstr>, SubroutineInfo> selectInstr(TAC.Func func);
+    public abstract Pair<List<PseudoInstr>, SubroutineInfo> selectInstr(TacFunc func);
 
     /**
      * Call this when all virtual tables are done, and you want to emit code for subroutines.

@@ -415,7 +415,7 @@ public class FuncVisitor {
 
     FuncVisitor(FuncLabel entry, int numArgs, ProgramWriter.Context ctx) {
         this.ctx = ctx;
-        func = new TAC.Func(entry, numArgs);
+        func = new TacFunc(entry, numArgs);
         visitLabel(entry);
         argsTemps = new Temp[numArgs];
         for (int i = 0; i < numArgs; i++) {
@@ -423,7 +423,7 @@ public class FuncVisitor {
         }
     }
 
-    private TAC.Func func;
+    private TacFunc func;
 
     private ProgramWriter.Context ctx;
 

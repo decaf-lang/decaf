@@ -25,7 +25,7 @@ public class Label implements Comparable<Label> {
     public final Kind kind;
 
     /**
-     * Name, should be the bare representation, NOT the pretty one (if it could be more pretty).
+     * Name, should be the bare representation.
      */
     public final String name;
 
@@ -50,8 +50,22 @@ public class Label implements Comparable<Label> {
         return kind.equals(Kind.INTRINSIC);
     }
 
+    /**
+     * Bare representation of this label, may differ from {@link #prettyString}.
+     *
+     * @return bare representation
+     */
     @Override
     public String toString() {
+        return name;
+    }
+
+    /**
+     * Pretty representation of this label.
+     *
+     * @return pretty representation
+     */
+    public String prettyString() {
         return name;
     }
 
