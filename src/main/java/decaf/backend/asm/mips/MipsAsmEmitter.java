@@ -5,11 +5,11 @@ import decaf.backend.asm.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.lowlevel.Mips;
+import decaf.lowlevel.StringUtils;
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.label.IntrinsicLabel;
 import decaf.lowlevel.label.Label;
 import decaf.lowlevel.tac.*;
-import decaf.lowlevel.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -85,13 +85,13 @@ public final class MipsAsmEmitter extends AsmEmitter {
     public String emitEnd() {
         if (!usedIntrinsics.isEmpty()) {
             printer.println("# start of intrinsics");
-            if (usedIntrinsics.contains(Intrinsic.READ_LINE)) {
+            if (usedIntrinsics.contains(Intrinsic.READ_LINE.entry)) {
                 loadReadLine();
             }
-            if (usedIntrinsics.contains(Intrinsic.STRING_EQUAL)) {
+            if (usedIntrinsics.contains(Intrinsic.STRING_EQUAL.entry)) {
                 loadStringEqual();
             }
-            if (usedIntrinsics.contains(Intrinsic.PRINT_BOOL)) {
+            if (usedIntrinsics.contains(Intrinsic.PRINT_BOOL.entry)) {
                 loadPrintBool();
             }
             printer.println("# end of intrinsics");
@@ -302,24 +302,16 @@ public final class MipsAsmEmitter extends AsmEmitter {
         public void visitDirectCall(TacInstr.DirectCall instr) {
             hasCall = true;
 
-            if (instr.label.isIntrinsic()) { // special case: inline or embed the code (no registers need be saved)
-                var opcode = ((IntrinsicLabel) instr.label).opcode;
-                switch (opcode) {
+            if (instr.entry.isIntrinsic()) { // special case: inline or embed the code (no registers need be saved)
+                var il = (IntrinsicLabel) instr.entry;
+                switch (il.opcode) {
                     case ALLOCATE -> {
                         seq.add(new Mips.LoadImm(Mips.V0, 9)); // memory allocation
                         seq.add(new Mips.Syscall());
                     }
-                    case READ_LINE -> {
-                        seq.add(new Mips.JumpAndLink(Intrinsic.READ_LINE.entry));
-                        usedIntrinsics.add(Intrinsic.READ_LINE);
-                    }
                     case READ_INT -> {
                         seq.add(new Mips.LoadImm(Mips.V0, 5)); // read integer
                         seq.add(new Mips.Syscall());
-                    }
-                    case STRING_EQUAL -> {
-                        seq.add(new Mips.JumpAndLink(Intrinsic.STRING_EQUAL.entry));
-                        usedIntrinsics.add(Intrinsic.STRING_EQUAL);
                     }
                     case PRINT_INT -> {
                         seq.add(new Mips.LoadImm(Mips.V0, 1)); // print integer
@@ -329,13 +321,13 @@ public final class MipsAsmEmitter extends AsmEmitter {
                         seq.add(new Mips.LoadImm(Mips.V0, 4)); // print string
                         seq.add(new Mips.Syscall());
                     }
-                    case PRINT_BOOL -> {
-                        seq.add(new Mips.JumpAndLink(Intrinsic.PRINT_BOOL.entry));
-                        usedIntrinsics.add(Intrinsic.PRINT_BOOL);
-                    }
                     case HALT -> {
                         seq.add(new Mips.LoadImm(Mips.V0, 10)); // exit
                         seq.add(new Mips.Syscall());
+                    }
+                    default -> {
+                        seq.add(new Mips.JumpAndLink(il));
+                        usedIntrinsics.add(il);
                     }
                 }
             } else {  // normal call
@@ -375,5 +367,5 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
     private StringPool pool = new StringPool();
 
-    private Set<Intrinsic> usedIntrinsics = new TreeSet<>();
+    private Set<IntrinsicLabel> usedIntrinsics = new TreeSet<>();
 }

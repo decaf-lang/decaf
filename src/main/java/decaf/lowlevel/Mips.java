@@ -70,7 +70,10 @@ public class Mips {
 
     private static String format(String op, String fmt, Object... args) {
         var sb = new StringBuilder();
-        sb.append(op);
+        sb.append(op).append(' ');
+        for (var i = 0; i < 7 - op.length(); i++) {
+            sb.append(' ');
+        }
         sb.append(String.format(fmt, args));
         return sb.toString();
     }

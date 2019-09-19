@@ -104,10 +104,11 @@ public abstract class PseudoInstr {
 
         this.dsts = dstRegs;
         this.srcs = srcRegs;
+        var str = toString();
         var nativeInstr = new NativeInstr(kind, dstRegs, srcRegs, label) {
             @Override
             public String toString() {
-                return this.toString();
+                return str;
             }
         };
 
@@ -120,8 +121,9 @@ public abstract class PseudoInstr {
         return kind.equals(Kind.LABEL);
     }
 
+    // TODO: not very consistent design
     public boolean isSequential() {
-        return kind.equals(Kind.SEQ);
+        return kind.equals(Kind.SEQ) || kind.equals(Kind.SPECIAL);
     }
 
     public boolean isReturn() {

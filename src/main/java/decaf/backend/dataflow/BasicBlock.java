@@ -26,12 +26,12 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
         CONTINUOUS, END_BY_JUMP, END_BY_COND_JUMP, END_BY_RETURN
     }
 
-    public Kind kind;
+    public final Kind kind;
 
     /**
      * Block id.
      */
-    public int id;
+    public final int id;
 
     /**
      * Entry label of this block, if any.
