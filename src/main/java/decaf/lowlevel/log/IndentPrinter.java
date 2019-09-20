@@ -107,14 +107,14 @@ public final class IndentPrinter {
     }
 
     /**
-     * Print an object, will call its {@link #toString)} method.
+     * Print an object, will call its {@link #toString} method.
      */
     public void print(Object o) {
         write(o.toString(), false);
     }
 
     /**
-     * Print an object with end of line, will call its {@link #toString)} method.
+     * Print an object with end of line, will call its {@link #toString} method.
      */
     public void println(Object o) {
         write(o.toString(), true);

@@ -26,7 +26,7 @@ public class Launcher {
             case PA1 -> tasks.parse();
             case PA2 -> tasks.typeCheck();
             case PA3 -> tasks.tacGen();
-            case PA4 -> tasks.tacGen();
+            case PA4 -> tasks.optimize();
             case PA5 -> tasks.mips();
         };
         task.apply(config.source);

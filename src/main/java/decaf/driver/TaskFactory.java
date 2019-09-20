@@ -2,6 +2,7 @@ package decaf.driver;
 
 import decaf.backend.asm.Asm;
 import decaf.backend.asm.mips.MipsAsmEmitter;
+import decaf.backend.opt.Optimizer;
 import decaf.backend.reg.BruteRegAlloc;
 import decaf.frontend.parsing.Parser;
 import decaf.frontend.tacgen.TacGen;
@@ -32,6 +33,10 @@ public class TaskFactory {
 
     public Task<InputStream, TacProg> tacGen() {
         return typeCheck().then(new TacGen(config));
+    }
+
+    public Task<InputStream, TacProg> optimize() {
+        return tacGen().then(new Optimizer(config));
     }
 
     public Task<InputStream, String> mips() {

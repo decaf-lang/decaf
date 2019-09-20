@@ -30,7 +30,7 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
         } else if (element instanceof List) {
             printer.println("List");
             printer.incIndent();
-            var list = (List) element;
+            var list = (List<?>) element;
             if (list.isEmpty()) printer.println("<empty>");
             else list.forEach(this::prettyElement);
             printer.decIndent();

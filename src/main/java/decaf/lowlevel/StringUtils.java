@@ -2,7 +2,7 @@ package decaf.lowlevel;
 
 public final class StringUtils {
     /**
-     * Quote a unquoted string.
+     * Quote an unquoted string.
      *
      * @param str unquoted string
      * @return quoted string
@@ -12,20 +12,11 @@ public final class StringUtils {
         for (int i = 0; i < str.length(); ++i) {
             char c = str.charAt(i);
             switch (c) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                default:
-                    sb.append(c);
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\t' -> sb.append("\\t");
+                case '\\' -> sb.append("\\\\");
+                default -> sb.append(c);
             }
         }
         return ('"' + sb.toString() + '"');

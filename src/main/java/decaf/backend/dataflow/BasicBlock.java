@@ -46,8 +46,7 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
         this.kind = kind;
         this.id = id;
         this.label = label;
-        this.locs = new ArrayList<>();
-        this.locs.addAll(locs);
+        this.locs = new ArrayList<>(locs);
     }
 
     public boolean isEmpty() {
@@ -69,7 +68,7 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
             }
 
             @Override
-            public Loc next() {
+            public Loc<I> next() {
                 var loc = locs.get(i);
                 i--;
                 return loc;
