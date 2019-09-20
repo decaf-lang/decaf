@@ -1,9 +1,10 @@
 package decaf.printing;
 
 import decaf.frontend.scope.*;
+import decaf.lowlevel.log.IndentPrinter;
 
 /**
- * PA2 output.
+ * Pretty print a scope. PA2 output.
  */
 public final class PrettyScope extends PrettyPrinter<Scope> {
 
@@ -23,7 +24,7 @@ public final class PrettyScope extends PrettyPrinter<Scope> {
             printer.decIndent();
         } else if (scope.isClassScope()) {
             var classScope = (ClassScope) scope;
-            printer.println(String.format("CLASS SCOPE OF '%s':", classScope.getOwner().name));
+            printer.formatLn("CLASS SCOPE OF '%s':", classScope.getOwner().name);
             printer.incIndent();
             if (scope.isEmpty()) printer.println("<empty>");
             else scope.forEach(printer::println);
@@ -31,7 +32,7 @@ public final class PrettyScope extends PrettyPrinter<Scope> {
             printer.decIndent();
         } else if (scope.isFormalScope()) {
             var formalScope = (FormalScope) scope;
-            printer.println(String.format("FORMAL SCOPE OF '%s':", formalScope.getOwner().name));
+            printer.formatLn("FORMAL SCOPE OF '%s':", formalScope.getOwner().name);
             printer.incIndent();
             if (scope.isEmpty()) printer.println("<empty>");
             else scope.forEach(printer::println);

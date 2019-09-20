@@ -3,7 +3,7 @@ package decaf.frontend.parsing;
 import decaf.driver.Config;
 import decaf.driver.Phase;
 import decaf.frontend.tree.Tree;
-import decaf.printing.IndentPrinter;
+import decaf.lowlevel.log.IndentPrinter;
 import decaf.printing.PrettyTree;
 
 import java.io.InputStream;

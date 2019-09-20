@@ -5,10 +5,13 @@ import decaf.backend.dataflow.LivenessAnalyzer;
 import decaf.backend.reg.RegAlloc;
 import decaf.driver.Config;
 import decaf.driver.Phase;
+import decaf.lowlevel.log.Log;
 import decaf.lowlevel.tac.TacProg;
+import decaf.printing.PrettyCFG;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.logging.Level;
 
 /**
  * The assembly code generation phase: translate a TAC program to assembly code.
@@ -32,18 +35,23 @@ public class Asm extends Phase<TacProg, String> {
 
     @Override
     public String transform(TacProg prog) {
+        Log.info("phase: asm");
+
         var analyzer = new LivenessAnalyzer<>();
 
         for (var vtbl : prog.vtables) {
+            Log.info("emit vtable for %s", vtbl.className);
             emitter.emitVTable(vtbl);
         }
 
         emitter.emitSubroutineBegin();
         for (var func : prog.funcs) {
+            Log.info("emit func for %s", func.entry.prettyString());
             var pair = emitter.selectInstr(func);
             var builder = new CFGBuilder<>();
             var cfg = builder.buildFrom(pair.getLeft());
             analyzer.accept(cfg);
+            Log.ifLoggable(Level.FINE, printer -> new PrettyCFG<>(printer).pretty(cfg));
             regAlloc.accept(cfg, pair.getRight());
         }
 

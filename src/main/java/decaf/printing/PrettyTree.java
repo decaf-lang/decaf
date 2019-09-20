@@ -1,10 +1,14 @@
 package decaf.printing;
 
 import decaf.frontend.tree.TreeNode;
+import decaf.lowlevel.log.IndentPrinter;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Pretty print a tree. PA1 output.
+ */
 public final class PrettyTree extends PrettyPrinter<TreeNode> {
 
     public PrettyTree(IndentPrinter printer) {
@@ -37,8 +41,7 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
 
     @Override
     public void pretty(TreeNode node) {
-        var posStr = " @ " + node.pos;
-        printer.println(node.displayName + posStr);
+        printer.formatLn("%s @ %s", node.displayName, node.pos);
         printer.incIndent();
         node.forEach(this::prettyElement);
         printer.decIndent();

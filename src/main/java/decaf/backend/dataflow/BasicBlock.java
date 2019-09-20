@@ -4,7 +4,6 @@ import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.instr.Temp;
 import decaf.lowlevel.label.Label;
 
-import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -78,7 +77,12 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
         };
     }
 
-    public List<Loc<I>> seqLocs() {
+    /**
+     * Get all sequential instructions. The last instruction will be included iff this block is {@link Kind#CONTINUOUS}.
+     *
+     * @return sequential instructions
+     */
+    public List<Loc<I>> allSeq() {
         if (kind.equals(Kind.CONTINUOUS)) {
             return locs;
         }
@@ -86,10 +90,16 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
         return locs.subList(0, locs.size() - 1);
     }
 
+    /**
+     * Get the last instruction.
+     *
+     * @return the last instruction
+     */
     public I getLastInstr() {
         return locs.get(locs.size() - 1).instr;
     }
 
+    // For data flow analysis
     public Set<Temp> def;
 
     public Set<Temp> liveUse;
@@ -97,32 +107,4 @@ public class BasicBlock<I extends PseudoInstr> implements Iterable<Loc<I>> {
     public Set<Temp> liveIn;
 
     public Set<Temp> liveOut;
-
-    public void printTo(PrintWriter pw) {
-        pw.println("BASIC BLOCK " + id + " " + label.map(Label::toString).orElse("<unnamed>") + ": ");
-        for (var loc : this) {
-            pw.println(loc);
-        }
-    }
-
-    public void printLivenessTo(PrintWriter pw) {
-        pw.println("BASIC BLOCK " + id + " " + label.map(Label::toString).orElse("<unnamed>") + ": ");
-        pw.println("  Def     = " + setToString(def));
-        pw.println("  liveUse = " + setToString(liveUse));
-        pw.println("  liveIn  = " + setToString(liveIn));
-        pw.println("  liveOut = " + setToString(liveOut));
-
-        for (var loc : this) {
-            pw.println(loc);
-        }
-    }
-
-    public static String setToString(Set<Temp> set) {
-        StringBuilder sb = new StringBuilder("[ ");
-        for (var t : set) {
-            sb.append(t + " ");
-        }
-        sb.append(']');
-        return sb.toString();
-    }
 }

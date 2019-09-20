@@ -83,7 +83,7 @@ public final class BruteRegAlloc extends RegAlloc {
 
         var callerNeedSave = new ArrayList<Reg>();
 
-        for (var loc : bb.seqLocs()) {
+        for (var loc : bb.allSeq()) {
             // Handle special instructions on caller save/restore.
 
             if (loc.instr instanceof HoleInstr) {

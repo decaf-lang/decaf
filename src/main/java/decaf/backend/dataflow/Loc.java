@@ -16,9 +16,4 @@ public class Loc<I extends PseudoInstr> {
     Loc(I instr) {
         this.instr = instr;
     }
-
-    @Override
-    public String toString() {
-        return instr.toString() + "  " + BasicBlock.setToString(liveOut);
-    }
 }

@@ -3,7 +3,6 @@ package decaf.backend.dataflow;
 import decaf.lowlevel.instr.PseudoInstr;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -99,33 +98,5 @@ public class CFG<I extends PseudoInstr> implements Iterable<BasicBlock<I>> {
     @Override
     public Iterator<BasicBlock<I>> iterator() {
         return nodes.iterator();
-    }
-
-    public void printTo(PrintWriter pw) {
-        pw.println("CFG : ");
-        for (BasicBlock bb : nodes) {
-            bb.printTo(pw);
-            pw.print(bb.kind);
-            pw.print(", succ");
-            for (var b : getSucc(bb.id)) {
-                pw.print(' ');
-                pw.print(b);
-            }
-            pw.println();
-        }
-    }
-
-    public void printLivenessTo(PrintWriter pw) {
-        pw.println("CFG : ");
-        for (BasicBlock bb : nodes) {
-            bb.printLivenessTo(pw);
-            pw.print(bb.kind);
-            pw.print(", succ");
-            for (var b : getSucc(bb.id)) {
-                pw.print(' ');
-                pw.print(b);
-            }
-            pw.println();
-        }
     }
 }

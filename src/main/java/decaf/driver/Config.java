@@ -1,11 +1,13 @@
 package decaf.driver;
 
+import decaf.lowlevel.log.Log;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.logging.Level;
 
 /**
  * Compiler configuration.
@@ -98,6 +100,23 @@ public class Config {
                 throw new FileNotFoundException(dir.getPath() + " (Not an existed directory)");
             }
             dstPath = dir.toPath();
+        }
+
+        if (cli.hasOption(OptParser.LOG_LEVEL)) {
+            var showColor = cli.hasOption(OptParser.LOG_COLORFUL);
+            var l = cli.getOptionValue(OptParser.LOG_LEVEL);
+            try {
+                var level = Level.parse(l.toUpperCase());
+                if (cli.hasOption(OptParser.LOG_FILE)) {
+                    Log.setup(level, showColor, cli.getOptionValue(OptParser.LOG_FILE));
+                } else {
+                    Log.setup(level, showColor);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new ParseException(String.format("Invalid log level: '%s'", l));
+            } catch (IOException e) {
+                throw new FileNotFoundException(e.toString());
+            }
         }
 
         return new Config(source, sourcePath, output, dstPath, target);

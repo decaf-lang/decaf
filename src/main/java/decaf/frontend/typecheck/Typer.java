@@ -13,7 +13,7 @@ import decaf.frontend.type.ArrayType;
 import decaf.frontend.type.BuiltInType;
 import decaf.frontend.type.ClassType;
 import decaf.frontend.type.Type;
-import decaf.printing.IndentPrinter;
+import decaf.lowlevel.log.IndentPrinter;
 import decaf.printing.PrettyScope;
 
 import java.util.Optional;

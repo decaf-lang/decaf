@@ -36,6 +36,32 @@ public class OptParser {
             .desc("target/task: PA1, PA2, PA3, PA4, or PA5 (default)")
             .build();
 
+    static final String LOG_COLORFUL = "log-color";
+    final Option logColorful = Option
+            .builder(null)
+            .longOpt(LOG_COLORFUL)
+            .hasArg(false)
+            .desc("enable colorful log (default plain)")
+            .build();
+
+    static final String LOG_LEVEL = "log-level";
+    final Option logLevel = Option
+            .builder(null)
+            .longOpt(LOG_LEVEL)
+            .hasArg()
+            .argName("level")
+            .desc("log level: all, severe, warning, info, config, fine, finer, finest, off (default)")
+            .build();
+
+    static final String LOG_FILE = "log-file";
+    final Option logFile = Option
+            .builder(null)
+            .longOpt(LOG_FILE)
+            .hasArg()
+            .argName("file")
+            .desc("also dump log to a file")
+            .build();
+
     static final String HELP = "h";
     final Option help = Option
             .builder(HELP)
@@ -52,6 +78,10 @@ public class OptParser {
         options.addOption(dst);
         options.addOption(target);
         options.addOption(help);
+        // log related
+        options.addOption(logLevel);
+        options.addOption(logFile);
+        options.addOption(logColorful);
     }
 
     public void printHelp() {
