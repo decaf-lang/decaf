@@ -15,10 +15,10 @@ import java.util.logging.Level;
 public class Config {
 
     /**
-     * Target/task. Options: PA1, PA2, PA3, PA4, PA5.
+     * Target/task. Options: PA1, PA1_LL, PA2, PA3, PA4, PA5.
      */
     public enum Target {
-        PA1, PA2, PA3, PA4, PA5
+        PA1, PA1_LL, PA2, PA3, PA4, PA5
     }
 
     /**
@@ -143,6 +143,7 @@ public class Config {
     private static Target parseTarget(String target) throws ParseException {
         return switch (target) {
             case "PA1" -> Target.PA1;
+            case "PA1-LL" -> Target.PA1_LL;
             case "PA2" -> Target.PA2;
             case "PA3" -> Target.PA3;
             case "PA4" -> Target.PA4;

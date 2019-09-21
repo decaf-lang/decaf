@@ -8,8 +8,8 @@ import decaf.lowlevel.StringUtils;
 
 %%
 %public
-%class DecafLexer
-%extends AbstractLexer
+%class DecafLexer<P extends AbstractParser>
+%extends AbstractLexer<P>
 %byaccj
 %line
 %column

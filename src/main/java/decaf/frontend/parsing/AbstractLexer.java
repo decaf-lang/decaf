@@ -12,8 +12,10 @@ import java.io.IOException;
  * Also, a couple of helper methods are provided.
  * <p>
  * See {@code src/main/jflex/Decaf.jflex}.
+ *
+ * @param <P> type of parser
  */
-abstract class AbstractLexer {
+abstract class AbstractLexer<P extends AbstractParser> {
 
     /**
      * Get position of the current token.
@@ -27,13 +29,13 @@ abstract class AbstractLexer {
      */
     abstract int yylex() throws IOException;
 
-    private AbstractParser parser;
+    private P parser;
     private ErrorIssuer issuer;
 
     /**
      * When lexing, we need to interact with the parser to set semantic value.
      */
-    void setup(AbstractParser parser, ErrorIssuer issuer) {
+    void setup(P parser, ErrorIssuer issuer) {
         this.parser = parser;
         this.issuer = issuer;
     }
@@ -41,75 +43,84 @@ abstract class AbstractLexer {
     /**
      * Helper method used by the concrete lexer: record a keyword by its code.
      *
-     * @param code the token's code
-     * @return just {@code code}
+     * @param code standard code of a Decaf keyword, specified in {@link Tokens}
+     * @return parser-specified token
      */
     protected int keyword(int code) {
+        var token = parser.tokenOf(code);
         parser.semValue = new SemValue(code, getPos());
-        return code;
+        return token;
     }
 
     /**
-     * Helper method used by the concrete lexer: record an operator (with a single character).
+     * Helper method used by the concrete lexer: record an operator.
+     * <p>
+     * Operators may contain multiple characters.
+     * NOTE: ALL parsers MUST use ASCII code to encode a single-character token.
      *
-     * @param code the token's code
-     * @return just `code`
+     * @param code standard code of a Decaf keyword, specified in {@link Tokens}
+     * @return parser-specified token
      */
     protected int operator(int code) {
+        var token = parser.tokenOf(code);
         parser.semValue = new SemValue(code, getPos());
-        return code;
+        return token;
     }
 
     /**
      * Helper method used by the concrete lexer: record a constant integer.
      *
      * @param value the text representation of the integer
-     * @return the token INT_LIT
+     * @return parser-specified token
      */
     protected int intConst(String value) {
+        var token = parser.tokenOf(Tokens.INT_LIT);
         parser.semValue = new SemValue(Tokens.INT_LIT, getPos());
         try {
             parser.semValue.intVal = Integer.decode(value);
         } catch (NumberFormatException e) {
             issueError(new IntTooLargeError(getPos(), value));
         }
-        return Tokens.INT_LIT;
+        return token;
     }
 
     /**
      * Helper method used by the concrete lexer: record a constant bool.
      *
      * @param value the text representation of the bool, i.e. "true" or "false"
-     * @return the token BOOL_LIT
+     * @return parser-specified token
      */
     protected int boolConst(boolean value) {
+        var token = parser.tokenOf(Tokens.BOOL_LIT);
         parser.semValue = new SemValue(Tokens.BOOL_LIT, getPos());
         parser.semValue.boolVal = value;
-        return Tokens.BOOL_LIT;
+        return token;
     }
 
     /**
      * Helper method used by the concrete lexer: record a constant string.
      *
      * @param value the _quoted_ string, i.e. the exact user input
-     * @return the token STRING_LIT
+     * @return parser-specified token
      */
     protected int stringConst(String value, Pos pos) {
+        var token = parser.tokenOf(Tokens.STRING_LIT);
         parser.semValue = new SemValue(Tokens.STRING_LIT, pos);
         parser.semValue.strVal = value;
-        return Tokens.STRING_LIT;
+        return token;
     }
 
     /**
      * Helper method used by the concrete lexer: record an identifier.
      *
      * @param name the text representation (or name) of the identifier
-     * @return the token IDENTIFIER
+     * @return parser-specified token
      */
     protected int identifier(String name) {
+        var token = parser.tokenOf(Tokens.IDENTIFIER);
         parser.semValue = new SemValue(Tokens.IDENTIFIER, getPos());
         parser.semValue.strVal = name;
-        return Tokens.IDENTIFIER;
+        return token;
     }
 
     /**

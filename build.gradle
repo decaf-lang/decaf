@@ -50,3 +50,9 @@ javadoc {
     options.addBooleanOption('-enable-preview', true)
     options.showFromPrivate()
 }
+
+task pg(type: Exec) {
+    workingDir '.'
+    commandLine 'java',  '-jar', 'll1-pg.jar', 'src/main/ll1/Decaf.spec',
+                'src/main/java/decaf/frontend/parsing/'
+}

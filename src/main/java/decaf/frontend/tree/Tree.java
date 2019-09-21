@@ -9,7 +9,6 @@ import decaf.frontend.type.FunType;
 import decaf.frontend.type.Type;
 import decaf.lowlevel.instr.Temp;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -1039,6 +1038,14 @@ public abstract class Tree {
             this.name = variable.name;
         }
 
+        public VarSel(Expr receiver, Id variable, Pos pos) {
+            this(Optional.of(receiver), variable, pos);
+        }
+
+        public VarSel(Id variable, Pos pos) {
+            this(Optional.empty(), variable, pos);
+        }
+
         /**
          * Set its receiver as {@code this}.
          * <p>
@@ -1486,6 +1493,10 @@ public abstract class Tree {
 
         public Call(Id method, List<Expr> args, Pos pos) {
             this(Optional.empty(), method, args, pos);
+        }
+
+        public Call(Expr receiver, Id method, List<Expr> args, Pos pos) {
+            this(Optional.of(receiver), method, args, pos);
         }
 
         /**

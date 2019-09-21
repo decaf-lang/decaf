@@ -8,9 +8,9 @@ import decaf.frontend.tree.Tree.*;
 import java.util.Optional;
 %}
 
-%class DecafParser
-%extends AbstractParser
-%interface DecafTokens
+%class DecafJaccParser
+%extends JaccParser.BaseParser
+%interface JaccTokens
 %next nextToken()
 %get token
 %semantic SemValue : semValue

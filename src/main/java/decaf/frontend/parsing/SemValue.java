@@ -15,7 +15,7 @@ import java.util.List;
 class SemValue {
     enum Kind {
         TOKEN, CLASS, CLASS_LIST, FIELD, FIELD_LIST, VAR, VAR_LIST, TYPE, STMT, STMT_LIST, BLOCK, EXPR, EXPR_LIST,
-        LVALUE, ID
+        LVALUE, ID, TEMPORARY
     }
 
     /**
@@ -61,6 +61,15 @@ class SemValue {
         this.pos = pos;
         this.code = code;
     }
+
+    /**
+     * Create a temporary semantic value.
+     */
+    SemValue() {
+        this.kind = Kind.TEMPORARY;
+    }
+
+    List<SemValue> thunkList;
 
     // For parser
     Tree.ClassDef clazz;
@@ -137,6 +146,7 @@ class SemValue {
             case EXPR_LIST -> "EXPR_LIST: " + exprList;
             case LVALUE -> "LVALUE: " + lValue;
             case ID -> "ID: " + id;
+            case TEMPORARY -> "TEMPORARY";
         };
         return String.format("%-9s%s", pos, msg);
     }

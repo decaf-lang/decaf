@@ -15,7 +15,7 @@ public class OptParser {
             .longOpt("output")
             .hasArg()
             .argName("file")
-            .desc("output file for result (default stdout)")
+            .desc("output file for result, available except PA5 (default stdout)")
             .build();
 
     static final String DST = "d";
@@ -24,7 +24,7 @@ public class OptParser {
             .longOpt("dir")
             .hasArg()
             .argName("directory")
-            .desc("output directory for byte/native code (default .)")
+            .desc("output directory for low-level code, available >= PA3 (default .)")
             .build();
 
     static final String TARGET = "t";
@@ -33,7 +33,7 @@ public class OptParser {
             .longOpt("target")
             .hasArg()
             .argName("target")
-            .desc("target/task: PA1, PA2, PA3, PA4, or PA5 (default)")
+            .desc("target/task: PA1, PA1-LL, PA2, PA3, PA4, or PA5 (default)")
             .build();
 
     static final String LOG_COLORFUL = "log-color";
