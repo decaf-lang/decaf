@@ -105,16 +105,6 @@ Var             :   Type Id
                     }
                 ;
 
-LocalVar        :   Type Id
-                    {
-                        $$ = svVarLocal($1.type, $2.id, null, null, $2.pos);
-                    }
-                |   Type Id '=' Expr
-                    {
-                        $$ = svVarLocal($1.type, $2.id, $3.pos, $4.expr, $2.pos);
-                    }
-                ;
-
 MethodDef       :   STATIC Type Id '(' VarList ')' Block
                     {
                         $$ = svField(new MethodDef(true, $3.id, $2.type, $5.varList, $7.block, $3.pos));
@@ -138,11 +128,11 @@ VarList         :   VarList1
 VarList1        :   VarList1 ',' Var
                     {
                         $$ = $1;
-                        $$.varList.add(new LocalVarDef($3.type, $3.id, Optional.empty(), Optional.empty(), $3.pos));
+                        $$.varList.add(new LocalVarDef($3.type, $3.id, $3.pos));
                     }
                 |   Var
                     {
-                        $$ = svVars(new LocalVarDef($1.type, $1.id, Optional.empty(), Optional.empty(), $1.pos));
+                        $$ = svVars(new LocalVarDef($1.type, $1.id, $1.pos));
                     }
                 ;
 
@@ -176,11 +166,7 @@ Type            :   INT
 
 // Statements
 
-Stmt            :   LocalVar ';'
-                    {
-                        $$ = svStmt(new LocalVarDef($1.type, $1.id, Optional.ofNullable($1.pos2), Optional.ofNullable($1.expr), $1.pos));
-                    }
-                |   Block
+Stmt            :   Block
                     {
                         $$ = svStmt($1.block);
                     }
@@ -188,6 +174,8 @@ Stmt            :   LocalVar ';'
                     {
                         if ($1.stmt == null) {
                             $$ = svStmt(new Skip($2.pos));
+                        } else {
+                            $$ = $1;
                         }
                     }
                 |   IF '(' Expr ')' Stmt ElseClause
@@ -197,13 +185,6 @@ Stmt            :   LocalVar ';'
                 |   WHILE '(' Expr ')' Stmt
                     {
                         $$ = svStmt(new While($3.expr, $5.stmt, $1.pos));
-                    }
-                |   FOR '(' LocalVar ';' Expr ';' SimpleStmt ')' Stmt
-                    {
-                        var _3 = svStmt(new LocalVarDef($3.type, $3.id, Optional.ofNullable($3.pos2), Optional.ofNullable($3.expr), $3.pos));
-                        if (_3.stmt == null) _3.stmt = new Skip($4.pos);
-                        if ($7.stmt == null) $7.stmt = new Skip($8.pos);
-                        $$ = svStmt(new For(_3.stmt, $5.expr, $7.stmt, $9.stmt, $1.pos));
                     }
                 |   FOR '(' SimpleStmt ';' Expr ';' SimpleStmt ')' Stmt
                     {
@@ -242,17 +223,32 @@ StmtList        :   StmtList Stmt
                     }
                 ;
 
-SimpleStmt      :   LValue '=' Expr
+SimpleStmt      :   Var Initializer
+                    {
+                        $$ = svStmt(new LocalVarDef($1.type, $1.id, $2.pos, Optional.ofNullable($2.expr), $1.pos));
+                    }
+                |   LValue '=' Expr
                     {
                         $$ = svStmt(new Assign($1.lValue, $3.expr, $2.pos));
                     }
-                |   Call
+                |   Expr
                     {
                         $$ = svStmt(new ExprEval($1.expr, $1.expr.pos));
                     }
                 |   /* empty */
                     {
                         $$ = svStmt(null);
+                    }
+                ;
+
+Initializer     :   '=' Expr
+                    {
+                        $$ = svExpr($2.expr);
+                        $$.pos = $1.pos;
+                    }
+                |   /* empty */
+                    {
+                        $$ = svExpr(null);
                     }
                 ;
 
@@ -290,9 +286,9 @@ Expr            :   Literal
                     {
                         $$ = svExpr($1.lValue);
                     }
-                |   Call
+                |   Receiver Id '(' ExprList ')'
                     {
-                        $$ = $1;
+                        $$ = svExpr(new Call(Optional.ofNullable($1.expr), $2.id, $4.exprList, $3.pos));
                     }
                 |   Expr '+' Expr
                     {
@@ -409,12 +405,6 @@ LValue          :   Receiver Id
                 |   Expr '[' Expr ']'
                     {
                         $$ = svLValue(new IndexSel($1.expr, $3.expr, $2.pos));
-                    }
-                ;
-
-Call            :   Receiver Id '(' ExprList ')'
-                    {
-                        $$ = svExpr(new Call(Optional.ofNullable($1.expr), $2.id, $4.exprList, $3.pos));
                     }
                 ;
 

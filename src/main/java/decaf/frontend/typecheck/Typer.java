@@ -547,7 +547,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
         var rt = initVal.type;
 
         if (lt.noError() && (lt.isFuncType() || !rt.subtypeOf(lt))) {
-            issue(new IncompatBinOpError(stmt.assignPos.get(), lt.toString(), "=", rt.toString()));
+            issue(new IncompatBinOpError(stmt.assignPos, lt.toString(), "=", rt.toString()));
         }
     }
 

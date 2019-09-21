@@ -9,6 +9,7 @@ import decaf.frontend.type.FunType;
 import decaf.frontend.type.Type;
 import decaf.lowlevel.instr.Temp;
 
+import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -446,14 +447,14 @@ public abstract class Tree {
         // Tree elements
         public TypeLit typeLit;
         public Id id;
-        public Optional<Pos> assignPos;
+        public Pos assignPos;
         public Optional<Expr> initVal;
         // For convenience
         public String name;
         // For type check
         public VarSymbol symbol;
 
-        public LocalVarDef(TypeLit typeLit, Id id, Optional<Pos> assignPos, Optional<Expr> initVal, Pos pos) {
+        public LocalVarDef(TypeLit typeLit, Id id, Pos assignPos, Optional<Expr> initVal, Pos pos) {
             // pos = id.pos, assignPos = position of the '='
             // TODO: looks not very consistent, maybe we shall always report error simply at `pos`, not `assignPos`?
             super(Kind.LOCAL_VAR_DEF, "LocalVarDef", pos);
@@ -462,6 +463,10 @@ public abstract class Tree {
             this.assignPos = assignPos;
             this.initVal = initVal;
             this.name = id.name;
+        }
+
+        public LocalVarDef(TypeLit typeLit, Id id, Pos pos) {
+            this(typeLit, id, Pos.NoPos, Optional.empty(), pos);
         }
 
         @Override
@@ -1477,6 +1482,10 @@ public abstract class Tree {
             this.method = method;
             this.args = args;
             this.methodName = method.name;
+        }
+
+        public Call(Id method, List<Expr> args, Pos pos) {
+            this(Optional.empty(), method, args, pos);
         }
 
         /**
