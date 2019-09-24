@@ -35,7 +35,10 @@ public final class PrettyTree extends PrettyPrinter<TreeNode> {
             else list.forEach(this::prettyElement);
             printer.decIndent();
         } else {
-            printer.println(element.toString());
+            var s = element.toString();
+            if (!s.isEmpty()) {
+                printer.println(s);
+            }
         }
     }
 
