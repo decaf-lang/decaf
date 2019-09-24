@@ -22,7 +22,7 @@ Type the standard Gradle build command in your CLI:
 ./gradlew build
 ```
 
-The built jar will be located at `build/libs/decaf-1.0.jar`.
+The built jar will be located at `build/libs/decaf.jar`.
 
 Or, import the project in a Java IDE (like IDEA or Eclipse, or your favorite VS Code) and use gradle plugin, if available.
 
@@ -31,7 +31,7 @@ Or, import the project in a Java IDE (like IDEA or Eclipse, or your favorite VS 
 In your CLI, type
 
 ```sh
-java -jar --enable-preview build/libs/decaf-1.0.jar -h
+java -jar --enable-preview build/libs/decaf.jar -h
 ```
 
 to display the usage help.
