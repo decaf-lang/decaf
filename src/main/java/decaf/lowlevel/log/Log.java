@@ -141,6 +141,7 @@ public class Log {
         if (L.isLoggable(level)) {
             var printer = new IndentPrinter(outs, true);
             action.accept(printer);
+            printer.flush();
         }
     }
 }

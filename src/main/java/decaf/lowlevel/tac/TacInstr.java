@@ -154,7 +154,7 @@ public abstract class TacInstr extends PseudoInstr {
 
         @Override
         public String toString() {
-            return String.format("%s = %s", dst, vtbl.label);
+            return String.format("%s = %s", dst, vtbl.label.prettyString());
         }
     }
 
