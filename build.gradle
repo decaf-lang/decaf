@@ -2,12 +2,14 @@ plugins {
     id 'java'
     id 'org.xbib.gradle.plugin.jflex' version '1.2.0'
     id 'org.xbib.gradle.plugin.jacc' version '1.1.3'
+    id 'de.undercouch.download' version "4.0.0"
 }
 
 group 'decaf'
-version '1.0'
 
 sourceCompatibility = JavaVersion.VERSION_12
+
+sourceSets.main.java.srcDirs += files("$project.buildDir/generated-src/ll1pg")
 
 tasks.withType(JavaCompile).each {
     it.options.compilerArgs.add('--enable-preview')
@@ -27,6 +29,31 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
 }
+
+task ll1pg(type: Task) {
+    download {
+        src 'https://github.com/paulzfm/ll1pg/releases/download/decaf-course-19-fall/ll1pg-decaf-course-19-fall.jar'
+        dest "$rootDir/ll1pg.jar"
+        overwrite false
+    }
+
+    ConfigurableFileTree fs = fileTree(dir: file('src/main/ll1pg'), include: '**/*.spec')
+    File dstDir = file("$project.buildDir/generated-src/ll1pg")
+    delete(dstDir)
+    mkdir(dstDir)
+
+    if (fs.empty) System.err.println("No *.spec file found in 'src/main/ll1pg/', skip")
+    fs.visit { FileVisitDetails f ->
+        if (f.isDirectory) return
+        javaexec {
+            classpath = files("$rootDir/ll1pg.jar")
+            main = 'decaf.tools.ll1pg.Main'
+            args = [f.file.path, dstDir.path]
+        }
+    }
+}
+
+tasks.compileJava.dependsOn tasks.ll1pg
 
 jar {
     manifest {
@@ -49,10 +76,4 @@ javadoc {
     // See https://github.com/gradle/gradle/issues/2354
     options.addBooleanOption('-enable-preview', true)
     options.showFromPrivate()
-}
-
-task pg(type: Exec) {
-    workingDir '.'
-    commandLine 'java',  '-jar', 'll1-pg.jar', 'src/main/ll1/Decaf.spec',
-                'src/main/java/decaf/frontend/parsing/'
 }

@@ -39,7 +39,7 @@ public class LLParser extends Phase<InputStream, Tree.TopLevel> {
         }
     }
 
-    private class Parser extends LLTable {
+    private class Parser extends decaf.frontend.parsing.LLTable {
         @Override
         boolean parse() {
             var sv = parseSymbol(start, new TreeSet<>());
