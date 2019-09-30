@@ -1,5 +1,7 @@
 # The New Decaf Compiler
 
+<img src="https://github.com/decaf-lang/decaf/wiki/images/decaf-logo-h.svg?sanitize=true" width="300" align=center></img>
+
 Decaf is a Java-like, but much smaller programming language mainly for educational purpose.
 We now have at least three different implementations of the compiler in Java, Scala and Rust.
 Since the standard language has quite a limited set of language features, students are welcome to add their own new features.
