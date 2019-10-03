@@ -14,10 +14,12 @@ Other dependencies will be automatically downloaded from the maven central repos
 
 ## Build
 
+First install the latest version (>= 5.4) [gradle](https://gradle.org).
+
 Type the standard Gradle build command in your CLI:
 
 ```sh
-./gradlew build
+gradle build
 ```
 
 The built jar will be located at `build/libs/decaf.jar`.
