@@ -127,7 +127,7 @@ abstract class AbstractParser {
     }
 
     protected SemValue svVars(Tree.LocalVarDef... vars) {
-        var v = new SemValue(SemValue.Kind.FIELD_LIST, vars.length == 0 ? Pos.NoPos : vars[0].pos);
+        var v = new SemValue(SemValue.Kind.VAR_LIST, vars.length == 0 ? Pos.NoPos : vars[0].pos);
         v.varList = new ArrayList<>();
         v.varList.addAll(Arrays.asList(vars));
         return v;
