@@ -529,13 +529,37 @@ ExprT6          :   Op6 Expr7 ExprT6
                     }
                 ;
 
-Expr7           :   Op7 Expr8
+Expr7           :   Op7 Expr7
                     {
                         $$ = svExpr(new Unary(UnaryOp.values()[$1.code], $2.expr, $1.pos));
+                    }
+                |   '(' AfterLParen
+                    {
+                        $$ = $2;
                     }
                 |   Expr8
                     {
                         $$ = $1;
+                    }
+                ;
+
+AfterLParen     :   CLASS Id ')' Expr7
+                    {
+                        $$ = svExpr(new ClassCast($4.expr, $2.id, $4.pos));
+                    }
+                |   Expr ')' ExprT8
+                    {
+                        $$ = $1;
+                        for (var sv : $3.thunkList) {
+                            if (sv.expr != null) {
+                                $$ = svExpr(new IndexSel($$.expr, sv.expr, sv.pos));
+                            } else if (sv.exprList != null) {
+                                $$ = svExpr(new Call($$.expr, sv.id, sv.exprList, sv.pos));
+                            } else {
+                                $$ = svExpr(new VarSel($$.expr, sv.id, sv.pos));
+                            }
+                        }
+                        $$.pos = $$.expr.pos;
                     }
                 ;
 
@@ -623,10 +647,6 @@ Expr9           :   Literal
                             $$ = svExpr(new NewArray($2.type, $2.expr, $1.pos));
                         }
                     }
-                |   '(' AfterParenExpr
-                    {
-                        $$ = $2;
-                    }
                 |   Id ExprListOpt
                     {
                         if ($2.exprList != null) {
@@ -678,16 +698,6 @@ AfterLBrack     :   ']' '[' AfterLBrack
                     {
                         $$ = svExpr($1.expr);
                         $$.intVal = 0; // counter
-                    }
-                ;
-
-AfterParenExpr  :   Expr ')'
-                    {
-                        $$ = $1;
-                    }
-                |   CLASS Id ')' Expr9
-                    {
-                        $$ = svExpr(new ClassCast($4.expr, $2.id, $4.pos));
                     }
                 ;
 
