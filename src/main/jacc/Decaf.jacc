@@ -31,7 +31,7 @@ import java.util.Optional;
 %nonassoc LESS_EQUAL GREATER_EQUAL '<' '>'
 %left  '+' '-'
 %left  '*' '/' '%'
-%nonassoc UMINUS '!'
+%nonassoc CAST UMINUS '!'
 %nonassoc '[' '.'
 %nonassoc ')' EMPTY
 %nonassoc ELSE
@@ -374,7 +374,7 @@ Expr            :   Literal
                     {
                         $$ = svExpr(new ClassTest($3.expr, $5.id, $1.pos));
                     }
-                |   '(' CLASS Id ')' Expr
+                |   '(' CLASS Id ')' Expr   %prec CAST
                     {
                         $$ = svExpr(new ClassCast($5.expr, $3.id, $5.expr.pos));
                     }
