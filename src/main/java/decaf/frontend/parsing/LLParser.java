@@ -2,6 +2,7 @@ package decaf.frontend.parsing;
 
 import decaf.driver.Config;
 import decaf.driver.Phase;
+import decaf.driver.error.DecafError;
 import decaf.frontend.tree.Tree;
 import decaf.lowlevel.log.IndentPrinter;
 import decaf.printing.PrettyTree;
@@ -37,6 +38,23 @@ public class LLParser extends Phase<InputStream, Tree.TopLevel> {
             printer.pretty(tree);
             printer.flush();
         }
+    }
+
+    /**
+     * To avoid issuing the same error multiple times.
+     *
+     * @param error Decaf error
+     */
+    @Override
+    public void issue(DecafError error) {
+        if (!errors.isEmpty()) {
+            var last = errors.get(errors.size() - 1);
+            if (error.toString().equals(last.toString())) { // ignore
+                return;
+            }
+        }
+
+        super.issue(error);
     }
 
     private class Parser extends decaf.frontend.parsing.LLTable {
