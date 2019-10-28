@@ -283,9 +283,13 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     public void visitLocalVarDef(Tree.LocalVarDef def, ScopeStack ctx) {
         var earlier = ctx.findConflict(def.name);
         if (earlier.isPresent()) {
-            issue(new DeclConflictError(def.pos, def.name, earlier.get().pos));
-            def.typeLit.type = BuiltInType.ERROR;
-            return;
+            var pre = earlier.get().domain();
+            var cur = ctx.currentScope();
+            if (pre == cur || (pre.isFormalScope() && ((FormalScope) pre).nestedLocalScope() == cur)) {
+                issue(new DeclConflictError(def.pos, def.name, earlier.get().pos));
+                def.typeLit.type = BuiltInType.ERROR;
+                return;
+            }
         }
 
         def.typeLit.accept(this, ctx);
