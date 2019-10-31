@@ -367,7 +367,11 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
             }
         }
 
-        if (rt.noError() && !rt.isClassType()) {
+        if (!rt.noError()) {
+            return;
+        }
+
+        if (!rt.isClassType()) {
             issue(new NotClassFieldError(expr.pos, expr.name, rt.toString()));
             return;
         }
