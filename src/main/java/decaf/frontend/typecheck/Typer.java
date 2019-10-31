@@ -84,7 +84,9 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
             stmt.accept(this, ctx);
         }
         ctx.close();
-        block.returns = !block.stmts.isEmpty() && block.stmts.get(block.stmts.size() - 1).returns;
+        /* if any statement in the block always returns, then we know this block will eventually
+         * return (if it doesn't loop forever), since statements are executed sequentially */
+        block.returns = block.stmts.stream().anyMatch(s -> s.returns);
     }
 
     @Override
