@@ -188,6 +188,8 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitVarDef(Tree.VarDef varDef, ScopeStack ctx) {
+        varDef.typeLit.accept(this, ctx);
+
         var earlier = ctx.findConflict(varDef.name);
         if (earlier.isPresent()) {
             if (earlier.get().isVarSymbol() && earlier.get().domain() != ctx.currentScope()) {
@@ -198,7 +200,6 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
             return;
         }
 
-        varDef.typeLit.accept(this, ctx);
         if (varDef.typeLit.type.eq(BuiltInType.VOID)) {
             issue(new BadVarTypeError(varDef.pos, varDef.name));
             return;
@@ -221,7 +222,7 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
                     // Only non-static methods can be overriden, but the type signature must be equivalent.
                     var formal = new FormalScope();
                     typeMethod(method, ctx, formal);
-                    if (method.type.noError() && method.type.subtypeOf(suspect.type)) { // override success
+                    if (method.type.subtypeOf(suspect.type)) { // override success
                         var symbol = new MethodSymbol(method.name, method.type, formal, method.pos, method.modifiers,
                                 ctx.currentClass());
                         ctx.declare(symbol);
@@ -243,30 +244,26 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
         var formal = new FormalScope();
         typeMethod(method, ctx, formal);
-        if (method.type.noError()) {
-            var symbol = new MethodSymbol(method.name, method.type, formal, method.pos, method.modifiers,
-                    ctx.currentClass());
-            ctx.declare(symbol);
-            method.symbol = symbol;
-            ctx.open(formal);
-            method.body.accept(this, ctx);
-            ctx.close();
-        }
+        var symbol = new MethodSymbol(method.name, method.type, formal, method.pos, method.modifiers,
+                ctx.currentClass());
+        ctx.declare(symbol);
+        method.symbol = symbol;
+        ctx.open(formal);
+        method.body.accept(this, ctx);
+        ctx.close();
     }
 
     private void typeMethod(Tree.MethodDef method, ScopeStack ctx, FormalScope formal) {
         method.returnType.accept(this, ctx);
-        if (method.returnType.type.noError()) {
-            ctx.open(formal);
-            if (!method.isStatic()) ctx.declare(VarSymbol.thisVar(ctx.currentClass().type, method.id.pos));
-            var argTypes = new ArrayList<Type>();
-            for (var param : method.params) {
-                param.accept(this, ctx);
-                argTypes.add(param.typeLit.type);
-            }
-            method.type = new FunType(method.returnType.type, argTypes);
-            ctx.close();
+        ctx.open(formal);
+        if (!method.isStatic()) ctx.declare(VarSymbol.thisVar(ctx.currentClass().type, method.id.pos));
+        var argTypes = new ArrayList<Type>();
+        for (var param : method.params) {
+            param.accept(this, ctx);
+            argTypes.add(param.typeLit.type);
         }
+        method.type = new FunType(method.returnType.type, argTypes);
+        ctx.close();
     }
 
     @Override
@@ -281,14 +278,14 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
     @Override
     public void visitLocalVarDef(Tree.LocalVarDef def, ScopeStack ctx) {
+        def.typeLit.accept(this, ctx);
+
         var earlier = ctx.findConflict(def.name);
         if (earlier.isPresent()) {
             issue(new DeclConflictError(def.pos, def.name, earlier.get().pos));
-            def.typeLit.type = BuiltInType.ERROR;
             return;
         }
 
-        def.typeLit.accept(this, ctx);
         if (def.typeLit.type.eq(BuiltInType.VOID)) {
             issue(new BadVarTypeError(def.pos, def.name));
             return;
