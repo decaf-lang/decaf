@@ -134,10 +134,13 @@ public class ScopeStack {
 
     /**
      * Find if a symbol is conflicting with some already defined symbol. Rules:
-     * First, if the current scope is local scope or formal scope, then it cannot conflict with any already defined
-     * symbol till the formal scope, and it cannot conflict with any names in the global scope.
+     * First, if the current scope is local scope, then it cannot conflict with any already defined
+     * symbol till immediate parent formal scope, and it cannot conflict with any names in the global scope.
      * <p>
-     * Second, if the current scope is class scope or global scope, then it cannot conflict with any already defined
+     * Second, if the current scope is formal scope, then it cannot conflict with any already defined
+     * symbol in the same scope, and it cannot conflict with any names in the global scope.
+     * <p>
+     * Third, if the current scope is class scope or global scope, then it cannot conflict with any already defined
      * symbol.
      * <p>
      * NO override checking is issued here -- the type checker is in charge of this!
@@ -146,8 +149,27 @@ public class ScopeStack {
      * @return innermost conflicting symbol (if any)
      */
     public Optional<Symbol> findConflict(String key) {
-        if (currentScope().isFormalOrLocalScope())
-            return findWhile(key, Scope::isFormalOrLocalScope, whatever -> true).or(() -> global.find(key));
+
+        /* global and class scopes are easy, so we check formal and local first */
+        if (currentScope().isFormalOrLocalScope()) {
+            /* check current scope first */
+            var current = currentScope();
+            var suspect = current.find(key);
+            if (suspect.isPresent()) {
+                return suspect;
+            }
+
+            /* special case for local scope: parent formal scope;
+             * although local scope must have a parent scope on the stack, we check the size anyway. */
+            if (current.isLocalScope() && scopeStack.size() > 1) {
+                var parent = this.scopeStack.get(scopeStack.size() - 2);
+                if (parent.isFormalScope() && parent.containsKey(key)) return parent.find(key);
+            }
+
+            /* check against global scope */
+            return this.global.find(key);
+        }
+        /* class or global scope */
         return lookup(key);
     }
 
