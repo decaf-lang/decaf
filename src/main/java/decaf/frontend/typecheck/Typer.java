@@ -352,7 +352,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
         // has receiver
         var receiver = expr.receiver.get();
-        /* allow class name as VarSel receiver only in chained VerSel structures */
+        // allow class name as VarSel receiver only in chained VerSel structures
         allowClassNameVar = (receiver instanceof Tree.VarSel);
         receiver.accept(this, ctx);
         allowClassNameVar = false;
@@ -423,7 +423,7 @@ public class Typer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
 
         if (expr.receiver.isPresent()) {
             var receiver = expr.receiver.get();
-            /* allow class name as VarSel receiver only in chained VerSel structures */
+            // allow class name as VarSel receiver only in chained VerSel structures
             allowClassNameVar = (receiver instanceof Tree.VarSel);
             receiver.accept(this, ctx);
             allowClassNameVar = false;
