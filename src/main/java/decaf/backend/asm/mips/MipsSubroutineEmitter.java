@@ -19,12 +19,12 @@ import java.util.TreeMap;
  * Recall the stack frame of a MIPS subroutine looks this:
  * <pre>
  *                  previous stack frame ...
- * SP + 4n + 36 + : local data m - 1
+ * SP + 4n + 40 + : local data m - 1
  * 4(m - 1)
  *               ...
- * SP + 4n + 36   : local data 0
- * SP + 4n + 32   : ($RA)
- * SP + 4n + 28   : ($S7)
+ * SP + 4n + 40   : local data 0
+ * SP + 4n + 36   : ($RA)
+ * SP + 4n + 32   : ($S8)
  *               ...
  * SP + 4n + 0    : ($S0)
  * SP + 4(n - 1)  : arg n - 1
@@ -40,7 +40,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
 
     MipsSubroutineEmitter(MipsAsmEmitter emitter, SubroutineInfo info) {
         super(emitter, info);
-        nextLocalOffset = info.argsSize + 36;
+        nextLocalOffset = info.argsSize + 40;
         printer.printLabel(info.funcLabel, "function " + info.funcLabel.prettyString());
     }
 
@@ -94,7 +94,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
         printer.printComment("start of prologue");
         printer.printInstr(new Mips.SPAdd(-nextLocalOffset), "push stack frame");
         if (Mips.RA.isUsed() || info.hasCalls) {
-            printer.printInstr(new Mips.NativeStoreWord(Mips.RA, Mips.SP, info.argsSize + 32),
+            printer.printInstr(new Mips.NativeStoreWord(Mips.RA, Mips.SP, info.argsSize + 36),
                     "save the return address");
         }
         for (var i = 0; i < Mips.calleeSaved.length; i++) {
@@ -107,8 +107,14 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
         printer.println();
 
         printer.printComment("start of body");
-        for (var i = 0; i < Math.min(info.numArg, 4); i++) {
+        for (var i = 0; i < Math.min(info.numArg, Mips.argRegs.length); i++) {
             printer.printInstr(new Mips.NativeStoreWord(Mips.argRegs[i], Mips.SP, 4 * i),
+                    "save arg " + i);
+        }
+        for (var i = Mips.argRegs.length; i < info.numArg; i++) {
+            printer.printInstr(new Mips.NativeLoadWord(Mips.callerSaved[0], Mips.SP, nextLocalOffset + 4 * i),
+                    "load arg " + i);
+            printer.printInstr(new Mips.NativeStoreWord(Mips.callerSaved[0], Mips.SP, 4 * i),
                     "save arg " + i);
         }
         for (var instr : buf) {
@@ -126,7 +132,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
             }
         }
         if (Mips.RA.isUsed() || info.hasCalls) {
-            printer.printInstr(new Mips.NativeLoadWord(Mips.RA, Mips.SP, info.argsSize + 32),
+            printer.printInstr(new Mips.NativeLoadWord(Mips.RA, Mips.SP, info.argsSize + 36),
                     "restore the return address");
         }
         printer.printInstr(new Mips.SPAdd(nextLocalOffset), "pop stack frame");
