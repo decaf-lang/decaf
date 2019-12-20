@@ -40,7 +40,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
 
     MipsSubroutineEmitter(MipsAsmEmitter emitter, SubroutineInfo info) {
         super(emitter, info);
-        nextLocalOffset = info.argsSize + 40;
+        nextLocalOffset = info.argsSize + 4 * Mips.calleeSaved.length + 4;
         printer.printLabel(info.funcLabel, "function " + info.funcLabel.prettyString());
     }
 
@@ -94,7 +94,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
         printer.printComment("start of prologue");
         printer.printInstr(new Mips.SPAdd(-nextLocalOffset), "push stack frame");
         if (Mips.RA.isUsed() || info.hasCalls) {
-            printer.printInstr(new Mips.NativeStoreWord(Mips.RA, Mips.SP, info.argsSize + 36),
+            printer.printInstr(new Mips.NativeStoreWord(Mips.RA, Mips.SP, info.argsSize + 4 * Mips.calleeSaved.length),
                     "save the return address");
         }
         for (var i = 0; i < Mips.calleeSaved.length; i++) {
@@ -132,7 +132,7 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
             }
         }
         if (Mips.RA.isUsed() || info.hasCalls) {
-            printer.printInstr(new Mips.NativeLoadWord(Mips.RA, Mips.SP, info.argsSize + 36),
+            printer.printInstr(new Mips.NativeLoadWord(Mips.RA, Mips.SP, info.argsSize + 4 * Mips.calleeSaved.length),
                     "restore the return address");
         }
         printer.printInstr(new Mips.SPAdd(nextLocalOffset), "pop stack frame");
