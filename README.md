@@ -8,13 +8,13 @@ Since the standard language has quite a limited set of language features, studen
 
 ## Getting Started
 
-This project requires JDK 12.
+This project requires JDK 14.
 
 Other dependencies will be automatically downloaded from the maven central repository by the build script.
 
 ## Build
 
-First install the latest version (>= 5.4) [gradle](https://gradle.org).
+First install the latest version (>= 6.5) [gradle](https://gradle.org).
 
 Type the standard Gradle build command in your CLI:
 
@@ -31,7 +31,7 @@ Or, import the project in a Java IDE (like IDEA or Eclipse, or your favorite VS 
 In your CLI, type
 
 ```sh
-java -jar --enable-preview build/libs/decaf.jar -h
+java -jar build/libs/decaf.jar -h
 ```
 
 to display the usage help.
