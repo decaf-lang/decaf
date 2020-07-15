@@ -30,3 +30,4 @@ public abstract class NativeInstr extends PseudoInstr {
         super(Kind.LABEL, new Temp[]{}, new Temp[]{}, label);
     }
 }
+

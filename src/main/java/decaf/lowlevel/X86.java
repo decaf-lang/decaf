@@ -1,9 +1,7 @@
 package decaf.lowlevel;
 
-import decaf.lowlevel.instr.NativeInstr;
-import decaf.lowlevel.instr.PseudoInstr;
-import decaf.lowlevel.instr.Reg;
-import decaf.lowlevel.instr.Temp;
+import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.*;
 import decaf.lowlevel.label.Label;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -42,6 +40,9 @@ public class X86 {
     }
     private static String formatBinary(String opString, Object op2, Object dstOp) {
         return String.format("%-8s %s, %s", opString, literalsEscaped(op2), dstOp);
+    }
+    private static String formatCompare(String opString, Object lhs, Object rhs) {
+        return String.format("%-8s %s, %s", opString, literalsEscaped(lhs), literalsEscaped(rhs));
     }
     private static String formatLoadWord(Object base, int offset, Object dst) {
         return String.format("%-8s %d(%s), %s", "movl", offset, base, dst);
@@ -86,7 +87,7 @@ public class X86 {
 
         @Override
         public String toString() {
-            return formatUnary("pop", srcs[0]);
+            return formatUnary("pop", dsts[0]);
         }
     }
 
@@ -122,6 +123,30 @@ public class X86 {
         @Override
         public String toString() {
             return formatBinary(op, srcs[0], dsts[0]);
+        }
+    }
+
+    public static class Compare extends PseudoInstr {
+
+        public Compare(Temp lhs, Temp rhs) {
+            super(new Temp[]{}, new Temp[]{lhs, rhs});
+        }
+
+        @Override
+        public String toString() {
+            return formatBinary("cmp", srcs[0], srcs[1]);
+        }
+    }
+
+    public static class CompareZero extends PseudoInstr {
+
+        public CompareZero(Temp lhs) {
+            super(new Temp[]{}, new Temp[]{lhs});
+        }
+
+        @Override
+        public String toString() {
+            return formatCompare("cmp", srcs[0], 0);
         }
     }
 
@@ -231,6 +256,99 @@ public class X86 {
     }
 
 
+    public static class CopyCC extends PseudoInstr {
+
+        public SetCCOp op;
+
+        public CopyCC(SetCCOp op, Temp dst) {
+            super(new Temp[]{dst}, new Temp[]{});
+            this.op = op;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("#TODO copycc(%s, %s)", op, dsts[0]);
+        }
+
+        @Override
+        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
+            var oldDsts = this.dsts;
+            var oldSrcs = this.srcs;
+
+            this.dsts = dstRegs;
+            this.srcs = srcRegs;
+            var str = toString();
+            var nativeInstr = new CopyCCNative(kind, op, dstRegs, srcRegs, label) {
+                @Override
+                public String toString() {
+                    return str;
+                }
+            };
+
+            this.dsts = oldDsts;
+            this.srcs = oldSrcs;
+            return nativeInstr;
+        }
+    }
+
+    // TODO: native hole
+    public abstract static class CopyCCNative extends NativeInstr {
+        public final SetCCOp op;
+        public CopyCCNative(Kind kind, SetCCOp op, Reg[] dsts, Reg[] srcs, Label label) {
+            super(kind, dsts, srcs, label);
+            this.op = op;
+        }
+    }
+
+    public enum CondJumpOp {
+        JE, JNE
+    }
+
+    public static class CondJump extends PseudoInstr {
+
+        public CondJump(CondJumpOp op, Temp cond, Label to) {
+            super(Kind.COND_JMP, new Temp[]{}, new Temp[]{cond}, to);
+            this.op = op;
+        }
+
+        private final CondJumpOp op;
+
+        @Override
+        public String toString() {
+            return String.format("#TODO condjump(%s, %s)", op, label);
+        }
+
+        @Override
+        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
+            var oldDsts = this.dsts;
+            var oldSrcs = this.srcs;
+
+            this.dsts = dstRegs;
+            this.srcs = srcRegs;
+            var str = toString();
+            var nativeInstr = new CondJumpNative(kind, op, dstRegs, srcRegs, label) {
+                @Override
+                public String toString() {
+                    return str;
+                }
+            };
+
+            this.dsts = oldDsts;
+            this.srcs = oldSrcs;
+            return nativeInstr;
+        }
+    }
+
+    public abstract static class CondJumpNative extends NativeInstr {
+        public final CondJumpOp op;
+        public CondJumpNative(Kind kind, CondJumpOp op, Reg[] dsts, Reg[] srcs, Label label) {
+            super(kind, dsts, srcs, label);
+            this.op = op;
+        }
+    }
+
+
+
     public static class Syscall extends NativeInstr {
 
         public Syscall() {
@@ -333,6 +451,58 @@ public class X86 {
         @Override
         public String toString() {
             return formatUnary("push", srcs[0]);
+        }
+    }
+
+    private static String lower8bits(Reg r) {
+        if (r.equals(EAX)) {
+            return "%al";
+        } else if (r.equals(EBX)) {
+            return "%bl";
+        } else if (r.equals(ECX)) {
+            return "%cl";
+        } else if (r.equals(EDX)) {
+            return "%dl";
+        } else {
+            assert false;
+            return "";
+        }
+    }
+
+    public enum ExtendOp {
+        MOVZBL
+    }
+
+    public static class ExtendFrom8Bit extends NativeInstr {
+
+        public ExtendFrom8Bit(ExtendOp op, Reg dst, Reg src) {
+            super(new Reg[]{dst}, new Reg[]{src});
+            this.op = op.toString().toLowerCase();
+        }
+
+        private String op;
+
+        @Override
+        public String toString() {
+            return formatBinary(op, lower8bits((Reg) srcs[0]), dsts[0]);
+        }
+    }
+
+    public enum SetCCOp {
+        SETE, SETNE, SETL, SETLE, SETG, SETGE, ERR
+    }
+
+    public static class NativeSetCC extends NativeInstr {
+        public NativeSetCC(SetCCOp op, Reg dst) {
+            super(new Reg[]{dst}, new Reg[]{});
+            this.op = op.toString().toLowerCase();
+        }
+
+        private String op;
+
+        @Override
+        public String toString() {
+            return formatUnary(op, lower8bits((Reg) dsts[0]));
         }
     }
 

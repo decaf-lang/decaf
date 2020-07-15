@@ -195,18 +195,37 @@ public final class X86AsmEmitter extends AsmEmitter {
                 case LOR -> BinaryOp.OR;
                 default -> BinaryOp.CMP;
             };
-            seq.add(new Move(instr.dst, instr.lhs));
-            seq.add(new Binary(op, instr.dst, instr.rhs));
+            if (op != BinaryOp.CMP) {
+                seq.add(new Move(instr.dst, instr.lhs));
+                seq.add(new Binary(op, instr.dst, instr.rhs));
+                return;
+            }
+            var ccOp = switch (instr.op) {
+                case EQU -> SetCCOp.SETE;
+                case NEQ -> SetCCOp.SETNE;
+                case LES -> SetCCOp.SETL;
+                case LEQ -> SetCCOp.SETLE;
+                case GTR -> SetCCOp.SETG;
+                case GEQ -> SetCCOp.SETGE;
+                default -> SetCCOp.ERR;
+            };
+            assert ccOp != SetCCOp.ERR;
+            seq.add(new Compare(instr.lhs, instr.rhs));
+            seq.add(new CopyCC(ccOp, instr.dst));
         }
 
         @Override
         public void visitBranch(TacInstr.Branch instr) {
-            assert false;
+            seq.add(new Jump(instr.target));
         }
 
         @Override
         public void visitCondBranch(TacInstr.CondBranch instr) {
-            assert false;
+            var op = switch (instr.op) {
+                case BEQZ -> CondJumpOp.JE;
+                case BNEZ -> CondJumpOp.JNE;
+            };
+            seq.add(new CondJump(op, instr.cond, instr.target));
         }
 
         @Override

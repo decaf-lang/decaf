@@ -1,5 +1,6 @@
 package decaf.backend.asm.x86;
 
+import decaf.backend.asm.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 
@@ -70,17 +71,30 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
         buf.add(new X86Label(label).toNative(new Reg[]{}, new Reg[]{}));
     }
 
-    private void emitPrologue() {
-        printer.printComment("start of prologue");
-        printer.printInstr(new NativePush(EBP));
-        printer.printInstr(new NativeMove(EBP, ESP));
-        printer.printInstr(new RSPAdd(lastLocalOffset), "push stack frame");
+    private void calleeSave() {
         for (var i = 0; i < calleeSaved.length; i++) {
             if (calleeSaved[i].isUsed()) {
                 var instr = new NativeStoreWord(calleeSaved[i], EBP, - 4 * (i+1));
                 printer.printInstr(instr, "save value of $S" + i);
             }
         }
+    }
+
+    private void calleeRestore() {
+        for (var i = 0; i < calleeSaved.length; i++) {
+            if (calleeSaved[i].isUsed()) {
+                printer.printInstr(new NativeLoadWord(calleeSaved[i], ESP, info.argsSize + 4 * i),
+                        "restore value of $S" + i);
+            }
+        }
+    }
+
+    private void emitPrologue() {
+        printer.printComment("start of prologue");
+        printer.printInstr(new NativePush(EBP));
+        printer.printInstr(new NativeMove(EBP, ESP));
+        printer.printInstr(new RSPAdd(lastLocalOffset), "push stack frame");
+        calleeSave();
         printer.printComment("end of prologue");
         printer.println();
     }
@@ -88,12 +102,7 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
     private void emitEpilogue() {
         printer.printLabel(new Label(info.funcLabel.name + EPILOGUE_SUFFIX));
         printer.printComment("start of epilogue");
-        for (var i = 0; i < calleeSaved.length; i++) {
-            if (calleeSaved[i].isUsed()) {
-                printer.printInstr(new NativeLoadWord(calleeSaved[i], ESP, info.argsSize + 4 * i),
-                        "restore value of $S" + i);
-            }
-        }
+        calleeRestore();
         printer.printInstr(new NativeLeave());
         printer.printInstr(new NativeReturn());
         printer.printComment("end of epilogue");
@@ -103,6 +112,28 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
     private void emitBody() {
         printer.printComment("start of body");
         for (var instr : buf) {
+            if (instr instanceof CopyCCNative) {
+                var instr1 = (CopyCCNative) instr;
+                if (instr1.dsts[0] == EAX) {
+                    printer.printInstr(new NativeSetCC(instr1.op, EAX));
+                    printer.printInstr(new ExtendFrom8Bit(ExtendOp.MOVZBL, EAX, EAX));
+                } else {
+                    printer.printInstr(new NativePush(EAX));
+                    printer.printInstr(new NativeSetCC(instr1.op, EAX));
+                    printer.printInstr(new ExtendFrom8Bit(ExtendOp.MOVZBL, (Reg) instr1.dsts[0], EAX));
+                    printer.printInstr(new NativePop(EAX));
+                }
+                continue;
+            }
+            if (instr instanceof CondJumpNative) {
+                var instr1 = (CondJumpNative) instr;
+                printer.print("%s %s, %s", "cmp", "$0", instr1.srcs[0]);
+                printer.println();
+                printer.print("%s %s", instr1.op, instr1.label);
+                printer.println();
+                continue;
+            }
+
             printer.printInstr(instr);
         }
         printer.printComment("end of body");
