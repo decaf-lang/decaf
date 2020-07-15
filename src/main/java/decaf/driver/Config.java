@@ -15,10 +15,10 @@ import java.util.logging.Level;
 public class Config {
 
     /**
-     * Target/task. Options: PA1, PA1_LL, PA2, PA3, PA4, PA5.
+     * Target/task. Options: PA1, PA1_LL, PA2, PA3, PA4, PA5_X86 (x86), PA5 (mips).
      */
     public enum Target {
-        PA1, PA1_LL, PA2, PA3, PA4, PA5
+        PA1, PA1_LL, PA2, PA3, PA4, PA5_X86, PA5_MIPS
     }
 
     /**
@@ -83,7 +83,7 @@ public class Config {
         var source = new FileInputStream(sourceFile);
         var sourcePath = sourceFile.toPath();
 
-        var target = Target.PA5;
+        var target = Target.PA5_X86;
         if (cli.hasOption(OptParser.TARGET)) {
             target = parseTarget(cli.getOptionValue(OptParser.TARGET));
         }
@@ -147,7 +147,8 @@ public class Config {
             case "PA2" -> Target.PA2;
             case "PA3" -> Target.PA3;
             case "PA4" -> Target.PA4;
-            case "PA5" -> Target.PA5;
+            case "PA5_X86" -> Target.PA5_X86;
+            case "PA5_MIPS" -> Target.PA5_MIPS;
             default -> throw new ParseException(String.format("Invalid target: '%s'", target));
         };
     }

@@ -48,6 +48,9 @@ public class Asm extends Phase<TacProg, String> {
         for (var func : prog.funcs) {
             Log.info("emit func for %s", func.entry.prettyString());
             var pair = emitter.selectInstr(func);
+            for (var x : pair.getLeft()) {
+                Log.info("%s", x.toString());
+            }
             var builder = new CFGBuilder<>();
             var cfg = builder.buildFrom(pair.getLeft());
             analyzer.accept(cfg);
@@ -60,7 +63,7 @@ public class Asm extends Phase<TacProg, String> {
 
     @Override
     public void onSucceed(String code) {
-        if (config.target.equals(Config.Target.PA5)) {
+        if (config.target.equals(Config.Target.PA5_X86) || config.target.equals(Config.Target.PA5_MIPS)) {
             var path = config.dstPath.resolve(config.getSourceBaseName() + ".s");
             try {
                 var printer = new PrintWriter(path.toFile());

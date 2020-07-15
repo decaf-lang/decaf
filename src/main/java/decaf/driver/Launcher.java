@@ -28,7 +28,8 @@ public class Launcher {
             case PA2 -> tasks.typeCheck();
             case PA3 -> tasks.tacGen();
             case PA4 -> tasks.optimize();
-            case PA5 -> tasks.mips();
+            case PA5_X86 -> tasks.x86();
+            case PA5_MIPS -> tasks.mips();
         };
         task.apply(config.source);
     }

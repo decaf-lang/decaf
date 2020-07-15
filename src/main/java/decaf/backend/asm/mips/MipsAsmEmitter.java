@@ -278,7 +278,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitParm(TacInstr.Parm instr) {
-            if (argCount < 4) {
+            if (argCount < Mips.argRegs.length) {
                 seq.add(new Mips.Move(Mips.argRegs[argCount], instr.value));
             } else {
                 seq.add(new Mips.StoreWord(instr.value, Mips.SP, argCount * 4));

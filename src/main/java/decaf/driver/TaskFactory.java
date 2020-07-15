@@ -2,6 +2,7 @@ package decaf.driver;
 
 import decaf.backend.asm.Asm;
 import decaf.backend.asm.mips.MipsAsmEmitter;
+import decaf.backend.asm.x86.X86AsmEmitter;
 import decaf.backend.opt.Optimizer;
 import decaf.backend.reg.BruteRegAlloc;
 import decaf.frontend.parsing.LLParser;
@@ -46,6 +47,11 @@ public class TaskFactory {
 
     public Task<InputStream, String> mips() {
         var emitter = new MipsAsmEmitter();
+        return tacGen().then(new Asm(emitter, new BruteRegAlloc(emitter), config));
+    }
+
+    public Task<InputStream, String> x86() {
+        var emitter = new X86AsmEmitter();
         return tacGen().then(new Asm(emitter, new BruteRegAlloc(emitter), config));
     }
 }
