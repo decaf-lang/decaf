@@ -188,7 +188,7 @@ public final class X86AsmEmitter extends AsmEmitter {
             var op = switch (instr.op) {
                 case ADD -> BinaryOp.ADD;
                 case SUB -> BinaryOp.SUB;
-                case MUL -> BinaryOp.MUL;
+                case MUL -> BinaryOp.IMULL;
                 case DIV -> BinaryOp.DIV;
                 case MOD -> BinaryOp.REM;
                 case LAND -> BinaryOp.AND;
@@ -210,7 +210,7 @@ public final class X86AsmEmitter extends AsmEmitter {
                 default -> SetCCOp.ERR;
             };
             assert ccOp != SetCCOp.ERR;
-            seq.add(new Compare(instr.lhs, instr.rhs));
+            seq.add(new Compare(instr.rhs, instr.lhs)); // fuck x86
             seq.add(new CopyCC(ccOp, instr.dst));
         }
 
@@ -252,9 +252,9 @@ public final class X86AsmEmitter extends AsmEmitter {
             pushArgs();
             seq.add(new X86Call(new Label(instr.entry.name)));
             callerRestore();
+            instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
 
             // move return value from RAX to the specified location
-            instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
         }
 
         private void pushArgs() {

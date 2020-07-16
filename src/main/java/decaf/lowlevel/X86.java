@@ -20,7 +20,9 @@ public class X86 {
     public static final Reg ESP = new Reg(7, "%esp");
 
     public static final Reg[] callerSaved = new Reg[]{
-            EAX, ECX, EDX
+            // We do no include EAX because
+            // restoreCallerSave() would clashes the return value in EAX
+            ECX, EDX
     };
 
     public static final Reg[] calleeSaved = new Reg[]{
@@ -107,7 +109,7 @@ public class X86 {
     }
 
     public enum BinaryOp {
-        ADD, SUB, MUL, DIV, REM,
+        ADD, SUB, IMULL, DIV, REM,
         AND, OR, CMP
     }
 
