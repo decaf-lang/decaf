@@ -149,6 +149,7 @@ public final class X86AsmEmitter extends AsmEmitter {
         // Arguments are Parm'ed left to right,
         // but i386-cc requires arguments to be pushed right to left.
         private Stack<PseudoInstr> pushArgInstrs = new Stack<>();
+        private int argsNum = 0;
 
         boolean hasCall = false;
 
@@ -239,32 +240,39 @@ public final class X86AsmEmitter extends AsmEmitter {
             pushArgInstrs.push(new Push(instr.value));
         }
 
-        @Override
-        public void visitIndirectCall(TacInstr.IndirectCall instr) {
+        private void callRoutine(PseudoInstr callInstr) {
             hasCall = true;
             callerSave();
             pushArgs();
-            seq.add(new X86IndirectCall(instr.entry));
+            seq.add(callInstr);
+            popArgs();
             callerRestore();
-            // move return value from RAX to the specified location
+            // Caller needs to move return value from RAX to the specified location
+        }
+        @Override
+        public void visitIndirectCall(TacInstr.IndirectCall instr) {
+            callRoutine(new X86IndirectCall(instr.entry));
             instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
         }
 
         @Override
         public void visitDirectCall(TacInstr.DirectCall instr) {
-            hasCall = true;
-            callerSave();
-            pushArgs();
-            seq.add(new X86Call(new Label(instr.entry.name)));
-            callerRestore();
-            // move return value from RAX to the specified location
+            callRoutine(new X86Call(new Label(instr.entry.name)));
             instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
         }
 
         private void pushArgs() {
+            argsNum = pushArgInstrs.size();
             while (!pushArgInstrs.empty()) {
                 seq.add(pushArgInstrs.pop());
             }
+        }
+
+        private void popArgs() {
+            for (int i = 0; i < argsNum; i++)
+                // essentially pop
+                seq.add(new RSPAdd(4));
+            argsNum = 0;
         }
 
         private void callerSave() {
