@@ -46,6 +46,9 @@ public class X86 {
     private static String formatCompare(String opString, Object lhs, Object rhs) {
         return String.format("%-8s %s, %s", opString, literalsEscaped(lhs), literalsEscaped(rhs));
     }
+    private static String formaIndirectCall(Object to) {
+        return String.format("%-8s *%s", "call", literalsEscaped(to));
+    }
     private static String formatLoadWord(Object base, int offset, Object dst) {
         return String.format("%-8s %d(%s), %s", "movl", offset, base, dst);
     }
@@ -230,6 +233,18 @@ public class X86 {
         @Override
         public String toString() {
             return formatUnary("call", label);
+        }
+    }
+
+    public static class X86IndirectCall extends PseudoInstr {
+
+        public X86IndirectCall(Temp to) {
+            super(new Temp[]{}, new Temp[]{to});
+        }
+
+        @Override
+        public String toString() {
+            return formaIndirectCall(srcs[0]);
         }
     }
 

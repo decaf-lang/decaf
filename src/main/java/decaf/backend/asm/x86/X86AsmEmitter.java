@@ -41,16 +41,16 @@ public final class X86AsmEmitter extends AsmEmitter {
 
         if (vtbl.parent.isPresent()) {
             var parent = vtbl.parent.get();
-            printer.println(".word %s    # parent: %s", parent.label, parent.className);
+            printer.println(".long %s    # parent: %s", parent.label, parent.className);
         } else {
-            printer.println(".word 0    # parent: none");
+            printer.println(".long 0    # parent: none");
         }
 
         var index = pool.add(vtbl.className);
-        printer.println(".word %s%d    # class name", STR_PREFIX, index);
+        printer.println(".long %s%d    # class name", STR_PREFIX, index);
 
         for (var entry : vtbl.getItems()) {
-            printer.println(".word %s    # member method", entry.name);
+            printer.println(".long %s    # member method", entry.name);
         }
 
         printer.println();
@@ -241,20 +241,24 @@ public final class X86AsmEmitter extends AsmEmitter {
 
         @Override
         public void visitIndirectCall(TacInstr.IndirectCall instr) {
-            assert false;
+            hasCall = true;
+            callerSave();
+            pushArgs();
+            seq.add(new X86IndirectCall(instr.entry));
+            callerRestore();
+            // move return value from RAX to the specified location
+            instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
         }
 
         @Override
         public void visitDirectCall(TacInstr.DirectCall instr) {
             hasCall = true;
-
             callerSave();
             pushArgs();
             seq.add(new X86Call(new Label(instr.entry.name)));
             callerRestore();
-            instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
-
             // move return value from RAX to the specified location
+            instr.dst.ifPresent(temp -> seq.add(new Move(temp, EAX)));
         }
 
         private void pushArgs() {
