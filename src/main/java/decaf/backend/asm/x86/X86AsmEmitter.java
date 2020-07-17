@@ -242,11 +242,11 @@ public final class X86AsmEmitter extends AsmEmitter {
 
         private void callRoutine(PseudoInstr callInstr) {
             hasCall = true;
-            callerSave();
             pushArgs();
+            callerSave();
             seq.add(callInstr);
-            popArgs();
             callerRestore();
+            popArgs();
             // Caller needs to move return value from RAX to the specified location
         }
         @Override
