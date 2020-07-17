@@ -1,7 +1,9 @@
 package decaf.lowlevel;
 
-import decaf.backend.asm.HoleInstr;
-import decaf.lowlevel.instr.*;
+import decaf.lowlevel.instr.NativeInstr;
+import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.instr.Reg;
+import decaf.lowlevel.instr.Temp;
 import decaf.lowlevel.label.Label;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -112,7 +114,7 @@ public class X86 {
     }
 
     public enum BinaryOp {
-        ADD, SUB, IMULL, DIV, REM,
+        ADD, SUB, IMULL, REM, DIV,
         AND, OR, CMP
     }
 
@@ -128,6 +130,53 @@ public class X86 {
         @Override
         public String toString() {
             return formatBinary(op, srcs[0], dsts[0]);
+        }
+    }
+
+    public enum SignedIntDivRemOp {
+        DIV, REM
+    }
+
+    public static class SignedIntDivRem extends PseudoInstr {
+
+        public SignedIntDivRem(SignedIntDivRemOp op, Temp dst, Temp lhs, Temp rhs) {
+            super(new Temp[]{dst}, new Temp[]{lhs, rhs});
+            this.op = op;
+        }
+
+        private SignedIntDivRemOp op;
+
+        @Override
+        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
+            var oldDsts = this.dsts;
+            var oldSrcs = this.srcs;
+
+            this.dsts = dstRegs;
+            this.srcs = srcRegs;
+            var str = toString();
+            var nativeInstr = new SignedIntDivRemNative(op, dstRegs, srcRegs) {
+                @Override
+                public String toString() {
+                    return str;
+                }
+            };
+
+            this.dsts = oldDsts;
+            this.srcs = oldSrcs;
+            return nativeInstr;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("idiv %s, %s, %s", srcs[0], srcs[1], dsts[0]);
+        }
+    }
+
+    public abstract static class SignedIntDivRemNative extends NativeInstr {
+        public final SignedIntDivRemOp op;
+        public SignedIntDivRemNative(SignedIntDivRemOp op, Reg[] dsts, Reg[] srcs) {
+            super(dsts, srcs);
+            this.op = op;
         }
     }
 
@@ -362,7 +411,30 @@ public class X86 {
         }
     }
 
+    // Sign extend EAX into EDX:EAX.
+    public static class NativeCLTD extends NativeInstr {
 
+        public NativeCLTD() {
+            super(new Reg[]{EAX, EDX}, new Reg[]{EAX});
+        }
+
+        @Override
+        public String toString() {
+            return "cltd";
+        }
+    }
+
+    public static class NativeDivRem extends NativeInstr {
+
+        public NativeDivRem(Reg r) {
+            super(new Reg[]{EAX, EDX}, new Reg[]{r});
+        }
+
+        @Override
+        public String toString() {
+            return formatUnary("idivl", srcs[0]);
+        }
+    }
 
     public static class Syscall extends NativeInstr {
 

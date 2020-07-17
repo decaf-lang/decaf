@@ -196,6 +196,14 @@ public final class X86AsmEmitter extends AsmEmitter {
                 case LOR -> BinaryOp.OR;
                 default -> BinaryOp.CMP;
             };
+            if (op == BinaryOp.DIV) {
+                seq.add(new SignedIntDivRem(SignedIntDivRemOp.DIV, instr.dst, instr.lhs, instr.rhs));
+                return;
+            }
+            if (op == BinaryOp.REM) {
+                seq.add(new SignedIntDivRem(SignedIntDivRemOp.REM, instr.dst, instr.lhs, instr.rhs));
+                return;
+            }
             if (op != BinaryOp.CMP) {
                 seq.add(new Move(instr.dst, instr.lhs));
                 seq.add(new Binary(op, instr.dst, instr.rhs));

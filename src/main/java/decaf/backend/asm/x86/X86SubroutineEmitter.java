@@ -1,12 +1,10 @@
 package decaf.backend.asm.x86;
 
-import decaf.backend.asm.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 
 import static decaf.lowlevel.X86.*;
 
-import decaf.lowlevel.Mips;
 import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
@@ -135,6 +133,19 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
                 var instr1 = (CondJumpNative) instr;
                 printer.printInstr(new NativeCompareToZero((Reg) instr1.srcs[0]));
                 printer.printInstr(instr1);
+                continue;
+            }
+            if (instr instanceof SignedIntDivRemNative) {
+                var instr1 = (SignedIntDivRemNative) instr;
+                printer.printInstr(new NativePush(EAX));
+                printer.printInstr(new NativePush(EDX));
+                printer.printInstr(new NativeMove(EAX, (Reg) instr1.srcs[0]));
+                printer.printInstr(new NativeCLTD());
+                printer.printInstr(new NativeDivRem((Reg) instr1.srcs[1]));
+                printer.printInstr(new NativeMove((Reg) instr1.dsts[0],
+                        (instr1.op == SignedIntDivRemOp.DIV) ? EAX : EDX));
+                printer.printInstr(new NativePop(EDX));
+                printer.printInstr(new NativePop(EAX));
                 continue;
             }
 
