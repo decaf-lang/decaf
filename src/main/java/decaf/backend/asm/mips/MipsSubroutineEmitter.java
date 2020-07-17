@@ -45,6 +45,11 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
     }
 
     @Override
+    public void emitComment(String comment) {
+        buf.add(NativeInstr.nativeComment(String.format("; %s", comment)));
+    }
+
+    @Override
     public void emitStoreToStack(Reg src) {
         if (!offsets.containsKey(src.temp)) {
             if (src.temp.index < info.numArg) { // Always map arg `i` to `SP + 4 * i`.

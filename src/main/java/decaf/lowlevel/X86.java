@@ -68,10 +68,6 @@ public class X86 {
         }
     }
 
-    public enum UnaryOp {
-        NEG, NOT
-    }
-
     public static class Push extends PseudoInstr {
 
         public Push(Temp operand) {
@@ -94,6 +90,10 @@ public class X86 {
         public String toString() {
             return formatUnary("pop", dsts[0]);
         }
+    }
+
+    public enum UnaryOp {
+        NEG, NOT
     }
 
     public static class Unary extends PseudoInstr {
@@ -119,7 +119,7 @@ public class X86 {
     public static class Binary extends PseudoInstr {
 
         public Binary(BinaryOp op, Temp dst, Temp src) {
-            super(new Temp[]{dst}, new Temp[]{src});
+            super(new Temp[]{dst}, new Temp[]{src, dst});
             this.op = op.toString().toLowerCase();
         }
 
@@ -284,7 +284,7 @@ public class X86 {
 
         @Override
         public String toString() {
-            return String.format("#TODO copycc(%s, %s)", op, dsts[0]);
+            return String.format("%s, %s  ##", op, dsts[0]);
         }
 
         @Override
@@ -325,14 +325,14 @@ public class X86 {
 
         public CondJump(CondJumpOp op, Temp cond, Label to) {
             super(Kind.COND_JMP, new Temp[]{}, new Temp[]{cond}, to);
-            this.op = op;
+            this.op = op.toString().toLowerCase();
         }
 
-        private final CondJumpOp op;
+        private final String op;
 
         @Override
         public String toString() {
-            return String.format("#TODO condjump(%s, %s)", op, label);
+            return formatUnary(op, label);
         }
 
         @Override
@@ -343,7 +343,7 @@ public class X86 {
             this.dsts = dstRegs;
             this.srcs = srcRegs;
             var str = toString();
-            var nativeInstr = new CondJumpNative(kind, op, dstRegs, srcRegs, label) {
+            var nativeInstr = new CondJumpNative(kind, dstRegs, srcRegs, label) {
                 @Override
                 public String toString() {
                     return str;
@@ -357,10 +357,8 @@ public class X86 {
     }
 
     public abstract static class CondJumpNative extends NativeInstr {
-        public final CondJumpOp op;
-        public CondJumpNative(Kind kind, CondJumpOp op, Reg[] dsts, Reg[] srcs, Label label) {
+        public CondJumpNative(Kind kind, Reg[] dsts, Reg[] srcs, Label label) {
             super(kind, dsts, srcs, label);
-            this.op = op;
         }
     }
 
@@ -375,6 +373,18 @@ public class X86 {
         @Override
         public String toString() {
             return "syscall";
+        }
+    }
+
+    public static class NativeCompareToZero extends NativeInstr {
+
+        public NativeCompareToZero(Reg r) {
+            super(new Reg[]{}, new Reg[]{r});
+        }
+
+        @Override
+        public String toString() {
+            return formatBinary("cmp", "$0", srcs[0]);
         }
     }
 

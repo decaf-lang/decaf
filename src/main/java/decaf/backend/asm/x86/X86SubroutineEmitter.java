@@ -11,6 +11,7 @@ import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
 import decaf.lowlevel.label.Label;
+import decaf.lowlevel.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,11 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
         // assume all registers may need callee-saving.
         lastLocalOffset = - 4 * calleeSaved.length;
         printer.printLabel(info.funcLabel, "function " + info.funcLabel.prettyString());
+    }
+
+    @Override
+    public void emitComment(String comment) {
+        buf.add(NativeInstr.nativeComment(comment));
     }
 
     @Override
@@ -127,10 +133,8 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
             }
             if (instr instanceof CondJumpNative) {
                 var instr1 = (CondJumpNative) instr;
-                printer.print("%s %s, %s", "cmp", "$0", instr1.srcs[0]);
-                printer.println();
-                printer.print("%s %s", instr1.op, instr1.label);
-                printer.println();
+                printer.printInstr(new NativeCompareToZero((Reg) instr1.srcs[0]));
+                printer.printInstr(instr1);
                 continue;
             }
 
@@ -142,6 +146,10 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
 
     @Override
     public void emitEnd() {
+        Log.info("Function %s", info.funcLabel.name);
+        offsets.forEach((k, v) -> {
+            Log.info("Temp %4s Offset %4d", k, v);
+        });
         // Called after register allocation has been done.
         emitPrologue();
         emitBody();

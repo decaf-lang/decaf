@@ -17,6 +17,13 @@ public abstract class SubroutineEmitter {
     }
 
     /**
+     * Append an assembly comment.
+     *
+     * @param comment does not include the leading comment indicator
+     */
+    public abstract void emitComment(String comment);
+
+    /**
      * Append an assembly instruction that stores the value of a register to stack.
      *
      * @param src source register
