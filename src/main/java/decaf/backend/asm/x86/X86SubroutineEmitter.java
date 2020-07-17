@@ -89,7 +89,7 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
     private void calleeRestore() {
         for (var i = 0; i < calleeSaved.length; i++) {
             if (calleeSaved[i].isUsed()) {
-                printer.printInstr(new NativeLoadWord(calleeSaved[i], ESP, info.argsSize + 4 * i),
+                printer.printInstr(new NativeLoadWord(calleeSaved[i], EBP, - 4 * (i+1)),
                         "restore value of $S" + i);
             }
         }

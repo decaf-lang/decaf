@@ -80,7 +80,6 @@ public final class BruteRegAlloc extends RegAlloc {
     private void localAlloc(BasicBlock<PseudoInstr> bb, SubroutineEmitter subEmitter) {
         bindings.clear();
         for (var reg : emitter.allocatableRegs) {
-            reg.used = false;
             reg.occupied = false;
         }
 
