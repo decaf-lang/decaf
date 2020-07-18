@@ -1,9 +1,6 @@
 package decaf.lowlevel;
 
-import decaf.lowlevel.instr.NativeInstr;
-import decaf.lowlevel.instr.PseudoInstr;
-import decaf.lowlevel.instr.Reg;
-import decaf.lowlevel.instr.Temp;
+import decaf.lowlevel.instr.*;
 import decaf.lowlevel.label.Label;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -47,6 +44,9 @@ public class X86 {
     }
     private static String formatCompare(String opString, Object lhs, Object rhs) {
         return String.format("%-8s %s, %s", opString, literalsEscaped(lhs), literalsEscaped(rhs));
+    }
+    private static String formatTernary(String opString, Object dst, Object lhs, Object rhs) {
+        return String.format("%-8s %s, %s, %s", opString, lhs, rhs, dst);
     }
     private static String formaIndirectCall(Object to) {
         return String.format("%-8s *%s", "call", literalsEscaped(to));
@@ -130,53 +130,6 @@ public class X86 {
         @Override
         public String toString() {
             return formatBinary(op, srcs[0], dsts[0]);
-        }
-    }
-
-    public enum SignedIntDivRemOp {
-        DIV, REM
-    }
-
-    public static class SignedIntDivRem extends PseudoInstr {
-
-        public SignedIntDivRem(SignedIntDivRemOp op, Temp dst, Temp lhs, Temp rhs) {
-            super(new Temp[]{dst}, new Temp[]{lhs, rhs});
-            this.op = op;
-        }
-
-        private SignedIntDivRemOp op;
-
-        @Override
-        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
-            var oldDsts = this.dsts;
-            var oldSrcs = this.srcs;
-
-            this.dsts = dstRegs;
-            this.srcs = srcRegs;
-            var str = toString();
-            var nativeInstr = new SignedIntDivRemNative(op, dstRegs, srcRegs) {
-                @Override
-                public String toString() {
-                    return str;
-                }
-            };
-
-            this.dsts = oldDsts;
-            this.srcs = oldSrcs;
-            return nativeInstr;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("idiv %s, %s, %s", srcs[0], srcs[1], dsts[0]);
-        }
-    }
-
-    public abstract static class SignedIntDivRemNative extends NativeInstr {
-        public final SignedIntDivRemOp op;
-        public SignedIntDivRemNative(SignedIntDivRemOp op, Reg[] dsts, Reg[] srcs) {
-            super(dsts, srcs);
-            this.op = op;
         }
     }
 
@@ -322,55 +275,11 @@ public class X86 {
     }
 
 
-    public static class CopyCC extends PseudoInstr {
-
-        public SetCCOp op;
-
-        public CopyCC(SetCCOp op, Temp dst) {
-            super(new Temp[]{dst}, new Temp[]{});
-            this.op = op;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s, %s  ##", op, dsts[0]);
-        }
-
-        @Override
-        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
-            var oldDsts = this.dsts;
-            var oldSrcs = this.srcs;
-
-            this.dsts = dstRegs;
-            this.srcs = srcRegs;
-            var str = toString();
-            var nativeInstr = new CopyCCNative(kind, op, dstRegs, srcRegs, label) {
-                @Override
-                public String toString() {
-                    return str;
-                }
-            };
-
-            this.dsts = oldDsts;
-            this.srcs = oldSrcs;
-            return nativeInstr;
-        }
-    }
-
-    // TODO: native hole
-    public abstract static class CopyCCNative extends NativeInstr {
-        public final SetCCOp op;
-        public CopyCCNative(Kind kind, SetCCOp op, Reg[] dsts, Reg[] srcs, Label label) {
-            super(kind, dsts, srcs, label);
-            this.op = op;
-        }
-    }
-
     public enum CondJumpOp {
         JE, JNE
     }
 
-    public static class CondJump extends PseudoInstr {
+    public static class CondJump extends HoleInstr {
 
         public CondJump(CondJumpOp op, Temp cond, Label to) {
             super(Kind.COND_JMP, new Temp[]{}, new Temp[]{cond}, to);
@@ -383,31 +292,51 @@ public class X86 {
         public String toString() {
             return formatUnary(op, label);
         }
+    }
+
+    public enum SignedIntDivRemOp {
+        DIV, REM
+    }
+
+    public static class SignedIntDivRem extends HoleInstr {
+
+        public SignedIntDivRem(SignedIntDivRemOp op, Temp dst, Temp lhs, Temp rhs) {
+            super(new Temp[]{dst}, new Temp[]{lhs, rhs});
+            this.op = op;
+        }
+
+        public final SignedIntDivRemOp op;
 
         @Override
-        public NativeInstr toNative(Reg[] dstRegs, Reg[] srcRegs) {
-            var oldDsts = this.dsts;
-            var oldSrcs = this.srcs;
-
-            this.dsts = dstRegs;
-            this.srcs = srcRegs;
-            var str = toString();
-            var nativeInstr = new CondJumpNative(kind, dstRegs, srcRegs, label) {
-                @Override
-                public String toString() {
-                    return str;
-                }
-            };
-
-            this.dsts = oldDsts;
-            this.srcs = oldSrcs;
-            return nativeInstr;
+        public String toString() {
+            return formatTernary(op.toString().toLowerCase(), dsts[0], srcs[0], srcs[1]);
         }
     }
 
-    public abstract static class CondJumpNative extends NativeInstr {
-        public CondJumpNative(Kind kind, Reg[] dsts, Reg[] srcs, Label label) {
-            super(kind, dsts, srcs, label);
+    public enum SetCCOp {
+        SETE, SETNE, SETL, SETLE, SETG, SETGE, ERR
+    }
+
+    public static class SetCC extends HoleInstr {
+
+        public SetCCOp op;
+
+        public SetCC(SetCCOp op, Temp dst) {
+            super(new Temp[]{dst}, new Temp[]{});
+            this.op = op;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s, %s", op, dsts[0]);
+        }
+    }
+
+    public abstract static class SignedIntDivRemNative extends NativeInstr {
+        public final SignedIntDivRemOp op;
+        public SignedIntDivRemNative(SignedIntDivRemOp op, Reg[] dsts, Reg[] srcs) {
+            super(dsts, srcs);
+            this.op = op;
         }
     }
 
@@ -585,10 +514,6 @@ public class X86 {
         public String toString() {
             return formatBinary(op, lower8bits((Reg) srcs[0]), dsts[0]);
         }
-    }
-
-    public enum SetCCOp {
-        SETE, SETNE, SETL, SETLE, SETG, SETGE, ERR
     }
 
     public static class NativeSetCC extends NativeInstr {

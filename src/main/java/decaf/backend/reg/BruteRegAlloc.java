@@ -1,18 +1,15 @@
 package decaf.backend.reg;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.backend.dataflow.BasicBlock;
 import decaf.backend.dataflow.CFG;
 import decaf.backend.dataflow.Loc;
-import decaf.lowlevel.X86;
-import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
-import decaf.lowlevel.log.Log;
 
 import java.util.*;
 
@@ -92,10 +89,7 @@ public final class BruteRegAlloc extends RegAlloc {
             loc.liveOut.forEach(t -> subEmitter.emitComment(String.format("::: liveOut: %4s", t)));
             loc.instr.getRead().forEach(t -> subEmitter.emitComment(String.format("::: reads: %4s", t)));
             loc.instr.getWritten().forEach(t -> subEmitter.emitComment(String.format("::: writes: %4s", t)));
-
-            bindings.forEach((t, r) -> {
-                subEmitter.emitComment(String.format("binding: %s -> %s", t, r));
-            });
+            bindings.forEach((t, r) -> {subEmitter.emitComment(String.format("binding: %s -> %s", t, r));});
 
             if (loc.instr instanceof HoleInstr) {
                 if (loc.instr.equals(HoleInstr.CallerSave)) {
@@ -159,7 +153,11 @@ public final class BruteRegAlloc extends RegAlloc {
             }
         }
 
-        subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
+        if (loc.instr instanceof HoleInstr) {
+            subEmitter.emitHoleInstr((HoleInstr) loc.instr, srcRegs, dstRegs);
+        } else {
+            subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
+        }
     }
 
     /**

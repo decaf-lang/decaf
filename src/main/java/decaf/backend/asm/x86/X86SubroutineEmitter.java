@@ -5,6 +5,7 @@ import decaf.backend.asm.SubroutineInfo;
 
 import static decaf.lowlevel.X86.*;
 
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
@@ -115,42 +116,7 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
 
     private void emitBody() {
         printer.printComment("start of body");
-        for (var instr : buf) {
-            if (instr instanceof CopyCCNative) {
-                var instr1 = (CopyCCNative) instr;
-                if (instr1.dsts[0] == EAX) {
-                    printer.printInstr(new NativeSetCC(instr1.op, EAX));
-                    printer.printInstr(new ExtendFrom8Bit(ExtendOp.MOVZBL, EAX, EAX));
-                } else {
-                    printer.printInstr(new NativePush(EAX));
-                    printer.printInstr(new NativeSetCC(instr1.op, EAX));
-                    printer.printInstr(new ExtendFrom8Bit(ExtendOp.MOVZBL, (Reg) instr1.dsts[0], EAX));
-                    printer.printInstr(new NativePop(EAX));
-                }
-                continue;
-            }
-            if (instr instanceof CondJumpNative) {
-                var instr1 = (CondJumpNative) instr;
-                printer.printInstr(new NativeCompareToZero((Reg) instr1.srcs[0]));
-                printer.printInstr(instr1);
-                continue;
-            }
-            if (instr instanceof SignedIntDivRemNative) {
-                var instr1 = (SignedIntDivRemNative) instr;
-                printer.printInstr(new NativePush(EAX));
-                printer.printInstr(new NativePush(EDX));
-                printer.printInstr(new NativeMove(EAX, (Reg) instr1.srcs[0]));
-                printer.printInstr(new NativeCLTD());
-                printer.printInstr(new NativeDivRem((Reg) instr1.srcs[1]));
-                printer.printInstr(new NativeMove((Reg) instr1.dsts[0],
-                        (instr1.op == SignedIntDivRemOp.DIV) ? EAX : EDX));
-                printer.printInstr(new NativePop(EDX));
-                printer.printInstr(new NativePop(EAX));
-                continue;
-            }
-
-            printer.printInstr(instr);
-        }
+        buf.forEach(x -> printer.printInstr(x));
         printer.printComment("end of body");
         printer.println();
     }
@@ -165,6 +131,44 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
         emitPrologue();
         emitBody();
         emitEpilogue();
+    }
+
+    @Override
+    public void emitHoleInstr(HoleInstr instr, Reg[] srcRegs, Reg[] dstRegs) {
+        if (instr instanceof SetCC) {
+            var instr1 = (SetCC) instr;
+            if (dstRegs[0] == EDI || dstRegs[0] == ESI) {
+                emitNative(new NativePush(EAX));
+                emitNative(new NativeSetCC(instr1.op, EAX));
+                emitNative(new ExtendFrom8Bit(ExtendOp.MOVZBL, dstRegs[0], EAX));
+                emitNative(new NativePop(EAX));
+            } else {
+                emitNative(new NativeSetCC(instr1.op, dstRegs[0]));
+                emitNative(new ExtendFrom8Bit(ExtendOp.MOVZBL, dstRegs[0], dstRegs[0]));
+            }
+            return;
+        }
+
+        if (instr instanceof SignedIntDivRem) {
+            var instr1 = (SignedIntDivRem) instr;
+            emitNative(new NativePush(EAX));
+            emitNative(new NativePush(EDX));
+            emitNative(new NativeMove(EAX, srcRegs[0]));
+            emitNative(new NativeCLTD());
+            emitNative(new NativeDivRem(srcRegs[1]));
+            emitNative(new NativeMove(dstRegs[0],
+                    (instr1.op == SignedIntDivRemOp.DIV) ? EAX : EDX));
+            emitNative(new NativePop(EDX));
+            emitNative(new NativePop(EAX));
+            return;
+        }
+
+        if (instr instanceof CondJump) {
+            var instr1 = (CondJump) instr;
+            emitNative(new NativeCompareToZero(srcRegs[0]));
+            emitNative(instr1.toNative(dstRegs, srcRegs));
+            return;
+        }
     }
 
     private List<NativeInstr> buf = new ArrayList<>();

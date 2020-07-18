@@ -1,13 +1,12 @@
 package decaf.backend.asm.x86;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.lowlevel.StringUtils;
 import decaf.lowlevel.X86;
 import decaf.lowlevel.instr.PseudoInstr;
-import decaf.lowlevel.label.IntrinsicLabel;
 import decaf.lowlevel.label.Label;
 import decaf.lowlevel.tac.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -81,21 +80,6 @@ public final class X86AsmEmitter extends AsmEmitter {
 
     @Override
     public String emitEnd() {
-        if (!usedIntrinsics.isEmpty()) {
-            printer.println("# start of intrinsics");
-            if (usedIntrinsics.contains(Intrinsic.READ_LINE.entry)) {
-                loadReadLine();
-            }
-            if (usedIntrinsics.contains(Intrinsic.STRING_EQUAL.entry)) {
-                loadStringEqual();
-            }
-            if (usedIntrinsics.contains(Intrinsic.PRINT_BOOL.entry)) {
-                loadPrintBool();
-            }
-            printer.println("# end of intrinsics");
-            printer.println();
-        }
-
         printer.println("# start of constant strings");
         printer.println(".data");
         var i = 0;
@@ -220,7 +204,7 @@ public final class X86AsmEmitter extends AsmEmitter {
             };
             assert ccOp != SetCCOp.ERR;
             seq.add(new Compare(instr.rhs, instr.lhs)); // fuck x86
-            seq.add(new CopyCC(ccOp, instr.dst));
+            seq.add(new SetCC(ccOp, instr.dst));
         }
 
         @Override
@@ -277,9 +261,7 @@ public final class X86AsmEmitter extends AsmEmitter {
         }
 
         private void popArgs() {
-            for (int i = 0; i < argsNum; i++)
-                // essentially pop
-                seq.add(new RSPAdd(4));
+            seq.add(new RSPAdd(4 * argsNum));
             argsNum = 0;
         }
 
@@ -311,6 +293,4 @@ public final class X86AsmEmitter extends AsmEmitter {
     }
 
     private StringPool pool = new StringPool();
-
-    private Set<IntrinsicLabel> usedIntrinsics = new TreeSet<>();
 }

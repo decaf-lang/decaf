@@ -1,7 +1,7 @@
 package decaf.backend.asm.mips;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.lowlevel.Mips;
