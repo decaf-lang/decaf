@@ -216,10 +216,10 @@ public class Namer extends Phase<Tree.TopLevel, Tree.TopLevel> implements TypeLi
     public void visitMethodDef(Tree.MethodDef method, ScopeStack ctx) {
         var earlier = ctx.findConflict(method.name);
         if (earlier.isPresent()) {
-            if (earlier.get().isMethodSymbol()) { // may be overriden
+            if (earlier.get().isMethodSymbol()) { // may be overridden
                 var suspect = (MethodSymbol) earlier.get();
                 if (suspect.domain() != ctx.currentScope() && !suspect.isStatic() && !method.isStatic()) {
-                    // Only non-static methods can be overriden, but the type signature must be equivalent.
+                    // Only non-static methods can be overridden, but the type signature must be equivalent.
                     var formal = new FormalScope();
                     typeMethod(method, ctx, formal);
                     if (method.type.subtypeOf(suspect.type)) { // override success
