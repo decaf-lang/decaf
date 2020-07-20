@@ -7,13 +7,9 @@ plugins {
 
 group 'decaf'
 
-sourceCompatibility = JavaVersion.VERSION_12
+sourceCompatibility = JavaVersion.VERSION_14
 
 sourceSets.main.java.srcDirs += files("$project.buildDir/generated-src/ll1pg")
-
-tasks.withType(JavaCompile).each {
-    it.options.compilerArgs.add('--enable-preview')
-}
 
 repositories {
     mavenCentral()
@@ -21,13 +17,13 @@ repositories {
 
 dependencies {
     // https://mvnrepository.com/artifact/commons-cli/commons-cli
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
     // https://mvnrepository.com/artifact/commons-io/commons-io
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
 }
 
 task ll1pg(type: Task) {
@@ -44,7 +40,7 @@ task ll1pg(type: Task) {
 
     if (fs.empty) System.err.println("No *.spec file found in 'src/main/ll1pg/', skip")
     fs.visit { FileVisitDetails f ->
-        if (f.isDirectory) return
+        if (f.isDirectory()) return
         javaexec {
             classpath = files("$rootDir/ll1pg.jar")
             main = 'decaf.tools.ll1pg.Main'
@@ -60,8 +56,9 @@ jar {
         attributes 'Main-Class': 'decaf.Main'
     }
 
+    // Create a fat JAR with all the dependencies.
     from {
-        configurations.compile.collect {
+        configurations.runtimeClasspath.collect {
             it.isDirectory() ? it : zipTree(it)
         }
     }
@@ -71,9 +68,9 @@ javadoc {
     // Ignore the auto-generated file, because their javadoc comments may be out-dated (e.g. jflex <tt>).
     source = sourceSets.main.allJava.filter { !it.toString().contains('generated-src') }
 
-    options.source('12')
+    options.source('14')
     // NOTE: the first '-' is added by Gradle and thus ignored.
     // See https://github.com/gradle/gradle/issues/2354
-    options.addBooleanOption('-enable-preview', true)
     options.showFromPrivate()
 }
+

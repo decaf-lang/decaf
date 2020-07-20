@@ -33,7 +33,7 @@ public class OptParser {
             .longOpt("target")
             .hasArg()
             .argName("target")
-            .desc("target/task: PA1, PA1-LL, PA2, PA3, PA4, or PA5 (default)")
+            .desc("target/task: PA1, PA1-LL, PA2, PA3, PA4, or PA5_X86 (default), PA5_MIPS")
             .build();
 
     static final String LOG_COLORFUL = "log-color";

@@ -3,6 +3,7 @@ package decaf.backend.asm.mips;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.lowlevel.Mips;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
@@ -42,6 +43,11 @@ public class MipsSubroutineEmitter extends SubroutineEmitter {
         super(emitter, info);
         nextLocalOffset = info.argsSize + 4 * Mips.calleeSaved.length + 4;
         printer.printLabel(info.funcLabel, "function " + info.funcLabel.prettyString());
+    }
+
+    @Override
+    public void emitComment(String comment) {
+        buf.add(NativeInstr.nativeComment(String.format("; %s", comment)));
     }
 
     @Override

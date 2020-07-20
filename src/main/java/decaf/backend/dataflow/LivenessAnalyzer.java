@@ -1,6 +1,7 @@
 package decaf.backend.dataflow;
 
 import decaf.lowlevel.instr.PseudoInstr;
+import decaf.lowlevel.log.Log;
 
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -14,6 +15,14 @@ public class LivenessAnalyzer<I extends PseudoInstr> implements Consumer<CFG<I>>
 
     @Override
     public void accept(CFG<I> graph) {
+        for (var bb: graph.nodes) {
+            Log.info("liveness analyze: BB =================");
+            for (var instr : bb.allSeq())
+                Log.info("liveness analyze: %s", instr.instr);
+            if (!bb.isEmpty())
+                Log.info("liveness analyze: %s", bb.getLastInstr());
+        }
+
         for (var bb : graph.nodes) {
             computeDefAndLiveUseFor(bb);
             bb.liveIn = new TreeSet<>();
@@ -87,6 +96,8 @@ public class LivenessAnalyzer<I extends PseudoInstr> implements Consumer<CFG<I>>
     private void analyzeLivenessForEachLocIn(BasicBlock<I> bb) {
         var liveOut = new TreeSet<>(bb.liveOut);
         var it = bb.backwardIterator();
+        Log.info("intrabb analysis: BB =============");
+        liveOut.forEach(t -> Log.info("intrabb analysis: BB   liveOut %s ==========", t));
         while (it.hasNext()) {
             var loc = it.next();
             loc.liveOut = new TreeSet<>(liveOut);
@@ -94,6 +105,11 @@ public class LivenessAnalyzer<I extends PseudoInstr> implements Consumer<CFG<I>>
             // in `_T1 = _T1 + _T2`, `_T1` must be alive before execution.
             liveOut.removeAll(loc.instr.getWritten());
             liveOut.addAll(loc.instr.getRead());
+            Log.info("intrabb analysis: %s", loc.instr);
+            liveOut.forEach(t -> Log.info("intrabb analysis:   liveOut %s", t));
+            loc.instr.getRead().forEach(t -> Log.info("intrabb analysis:   reads %s", t));
+            loc.instr.getWritten().forEach(t -> Log.info("intrabb analysis:   writes %s", t));
+
             loc.liveIn = new TreeSet<>(liveOut);
         }
         // assert liveIn == bb.liveIn

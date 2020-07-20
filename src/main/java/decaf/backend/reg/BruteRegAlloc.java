@@ -1,7 +1,7 @@
 package decaf.backend.reg;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.backend.dataflow.BasicBlock;
@@ -41,7 +41,6 @@ public final class BruteRegAlloc extends RegAlloc {
 
     private void bind(Temp temp, Reg reg) {
         reg.used = true;
-
         bindings.put(temp, reg);
         reg.occupied = true;
         reg.temp = temp;
@@ -78,7 +77,6 @@ public final class BruteRegAlloc extends RegAlloc {
     private void localAlloc(BasicBlock<PseudoInstr> bb, SubroutineEmitter subEmitter) {
         bindings.clear();
         for (var reg : emitter.allocatableRegs) {
-            reg.used = false;
             reg.occupied = false;
         }
 
@@ -86,6 +84,12 @@ public final class BruteRegAlloc extends RegAlloc {
 
         for (var loc : bb.allSeq()) {
             // Handle special instructions on caller save/restore.
+            subEmitter.emitComment(loc.instr.toString());
+            loc.liveIn.forEach(t -> subEmitter.emitComment(String.format("::: liveIn: %4s", t)));
+            loc.liveOut.forEach(t -> subEmitter.emitComment(String.format("::: liveOut: %4s", t)));
+            loc.instr.getRead().forEach(t -> subEmitter.emitComment(String.format("::: reads: %4s", t)));
+            loc.instr.getWritten().forEach(t -> subEmitter.emitComment(String.format("::: writes: %4s", t)));
+            bindings.forEach((t, r) -> {subEmitter.emitComment(String.format("binding: %s -> %s", t, r));});
 
             if (loc.instr instanceof HoleInstr) {
                 if (loc.instr.equals(HoleInstr.CallerSave)) {
@@ -143,13 +147,17 @@ public final class BruteRegAlloc extends RegAlloc {
         for (var i = 0; i < instr.dsts.length; i++) {
             var temp = instr.dsts[i];
             if (temp instanceof Reg) {
-                dstRegs[i] = ((Reg) temp);
+                dstRegs[i] = (Reg) temp;
             } else {
                 dstRegs[i] = allocRegFor(temp, false, loc.liveIn, subEmitter);
             }
         }
 
-        subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
+        if (loc.instr instanceof HoleInstr) {
+            subEmitter.emitHoleInstr((HoleInstr) loc.instr, srcRegs, dstRegs);
+        } else {
+            subEmitter.emitNative(instr.toNative(dstRegs, srcRegs));
+        }
     }
 
     /**
@@ -170,6 +178,7 @@ public final class BruteRegAlloc extends RegAlloc {
         // First attempt: find an unoccupied register, or one whose value is no longer alive at this location.
         for (var reg : emitter.allocatableRegs) {
             if (!reg.occupied || !live.contains(reg.temp)) {
+                subEmitter.emitComment(String.format("  allocate %s to %s  (read: %5s):", temp, reg, isRead));
                 if (isRead) {
                     // Since `reg` is uninitialized, we must load the latest value of `temp`, from stack, to `reg`.
                     subEmitter.emitLoadFromStack(reg, temp);
@@ -187,8 +196,10 @@ public final class BruteRegAlloc extends RegAlloc {
         // is to randomize our choice among all of them.
         var reg = emitter.allocatableRegs[random.nextInt(emitter.allocatableRegs.length)];
         subEmitter.emitStoreToStack(reg);
+        subEmitter.emitComment(String.format("  spill %s (%s)", reg, reg.temp));
         unbind(reg.temp);
         bind(temp, reg);
+        subEmitter.emitComment(String.format("  allocate %s to %s (read: %5s)", temp, reg, isRead));
         if (isRead) {
             subEmitter.emitLoadFromStack(reg, temp);
         }

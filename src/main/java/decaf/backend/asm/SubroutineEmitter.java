@@ -1,6 +1,7 @@
 package decaf.backend.asm;
 
 import decaf.lowlevel.AsmCodePrinter;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.lowlevel.instr.NativeInstr;
 import decaf.lowlevel.instr.Reg;
 import decaf.lowlevel.instr.Temp;
@@ -15,6 +16,13 @@ public abstract class SubroutineEmitter {
         this.info = info;
         this.printer = emitter.printer;
     }
+
+    /**
+     * Append an assembly comment.
+     *
+     * @param comment does not include the leading comment indicator
+     */
+    public abstract void emitComment(String comment);
 
     /**
      * Append an assembly instruction that stores the value of a register to stack.
@@ -68,4 +76,11 @@ public abstract class SubroutineEmitter {
      * Assembly code pretty printer.
      */
     protected AsmCodePrinter printer;
+
+    /**
+     * Expand hole instructions with necessary native instructions.
+     *
+     * Note that hole instruction expansion is done after register allocation.
+     */
+    public void emitHoleInstr(HoleInstr instr, Reg[] srcRegs, Reg[] dstRegs) {}
 }

@@ -1,7 +1,7 @@
 package decaf.backend.asm.mips;
 
 import decaf.backend.asm.AsmEmitter;
-import decaf.backend.asm.HoleInstr;
+import decaf.lowlevel.instr.HoleInstr;
 import decaf.backend.asm.SubroutineEmitter;
 import decaf.backend.asm.SubroutineInfo;
 import decaf.lowlevel.Mips;
@@ -278,7 +278,7 @@ public final class MipsAsmEmitter extends AsmEmitter {
 
         @Override
         public void visitParm(TacInstr.Parm instr) {
-            if (argCount < 4) {
+            if (argCount < Mips.argRegs.length) {
                 seq.add(new Mips.Move(Mips.argRegs[argCount], instr.value));
             } else {
                 seq.add(new Mips.StoreWord(instr.value, Mips.SP, argCount * 4));

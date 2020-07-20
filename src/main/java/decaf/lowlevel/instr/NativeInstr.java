@@ -29,4 +29,14 @@ public abstract class NativeInstr extends PseudoInstr {
     public NativeInstr(Label label) {
         super(Kind.LABEL, new Temp[]{}, new Temp[]{}, label);
     }
+
+    public static NativeInstr nativeComment(String comment) {
+        return new NativeInstr(new Reg[]{}, new Reg[]{}) {
+            @Override
+            public String toString() {
+                return "  # " + comment;
+            }
+        };
+    }
 }
+

@@ -2,6 +2,7 @@ package decaf.backend.dataflow;
 
 import decaf.lowlevel.instr.PseudoInstr;
 import decaf.lowlevel.label.Label;
+import decaf.lowlevel.log.Log;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -54,6 +55,7 @@ public class CFGBuilder<I extends PseudoInstr> {
             switch (bb.kind) {
                 case END_BY_JUMP -> {
                     // can only continue to execute the block we wish to jump into
+                    Log.info("labelToBB [ " + bb.getLastInstr().label + " ]: ");
                     Objects.requireNonNull(labelsToBBs.get(bb.getLastInstr().label));
                     edges.add(Pair.of(bb.id, labelsToBBs.get(bb.getLastInstr().label)));
                 }
