@@ -150,19 +150,21 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
         }
 
         if (instr instanceof SignedIntDivRem) {
+            // Do not clutter any other registers,
+            // yet do not restore any destination registers.
             var instr1 = (SignedIntDivRem) instr;
-            emitNative(new NativePush(EAX));
-            emitNative(new NativePush(ECX));
-            emitNative(new NativePush(EDX));
+            if (dstRegs[0] != EAX) emitNative(new NativePush(EAX));
+            if (dstRegs[0] != ECX) emitNative(new NativePush(ECX));
+            if (dstRegs[0] != EDX) emitNative(new NativePush(EDX));
             emitNative(new NativeMove(EAX, srcRegs[0]));
             emitNative(new NativeMove(ECX, srcRegs[1]));
             emitNative(new NativeCLTD());
             emitNative(new NativeDivRem(ECX));
             emitNative(new NativeMove(dstRegs[0],
                     (instr1.op == SignedIntDivRemOp.DIV) ? EAX : EDX));
-            emitNative(new NativePop(EDX));
-            emitNative(new NativePop(ECX));
-            emitNative(new NativePop(EAX));
+            if (dstRegs[0] != EDX) emitNative(new NativePop(EDX));
+            if (dstRegs[0] != ECX) emitNative(new NativePop(ECX));
+            if (dstRegs[0] != EAX) emitNative(new NativePop(EAX));
             return;
         }
 
