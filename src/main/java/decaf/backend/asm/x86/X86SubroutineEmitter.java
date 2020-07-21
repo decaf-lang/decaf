@@ -152,13 +152,16 @@ public class X86SubroutineEmitter extends SubroutineEmitter {
         if (instr instanceof SignedIntDivRem) {
             var instr1 = (SignedIntDivRem) instr;
             emitNative(new NativePush(EAX));
+            emitNative(new NativePush(ECX));
             emitNative(new NativePush(EDX));
             emitNative(new NativeMove(EAX, srcRegs[0]));
+            emitNative(new NativeMove(ECX, srcRegs[1]));
             emitNative(new NativeCLTD());
-            emitNative(new NativeDivRem(srcRegs[1]));
+            emitNative(new NativeDivRem(ECX));
             emitNative(new NativeMove(dstRegs[0],
                     (instr1.op == SignedIntDivRemOp.DIV) ? EAX : EDX));
             emitNative(new NativePop(EDX));
+            emitNative(new NativePop(ECX));
             emitNative(new NativePop(EAX));
             return;
         }
