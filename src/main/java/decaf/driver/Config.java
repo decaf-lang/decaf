@@ -147,8 +147,8 @@ public class Config {
             case "PA2" -> Target.PA2;
             case "PA3" -> Target.PA3;
             case "PA4" -> Target.PA4;
-            case "PA5_X86" -> Target.PA5_X86;
-            case "PA5_MIPS" -> Target.PA5_MIPS;
+            case "PA5-X86" -> Target.PA5_X86;
+            case "PA5-MIPS" -> Target.PA5_MIPS;
             default -> throw new ParseException(String.format("Invalid target: '%s'", target));
         };
     }
