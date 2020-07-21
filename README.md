@@ -8,13 +8,18 @@ Since the standard language has quite a limited set of language features, studen
 
 ## Getting Started
 
-This project requires JDK 14.
+This project requires
+* JDK 14
+* Gradle 6.5.1
 
 Other dependencies will be automatically downloaded from the maven central repository by the build script.
 
-## Build
+After git clone, you need to setup submodules by
+```
+git submodule update --recursive --init
+```
 
-First install the latest version (>= 6.5) [gradle](https://gradle.org).
+## Build
 
 Type the standard Gradle build command in your CLI:
 
