@@ -462,24 +462,24 @@ ExprT3          :   Op3 Expr4 ExprT3
 
 Expr4           :   Expr5 ExprT4
                     {
-                        $$ = buildBinaryExpr($1, $2.thunkList);
+                        if($2.expr != null) {
+                            $$ = svExpr(new Binary(BinaryOp.values()[$2.code], $1.expr, $2.expr, $2.pos));
+                        } else
+                            $$ = $1;
                     }
                 ;
 
-ExprT4          :   Op4 Expr5 ExprT4
+ExprT4          :   Op4 Expr5
                     {
                         var sv = new SemValue();
                         sv.code = $1.code;
                         sv.pos = $1.pos;
                         sv.expr = $2.expr;
-
-                        $$ = $3;
-                        $$.thunkList.add(0, sv);
+                        $$ = sv;
                     }
                 |   /* empty */
                     {
                         $$ = new SemValue();
-                        $$.thunkList = new ArrayList<>();
                     }
                 ;
 
